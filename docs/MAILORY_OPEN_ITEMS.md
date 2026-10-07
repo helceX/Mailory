@@ -32,6 +32,7 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 | B8  | Partner yetki tavanı = pro plan değerleri; partner çocuk org'a üye olmaz (girişimci owner olur); partner sponsorluk bütçesi yok              | Hesap ele geçirme riskini sınırla, D-007'yi koru           | 13  |
 | B2  | Onay politikasında sahipler dahi kendi gönderdiğini onaylayamaz                                                                              | Dört göz ilkesi; tek yöneticili org kendini kilitleyebilir | 7   |
 | B9  | Saklama süreleri: izleme 25 ay (bot 30 gün), sağlayıcı olayı/AI günlüğü 13 ay, oturum/token/outbox 30 gün; org silme 30 gün tolerans         | KVKK minimizasyonu; hukuk onayı gerekir                    | 15  |
+| B12 | Pilot: SendPulse paralel yaşar, ısınma takvimi 2 haftada 500→hedef, durdurma eşikleri bounce %2 / şikayet %0,1                               | Yeni alan adı/IP itibarı korunur                           | 17  |
 | B11 | Migration'lar worker'ın Railway `preDeployCommand`'ıyla çalışır (web imajında tsx yok); migration'lar yalnızca-ekleme tutulur                | Tek yerde, başarısızsa dağıtım durur                       | 16  |
 | B10 | Next.js 16.3.6'ya yükseltme (güvenlik); esbuild (dev aracı) bulgusu kabul edildi                                                             | Üretime girmez                                             | 15  |
 
@@ -46,6 +47,7 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 | C5  | Postgres RLS                                                                | Bileşik FK + uygulama katmanı yeterli (D-089); havuz/worker karmaşıklığı                             | Pilot sonrası, gerçek ihtiyaçta |
 | C6  | Org'un tüm verisinin dışa aktarımı (taşınabilirlik)                         | Kişi bazlı dışa aktarma var; toplu paket kapsam dışı                                                 | Talep gelince                   |
 | C7  | Tarayıcı e2e paketlerinin CI'da koşması                                     | Playwright + `next dev` + Redis anahtar temizliği kurulumu doğrulanmadan CI'ı kırılgan yapmamak için | Pilot öncesi                    |
+| C8  | Bastırma listesi CSV dışa aktarımı ve SendPulse'a geri aktarım yardımcısı   | Pilot için gerekmeyebilir; geri dönüş senaryosunda elle kopyalanır                                   | İhtiyaç doğunca                 |
 
 ## D. Altyapı notları
 

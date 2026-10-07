@@ -30,4 +30,15 @@ describe("suggestMapping", () => {
     expect(normalizeHeader("SOYADI")).toBe("soyadi");
     expect(normalizeHeader("İl")).toBe("il");
   });
+
+  it("recognizes a typical SendPulse export (Email, Name, Phone, variables)", () => {
+    const m = suggestMapping(["Email", "Name", "Phone", "Company", "City"]);
+    expect(m).toEqual({
+      Email: "email",
+      Name: "first_name",
+      Phone: "phone",
+      Company: "company",
+      City: "city",
+    });
+  });
 });
