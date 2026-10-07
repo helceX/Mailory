@@ -448,6 +448,29 @@ export function EndSponsorship({ endpoint }: { endpoint: string }) {
   );
 }
 
+export function RestoreOrg({ endpoint }: { endpoint: string }) {
+  const { error, busy, run } = useAct();
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <Button
+        variant="secondary"
+        disabled={busy}
+        onClick={() =>
+          void run(
+            endpoint,
+            "PATCH",
+            { action: "restore" },
+            "Çalışma alanı geri açıldı.",
+          )
+        }
+      >
+        Geri aç
+      </Button>
+      <FormError message={error} />
+    </div>
+  );
+}
+
 export function BackLink({
   href,
   children,

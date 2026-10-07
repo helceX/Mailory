@@ -175,3 +175,10 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 
 - `@mailory/db` `platform.ts`: `METRICS` (yalnızca toplamlar), `listOrganizationsOverview`, `listChildOrganizations`/`getChildOrganization` (parent koşullu), `createOrganizationWithoutOwner`, askıya alma/tür/günlük limit, hub CRUD. `packages/db/src/platform-admin.ts` CLI.
 - Web: `lib/platform/service.ts` (PlatformActor = oturumdan `isPlatformAdmin`), `lib/partner/service.ts` (partnerGuard: owner/admin + type partner), `lib/org/service.ts#inviteFirstOwner`. Sayfalar: `/platform`, `/platform/orgs/[id]`, `/platform/system`, `/partner`, `/partner/children/[id]`, `/partner/templates`, şablonlarda sponsor sekmesi. Yan menüde role göre 'BTM Admin' / 'Platform'.
+
+## 22. Güvenlik sertleştirme ve KVKK (Faz 15)
+
+- `src/proxy.ts` nonce CSP; `route-security.test.ts` her API rotasında CSRF + oturum + rol denetimini zorlar. Bileşik FK'ler (D-089).
+- `@mailory/db` `privacy.ts`: `exportContactData`, `eraseContact`, `softDeleteOrganization`/`restoreOrganization`/`purgeDeletedOrganizations`, `runRetention`. Web `lib/privacy/service.ts` (+ `/settings/privacy`, kişi detayında dışa aktar/sil). Worker `jobs/retention.ts` (günlük 04:00 UTC). Platform yöneticisi `/platform`'dan silinmeyi bekleyen org'ları geri açar.
+- Yük ölçümü (opt-in `PERF=1`, tek makine, gerçek Postgres, boş transport): 100k kişi tohumlama 2,2 sn; 100k alıcı materialize 4,5 sn; render+talep+işaretleme ~440 mesaj/sn (DB'ye bağlı, gerçek sınır SES hızı); `campaignStats` 100k alıcıda ~21 ms; `orgOverview` ~2 ms.
+- `pnpm audit`: Next.js 16.3.5→16.3.6 (kritik: next/og RCE) yükseltildi. Kalan: esbuild (orta) yalnızca geliştirme aracı drizzle-kit zincirinde, üretime girmez → kabul.

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { can } from "@mailory/core";
 import { PageHeader } from "@/components/page-header";
+import { ContactPrivacy } from "@/components/privacy/privacy-actions";
 import { ContactForm } from "@/components/audience/contact-form";
 import { audienceDeps } from "@/lib/audience/deps";
 import { getContactDetail, getFields } from "@/lib/audience/service";
@@ -63,6 +64,11 @@ export default async function ContactPage({
           tags: c.tags,
           lists: c.lists,
         }}
+      />
+      <ContactPrivacy
+        id={c.id}
+        canExport={can(actor.role, "contacts:export")}
+        canErase={can(actor.role, "org:manage_settings")}
       />
     </>
   );

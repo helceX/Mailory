@@ -11,6 +11,8 @@ import {
   createOrganizationWithoutOwner,
   entitlementsOverview,
   getOrganizationMetrics,
+  listDeletedOrganizations,
+  restoreOrganization,
   listOrganizationsOverview,
   recordAudit,
   setDailySendLimit,
@@ -267,4 +269,20 @@ export async function getSystemStatus(
       orgs,
     },
   };
+}
+
+export async function listDeletedFor(deps: PlatformDeps, a: PlatformActor) {
+  const g = guard(a);
+  if (g) return g;
+  return { ok: true as const, orgs: await listDeletedOrganizations(deps.db) };
+}
+
+/** Reopens a workspace its owner closed, while it is still inside the grace period. Sending stays paused. */
+export async function restoreOrgFor(deps: PlatformDeps, a: PlatformActor, id: string) {
+  const g = guard(a);
+  if (g) return g;
+  const done = await restoreOrganization(deps.db, asOrganizationId(id), now(deps));
+  if (!done) return fail("not_found");
+  await audit(deps, a, id, "restored");
+  return { ok: true as const };
 }

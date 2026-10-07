@@ -176,7 +176,9 @@ export async function sendBatch(
     : null;
   if (!cover) return halt("sender_unverified");
 
-  if ((await getOrganization(deps.db, org))?.suspendedAt) return halt("org_suspended");
+  const orgRow = await getOrganization(deps.db, org); // null once the workspace has been deleted
+  if (!orgRow) return halt("org_deleted");
+  if (orgRow.suspendedAt) return halt("org_suspended");
 
   const [limit, sentToday, plan] = await Promise.all([
     getOrgSendLimit(deps.db, org),

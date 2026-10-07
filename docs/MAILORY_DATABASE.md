@@ -132,3 +132,8 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Faz 13 notları (migration `0012_…`)
 
 - `shared_templates` (partner_organization_id, name, category, description, doc jsonb, archived_at). `organizations.type/parent_organization_id` (Faz 3'te vardı) artık kullanılıyor.
+
+## Faz 15 notları (migration `0013_composite_tenant_fks.sql`, elle yazıldı)
+
+- Ebeveyn tablolara `UNIQUE(organization_id, id)`; çocuk tablolarda tek kolonlu FK'ler `(organization_id, parent_id)` bileşik FK'lerle değiştirildi (kampanya→şablon/gönderici/versiyon, alıcı→kampanya/kişi, link/olay→kampanya/alıcı/link, liste/etiket üyelikleri, otomasyon kayıtları, marka kiti→görsel). Başka org'un satırına referans DB'de 23503 verir.
+- KVKK: `organizations.deleted_at` (30 gün sonra `purgeDeletedOrganizations`), `contact_tags.added_at`. Saklama: `runRetention` (bkz. D-093).

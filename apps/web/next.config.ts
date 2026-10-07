@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   reactStrictMode: true,
+  poweredByHeader: false,
   transpilePackages: [
     "@mailory/ui",
     "@mailory/db",

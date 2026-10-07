@@ -17,6 +17,7 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 | A9  | Plan limitleri / fiyat | Plan sayıları (free 500 kişi/1000 e-posta … btm_sponsored 5000/15000) benim hipotezim; iş modeli kararı + ödeme sağlayıcısı (Stripe/iyzico) sözleşmesi gerekir                                                                      | 14  |
 | A8  | Yapay zekâ             | `ANTHROPIC_API_KEY` ekleyip `AI_PROVIDER=anthropic` ile canlı duman testi; veri işleme (üçüncü taraf model) bilgilendirmesi hukuki metinlere eklenmeli                                                                              | 12  |
 | A7  | E-posta istemci testi  | Outlook/Gmail/Apple Mail render geçişi (Litmus/Email on Acid)                                                                                                                                                                       | 5   |
+| A11 | KVKK hukuki metinler   | Aydınlatma metni, gizlilik politikası, veri işleme sözleşmesi (BTM ve girişimciler için), saklama sürelerinin (D-093) metne işlenmesi, VERBİS değerlendirmesi, alt işleyenler (Amazon SES, Anthropic, Railway) listesi              | 15  |
 
 ## B. Otonom verilen kararlar / öneriler (uygulandı, onayına açık)
 
@@ -30,15 +31,19 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 | B7  | Aboneliği olmayan org = free plan; plan düşürme veri silmez; limit dolunca kampanya duraklar ve limit artınca kendiliğinden devam eder       | Veriyi cezalandırmadan koru                                | 14  |
 | B8  | Partner yetki tavanı = pro plan değerleri; partner çocuk org'a üye olmaz (girişimci owner olur); partner sponsorluk bütçesi yok              | Hesap ele geçirme riskini sınırla, D-007'yi koru           | 13  |
 | B2  | Onay politikasında sahipler dahi kendi gönderdiğini onaylayamaz                                                                              | Dört göz ilkesi; tek yöneticili org kendini kilitleyebilir | 7   |
+| B9  | Saklama süreleri: izleme 25 ay (bot 30 gün), sağlayıcı olayı/AI günlüğü 13 ay, oturum/token/outbox 30 gün; org silme 30 gün tolerans         | KVKK minimizasyonu; hukuk onayı gerekir                    | 15  |
+| B10 | Next.js 16.3.6'ya yükseltme (güvenlik); esbuild (dev aracı) bulgusu kabul edildi                                                             | Üretime girmez                                             | 15  |
 
 ## C. Ertelenen / kapsam dışı bırakılanlar (neden + öneri)
 
-| #   | Konu                                                                        | Neden                               | Öneri           |
-| --- | --------------------------------------------------------------------------- | ----------------------------------- | --------------- |
-| C2  | Google Postmaster/SNDS entegrasyonu, seed-list testi                        | Dış hesap/ücretli hizmet gerektirir | Pilot sonrası   |
-| C3  | Görsel akış tuvali, birleşen dallar, ek tetikleyici/eylemler, yeniden giriş | Kapsam; V2.1                        | 11+             |
-| C4  | Impersonation/destek oturumu, sponsorluk bütçesi ve kullanım raporu         | Güvenlik tasarımı gerekir           | 13+             |
-| C1  | PDF rapor dışa aktarma                                                      | CSV yeterli; PDF için ek bağımlılık | İhtiyaç doğunca |
+| #   | Konu                                                                        | Neden                                                                    | Öneri                           |
+| --- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------- |
+| C2  | Google Postmaster/SNDS entegrasyonu, seed-list testi                        | Dış hesap/ücretli hizmet gerektirir                                      | Pilot sonrası                   |
+| C3  | Görsel akış tuvali, birleşen dallar, ek tetikleyici/eylemler, yeniden giriş | Kapsam; V2.1                                                             | 11+                             |
+| C4  | Impersonation/destek oturumu, sponsorluk bütçesi ve kullanım raporu         | Güvenlik tasarımı gerekir                                                | 13+                             |
+| C1  | PDF rapor dışa aktarma                                                      | CSV yeterli; PDF için ek bağımlılık                                      | İhtiyaç doğunca                 |
+| C5  | Postgres RLS                                                                | Bileşik FK + uygulama katmanı yeterli (D-089); havuz/worker karmaşıklığı | Pilot sonrası, gerçek ihtiyaçta |
+| C6  | Org'un tüm verisinin dışa aktarımı (taşınabilirlik)                         | Kişi bazlı dışa aktarma var; toplu paket kapsam dışı                     | Talep gelince                   |
 
 ## D. Altyapı notları
 

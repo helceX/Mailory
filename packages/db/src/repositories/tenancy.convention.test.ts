@@ -30,6 +30,9 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   "createOrganizationWithoutOwner", // creates a tenant (no tenant exists yet to scope by)
   "listPlans", // plan catalog: global reference data, no tenant column
   "getPlanLimits", // limits a plan grants (reference data)
+  "purgeDeletedOrganizations", // retention: workspaces past their grace period
+  "runRetention", // retention sweep across tenants
+  "listDeletedOrganizations", // platform admin: workspaces in their deletion grace period
   "refreshEngagement", // nightly job across tenants (optionally scoped)
   "listDueCampaigns",
   "listSendingCampaigns",

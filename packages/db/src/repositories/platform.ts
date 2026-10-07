@@ -257,3 +257,14 @@ export async function archiveSharedTemplate(
     .returning({ id: sharedTemplates.id });
   return rows.length > 0;
 }
+
+/** Workspaces closed by their owners and still inside the grace period (platform admins can restore them). */
+export async function listDeletedOrganizations(db: Database) {
+  const r = await db.execute<{ id: string; name: string; deleted_at: string }>(sql`
+    select id, name, deleted_at from organizations where deleted_at is not null order by deleted_at desc limit 100`);
+  return r.rows.map((x) => ({
+    id: x.id,
+    name: x.name,
+    deletedAt: new Date(x.deleted_at),
+  }));
+}

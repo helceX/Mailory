@@ -426,6 +426,19 @@ suite("send engine (real Postgres)", () => {
     expect(t.sent).toHaveLength(3);
   });
 
+  it("a closed (soft-deleted) workspace sends nothing", async () => {
+    const s = await setup(3);
+    await db
+      .update(organizations)
+      .set({ deletedAt: new Date() })
+      .where(eq(organizations.id, s.org.id));
+    const t = new ScriptedTransport();
+    const d = deps(t);
+    const r = await sendBatch(d, await row(s.campaign.id));
+    expect(r.halted).toBe("org_deleted");
+    expect(t.sent).toHaveLength(0);
+  });
+
   it("refuses to send when the sender's domain is no longer verified", async () => {
     const s = await setup(2);
     const t = new ScriptedTransport();
