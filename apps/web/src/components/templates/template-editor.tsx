@@ -603,6 +603,7 @@ export function TemplateEditor({
         </div>
       ) : (
         <DndContext
+          id="template-editor-dnd"
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={(e) => {
