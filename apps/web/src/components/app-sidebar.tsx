@@ -4,9 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn, Wordmark } from "@mailory/ui";
 import { LogoutButton } from "./logout-button";
+import { OrgSwitcher } from "./org-switcher";
 import { NAV_ITEMS } from "./nav-config";
 
-export function AppSidebar({ userName }: { userName: string }) {
+export function AppSidebar({
+  userName,
+  organizations,
+  activeOrganizationId,
+}: {
+  userName: string;
+  organizations: { id: string; name: string }[];
+  activeOrganizationId: string;
+}) {
   const pathname = usePathname();
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r bg-surface md:flex md:flex-col">
@@ -14,6 +23,9 @@ export function AppSidebar({ userName }: { userName: string }) {
         <Link href="/dashboard" aria-label="Mailory dashboard" className="text-lg">
           <Wordmark />
         </Link>
+      </div>
+      <div className="pb-3">
+        <OrgSwitcher organizations={organizations} activeId={activeOrganizationId} />
       </div>
       <nav
         className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4"

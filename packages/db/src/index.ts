@@ -35,3 +35,5 @@ export async function checkDb(pool: Pool, timeoutMs = 2000): Promise<boolean> {
 
 export * from "./schema/index";
 export * from "./repositories/auth";
+export * from "./repositories/organizations";
+export * from "./repositories/audit";

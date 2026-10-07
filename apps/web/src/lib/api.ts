@@ -63,3 +63,35 @@ export async function parseJson<T>(
   }
   return { data: result.data };
 }
+
+import { getOrgContext } from "./org/context";
+import type { Actor } from "./org/service";
+
+/** Resolves the acting user + their live role in the active org, or the right error response. */
+export async function requireActor(): Promise<
+  | { actor: Actor; sessionId: string; user: { id: string; email: string } }
+  | { response: NextResponse }
+> {
+  const context = await getOrgContext();
+  if (!context)
+    return { response: apiError(401, "unauthenticated", "Oturum açmanız gerekiyor.") };
+  if (!context.actor)
+    return {
+      response: apiError(409, "no_organization", "Önce bir organizasyon oluşturun."),
+    };
+  return { actor: context.actor, sessionId: context.sessionId, user: context.user };
+}
+
+const FAILURE_STATUS = {
+  forbidden: [403, "Bu işlem için yetkiniz yok."],
+  not_found: [404, "Kayıt bulunamadı."],
+  last_owner: [409, "Organizasyonun en az bir sahibi olmalı."],
+  already_member: [409, "Bu kişi zaten organizasyonun üyesi."],
+  invalid: [400, "Geçersiz istek."],
+  email_mismatch: [403, "Bu davet farklı bir e-posta adresi için gönderilmiş."],
+} as const;
+
+export function failureResponse(code: keyof typeof FAILURE_STATUS) {
+  const [status, message] = FAILURE_STATUS[code];
+  return apiError(status, code, message);
+}

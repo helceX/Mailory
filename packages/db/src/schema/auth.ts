@@ -1,4 +1,5 @@
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { organizations } from "./organizations";
 import { users } from "./users";
 
 /**
@@ -13,8 +14,11 @@ export const sessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull().unique(),
-    // Phase 3 adds the FK to organizations; kept a plain nullable uuid until that table exists.
-    activeOrganizationId: uuid("active_organization_id"),
+    // Validated against memberships on every request; the FK only guarantees the org exists.
+    activeOrganizationId: uuid("active_organization_id").references(
+      () => organizations.id,
+      { onDelete: "set null" },
+    ),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     userAgent: text("user_agent"),

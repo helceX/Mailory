@@ -7,8 +7,8 @@ PostgreSQL 16+, Drizzle. Kurallar: `uuid` PK (`defaultRandom`), `timestamptz`, t
 - `users` (id, email unique-lower, password_hash, first_name, last_name, email_verified_at, is_platform_admin, disabled_at)
 - `sessions` (id, user_id, token_hash unique, active_organization_id, ip, user_agent, expires_at, revoked_at)
 - `organizations` (id, name, slug, type `standard|partner`, **parent_organization_id** → organizations, default_timezone, deleted_at)
-- `memberships` (organization_id, user_id, role `owner|admin|editor|viewer`, status `active|invited|revoked`, invited_by) — unique(org,user)
-- `invitations` (organization_id, email, role, token_hash, expires_at, accepted_at)
+- `memberships` (organization_id, user_id, role `owner|admin|editor|viewer`, status `active|revoked`, invited_by) — unique(org,user); role/status CHECK kısıtlı
+- `invitations` (organization_id, email, role `admin|editor|viewer`, token_hash unique, invited_by, expires_at, accepted_at, revoked_at) — aynı e-postaya yeni davet eskisini iptal eder
 - `user_tokens` (user_id, purpose `verify_email|reset_password`, token_hash unique, expires_at, consumed_at) — D-026
 - `email_outbox` (sistem e-postaları: to, subject, body, kind, sent_at, delivered_via, last_error)
 

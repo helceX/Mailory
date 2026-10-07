@@ -140,6 +140,7 @@ export async function resolveSession(deps: AuthDeps, sessionToken: string) {
   if (!row) return null;
   return {
     sessionId: row.session.id,
+    activeOrganizationId: row.session.activeOrganizationId,
     user: {
       id: row.user.id,
       email: row.user.email,
