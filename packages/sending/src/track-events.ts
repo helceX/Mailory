@@ -7,6 +7,7 @@ import {
   getOrganization,
   getRecipient,
   recipientSentAt,
+  emitRecipientWebhook,
   recordTracking,
   type CampaignSnapshot,
   type Database,
@@ -46,7 +47,7 @@ async function record(
     type,
     msSinceSent: info.sentAt ? now.getTime() - info.sentAt.getTime() : null,
   });
-  return recordTracking(deps.db, org, {
+  const recorded = await recordTracking(deps.db, org, {
     campaignId: t.campaignId,
     recipientId: t.recipientId,
     linkId: t.linkId ?? null,
@@ -56,6 +57,17 @@ async function record(
     isBot,
     at: now,
   });
+  // Scanners and prefetchers are not people: integrators only hear about real engagement.
+  if (!isBot)
+    await emitRecipientWebhook(
+      deps.db,
+      org,
+      type === "open" ? "email.opened" : "email.clicked",
+      t.recipientId,
+      t.linkId ? { linkId: t.linkId } : {},
+      now,
+    );
+  return recorded;
 }
 
 /** Records an open if the token is valid. Always "succeeds": the pixel must not reveal whether a token was genuine. */

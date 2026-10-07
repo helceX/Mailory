@@ -8,6 +8,7 @@ import { startAutomation } from "./jobs/automation";
 import { startEngagementRefresh } from "./jobs/engagement";
 import { startDomainCheck } from "./jobs/domain-check";
 import { startRetention } from "./jobs/retention";
+import { startWebhookDelivery } from "./jobs/webhook-deliver";
 
 const HEARTBEAT_KEY = "mailory:worker:heartbeat";
 const env = getEnv();
@@ -57,8 +58,14 @@ const retention = await startRetention({
   db,
   log: (message, data) => console.log(`[worker] ${message}`, JSON.stringify(data)),
 });
+const webhooks = await startWebhookDelivery({
+  redis,
+  db,
+  allowPrivate: env.NODE_ENV !== "production",
+  log: (message, data) => console.log(`[worker] ${message}`, JSON.stringify(data)),
+});
 console.log(
-  "[worker] started (domain-check, campaign-send, engagement, automation, retention scheduled)",
+  "[worker] started (domain-check, campaign-send, engagement, automation, retention, webhooks scheduled)",
 );
 
 async function shutdown() {
@@ -68,6 +75,7 @@ async function shutdown() {
   await engagement.close();
   await automation.close();
   await retention.close();
+  await webhooks.close();
   await redis.quit();
   await pool.end();
   process.exit(0);

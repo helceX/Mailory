@@ -137,3 +137,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 
 - Ebeveyn tablolara `UNIQUE(organization_id, id)`; çocuk tablolarda tek kolonlu FK'ler `(organization_id, parent_id)` bileşik FK'lerle değiştirildi (kampanya→şablon/gönderici/versiyon, alıcı→kampanya/kişi, link/olay→kampanya/alıcı/link, liste/etiket üyelikleri, otomasyon kayıtları, marka kiti→görsel). Başka org'un satırına referans DB'de 23503 verir.
 - KVKK: `organizations.deleted_at` (30 gün sonra `purgeDeletedOrganizations`), `contact_tags.added_at`. Saklama: `runRetention` (bkz. D-093).
+
+## Faz 18 notları (migration `0014_public_api.sql`)
+
+- `api_keys` (prefix UNIQUE, secret_hash, scope read|write, revoked_at), `api_usage` (PK org+gün, sayaç), `webhook_endpoints` (secret, events text[], consecutive_failures), `webhook_deliveries` (outbox; status pending|delivered|failed, attempts, next_attempt_at, locked_until). `webhook_deliveries` → `webhook_endpoints` bileşik FK (aynı org zorunlu, elle yazıldı). Saklama: teslimatlar 30 gün, `api_usage` 400 gün (`runRetention`).

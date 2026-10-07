@@ -3,6 +3,7 @@ import {
   asOrganizationId,
   getOrganization,
   getRecipient,
+  emitRecipientWebhook,
   markRecipientUnsubscribed,
   recordAudit,
   suppressForEvent,
@@ -70,5 +71,13 @@ export async function unsubscribeByToken(
     entityId: found.recipientId,
     metadata: { source },
   });
+  await emitRecipientWebhook(
+    deps.db,
+    org,
+    "email.unsubscribed",
+    found.recipientId,
+    { source },
+    now,
+  );
   return { ok: true };
 }

@@ -182,3 +182,9 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - `@mailory/db` `privacy.ts`: `exportContactData`, `eraseContact`, `softDeleteOrganization`/`restoreOrganization`/`purgeDeletedOrganizations`, `runRetention`. Web `lib/privacy/service.ts` (+ `/settings/privacy`, kişi detayında dışa aktar/sil). Worker `jobs/retention.ts` (günlük 04:00 UTC). Platform yöneticisi `/platform`'dan silinmeyi bekleyen org'ları geri açar.
 - Yük ölçümü (opt-in `PERF=1`, tek makine, gerçek Postgres, boş transport): 100k kişi tohumlama 2,2 sn; 100k alıcı materialize 4,5 sn; render+talep+işaretleme ~440 mesaj/sn (DB'ye bağlı, gerçek sınır SES hızı); `campaignStats` 100k alıcıda ~21 ms; `orgOverview` ~2 ms.
 - `pnpm audit`: Next.js 16.3.5→16.3.6 (kritik: next/og RCE) yükseltildi. Kalan: esbuild (orta) yalnızca geliştirme aracı drizzle-kit zincirinde, üretime girmez → kabul.
+
+## 23. Genel API ve webhook'lar (Faz 18)
+
+- `apps/web/src/lib/api-v1.ts#withApiKey`: başarısız-kimlik sınırı → anahtar → kapsam → anahtar başına hız → plan kotası → ölçüm → handler. Handler'a anahtardan türetilmiş `Actor` verilir; mevcut `*For` servisleri aynen çağrılır. Uçlar `app/api/v1/*`; şekiller `api-v1-dto.ts`. Yönetim (oturum + `api_keys:manage`): `app/api/developers/*`, `lib/developers/service.ts`, sayfa `/settings/developers`. Belge: `docs/MAILORY_API.md`.
+- Webhook olayları `packages/sending` içindeki üç noktada (`ses-events`, `unsubscribe`, `track-events`) `emitRecipientWebhook` ile outbox'a yazılır; `apps/worker/src/jobs/webhook-deliver.ts` 10 sn'de bir kiralayıp teslim eder.
+- Fiyat/maliyet analizi: `docs/MAILORY_PRICING.md`.

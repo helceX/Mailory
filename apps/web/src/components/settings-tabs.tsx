@@ -9,6 +9,7 @@ const TABS = [
   { href: "/settings/senders", label: "Göndericiler" },
   { href: "/settings/domains", label: "Alan adları" },
   { href: "/settings/plan", label: "Plan ve kullanım" },
+  { href: "/settings/developers", label: "Geliştiriciler" },
   { href: "/settings/privacy", label: "Veri ve gizlilik" },
   { href: "/settings/audit-log", label: "Denetim kaydı" },
 ];

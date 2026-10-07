@@ -7,3 +7,4 @@ export * from "./templates";
 export * from "./senders";
 export * from "./campaigns";
 export * from "./billing";
+export * from "./api";

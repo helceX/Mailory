@@ -33,6 +33,8 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   "purgeDeletedOrganizations", // retention: workspaces past their grace period
   "runRetention", // retention sweep across tenants
   "listDeletedOrganizations", // platform admin: workspaces in their deletion grace period
+  "findApiKeyByPrefix", // API authentication: the key prefix identifies the key and thereby its organization
+  "claimWebhookDeliveries", // worker: cross-tenant, row-locked claim of due webhook deliveries
   "refreshEngagement", // nightly job across tenants (optionally scoped)
   "listDueCampaigns",
   "listSendingCampaigns",

@@ -51,3 +51,4 @@ export * from "./repositories/ai";
 export * from "./repositories/entitlements";
 export * from "./repositories/platform";
 export * from "./repositories/privacy";
+export * from "./repositories/api";

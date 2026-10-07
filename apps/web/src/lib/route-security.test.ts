@@ -60,7 +60,7 @@ describe("route security audit", () => {
       if (mutating === 0 || NO_CSRF_OK.has(name as string)) return;
       const wrappedWrites = (
         s.match(
-          /withActor\([^)]*\{\s*write:\s*true\s*\}|withPlatformAdmin\([^)]*\{\s*write:\s*true\s*\}/g,
+          /withActor\([^)]*\{\s*write:\s*true\s*\}|withPlatformAdmin\([^)]*\{\s*write:\s*true\s*\}|withApiKey\(request,\s*"write"/g,
         ) ?? []
       ).length;
       const manual = (s.match(/assertSameOrigin\(/g) ?? []).length;
@@ -96,9 +96,28 @@ describe("route security audit", () => {
       expect(
         s,
         `${name} must authenticate (withActor/withPlatformAdmin/requireActor/getOrgContext)`,
-      ).toMatch(/withActor|withPlatformAdmin|requireActor|getOrgContext/);
+      ).toMatch(/withActor|withPlatformAdmin|withApiKey|requireActor|getOrgContext/);
     },
   );
+
+  it("public API (/api/v1): bearer-key routes only, mutating handlers need a write-scoped key, reads never ask for write", () => {
+    const v1 = files.filter((f) => rel(f).startsWith("api/v1/"));
+    expect(v1.length).toBeGreaterThan(5);
+    for (const f of v1) {
+      const s = src(f);
+      // No cookie session in the public API: a browser must not be able to act through it.
+      expect(s, rel(f)).not.toMatch(/withActor|requireActor|getOrgContext/);
+      expect(s, rel(f)).toMatch(/withApiKey\(/);
+      for (const m of s.matchAll(
+        /export (?:async )?function (GET|HEAD)\b[\s\S]*?(?=\nexport |\s*$)/g,
+      ))
+        expect(m[0], rel(f)).not.toMatch(/withApiKey\(request,\s*"write"/);
+      for (const m of s.matchAll(
+        /export (?:async )?function (POST|PUT|PATCH|DELETE)\b[\s\S]*?(?=\nexport |\s*$)/g,
+      ))
+        expect(m[0], rel(f)).toMatch(/withApiKey\(request,\s*"write"/);
+    }
+  });
 
   it("the public list contains only real routes (no stale entries hiding a missing file)", () => {
     const set = new Set(files.map(rel));

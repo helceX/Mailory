@@ -104,15 +104,13 @@ suite("privacy: export, erasure, workspace deletion, retention (real Postgres)",
         url: `https://x.com/${randomUUID()}`,
       })
       .returning();
-    await db
-      .insert(trackingEvents)
-      .values({
-        organizationId: o,
-        campaignId: campaign!.id,
-        recipientId: recipient!.id,
-        linkId: link!.id,
-        type: "click",
-      });
+    await db.insert(trackingEvents).values({
+      organizationId: o,
+      campaignId: campaign!.id,
+      recipientId: recipient!.id,
+      linkId: link!.id,
+      type: "click",
+    });
     return {
       o: asOrganizationId(o),
       contact: contact!,
@@ -222,17 +220,15 @@ suite("privacy: export, erasure, workspace deletion, retention (real Postgres)",
       .from(campaignLinks)
       .where(eq(campaignLinks.campaignId, w.campaign.id));
     const mk = (ageDays: number, isBot: boolean) =>
-      db
-        .insert(trackingEvents)
-        .values({
-          organizationId: w.o,
-          campaignId: w.campaign.id,
-          recipientId: w.recipient.id,
-          linkId: link[0]!.id,
-          type: "click",
-          isBot,
-          occurredAt: new Date(now.getTime() - ageDays * DAY),
-        });
+      db.insert(trackingEvents).values({
+        organizationId: w.o,
+        campaignId: w.campaign.id,
+        recipientId: w.recipient.id,
+        linkId: link[0]!.id,
+        type: "click",
+        isBot,
+        occurredAt: new Date(now.getTime() - ageDays * DAY),
+      });
     await mk(RETENTION.trackingDays + 5, false); // too old
     await mk(RETENTION.botTrackingDays + 5, true); // old bot
     await mk(RETENTION.botTrackingDays + 5, false); // human at the same age: kept

@@ -10,6 +10,7 @@ import {
   type PlanKey,
   type SubscriptionSource,
 } from "@mailory/core/shared";
+import { apiUsageSince } from "./api";
 import type { Database, OrganizationId } from "../index";
 import {
   entitlementOverrides,
@@ -65,7 +66,8 @@ export async function getEffectiveLimits(
 }
 
 /**
- * Usage is always DERIVED from the source tables (never a separate counter), so it cannot drift from reality.
+ * Usage is DERIVED from the source tables (never a separate counter), so it cannot drift from reality — the one
+ * exception is API requests, which are counted per day in `api_usage` (a row per request would cost more than it earns).
  * Periodic keys use the current UTC calendar month.
  */
 export async function getUsage(
@@ -103,7 +105,7 @@ export async function getUsage(
         sql`select ceil(coalesce(sum(size), 0) / 1048576.0) as n from assets where organization_id = ${org}`,
       );
     case "api_requests":
-      return 0; // metered when the public API ships (Phase 18)
+      return apiUsageSince(db, organizationId, since);
   }
 }
 

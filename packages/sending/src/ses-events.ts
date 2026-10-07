@@ -1,5 +1,6 @@
 import {
   applyRecipientEvent,
+  emitRecipientWebhook,
   asOrganizationId,
   findRecipientByMessageId,
   getCampaignAny,
@@ -89,18 +90,42 @@ export async function processSesEvent(
   switch (kind) {
     case "delivery":
       await applyRecipientEvent(deps.db, org, recipient.id, "delivered", at);
+      await emitRecipientWebhook(
+        deps.db,
+        org,
+        "email.delivered",
+        recipient.id,
+        {},
+        now,
+      );
       break;
     case "bounce":
       // Transient bounces are retried by the receiving side; only permanent ones end the address.
       if (event.bounce?.bounceType === "Permanent") {
         await applyRecipientEvent(deps.db, org, recipient.id, "bounced", at);
         await suppressForEvent(deps.db, org, recipient.email, "hard_bounce");
+        await emitRecipientWebhook(
+          deps.db,
+          org,
+          "email.bounced",
+          recipient.id,
+          {},
+          now,
+        );
         halt = true;
       }
       break;
     case "complaint":
       await applyRecipientEvent(deps.db, org, recipient.id, "complained", at);
       await suppressForEvent(deps.db, org, recipient.email, "complaint");
+      await emitRecipientWebhook(
+        deps.db,
+        org,
+        "email.complained",
+        recipient.id,
+        {},
+        now,
+      );
       halt = true;
       break;
     case "reject":

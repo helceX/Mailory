@@ -14,6 +14,8 @@ export const RETENTION = {
   aiRequestDays: 13 * 30,
   authDebrisDays: 30,
   outboxDays: 30,
+  webhookDeliveryDays: 30,
+  apiUsageDays: 400,
   orgGraceDays: 30,
 } as const;
 
@@ -251,6 +253,12 @@ export async function runRetention(db: Database, now: Date) {
     ),
     userTokens: await n(
       sql`delete from user_tokens where expires_at < ${ago(RETENTION.authDebrisDays)}`,
+    ),
+    webhookDeliveries: await n(
+      sql`delete from webhook_deliveries where created_at < ${ago(RETENTION.webhookDeliveryDays)}`,
+    ),
+    apiUsage: await n(
+      sql`delete from api_usage where day < ${ago(RETENTION.apiUsageDays).toISOString().slice(0, 10)}::date`,
     ),
     outbox: await n(
       sql`delete from email_outbox where created_at < ${ago(RETENTION.outboxDays)}`,
