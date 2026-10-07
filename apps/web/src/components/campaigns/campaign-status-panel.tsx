@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CAMPAIGN_STATUS_LABELS, type CampaignStatus } from "@mailory/core/shared";
 import {
   Badge,
@@ -27,7 +27,9 @@ export type StatusPanelProps = {
     submittedAt: string | null;
     approvedAt: string | null;
     submittedByUserId: string | null;
+    haltReason: string | null;
   };
+  progress: Record<string, number> | null;
   snapshot: {
     audienceCount: number;
     version: number;
@@ -57,6 +59,15 @@ export function CampaignStatusPanel(p: StatusPanelProps) {
   }
 
   const own = c.submittedByUserId === p.userId;
+  // Live progress while the engine is working.
+  useEffect(() => {
+    if (c.status !== "sending" && c.status !== "scheduled") return;
+    const t = setInterval(
+      () => router.refresh(),
+      c.status === "sending" ? 5000 : 10_000,
+    );
+    return () => clearInterval(t);
+  }, [c.status, router]);
   return (
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-4 rounded-lg border bg-surface p-5">
@@ -108,6 +119,17 @@ export function CampaignStatusPanel(p: StatusPanelProps) {
             </div>
           ) : null}
         </dl>
+        {p.progress && Object.keys(p.progress).length > 0 ? (
+          <Progress counts={p.progress} />
+        ) : null}
+        {c.haltReason ? (
+          <p
+            role="status"
+            className="rounded border border-warning/40 bg-warning/10 p-3 text-sm"
+          >
+            {HALT_TEXT[c.haltReason] ?? `Durduruldu: ${c.haltReason}`}
+          </p>
+        ) : null}
         {c.status === "pending_approval" ? (
           <p className="text-sm text-muted-foreground">
             {own
@@ -202,5 +224,65 @@ function RejectButton({ onReject }: { onReject: (reason: string) => Promise<void
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const HALT_TEXT: Record<string, string> = {
+  manual: "Kampanya duraklatıldı.",
+  daily_limit:
+    "Günlük gönderim sınırına ulaşıldı. Sınır yenilendiğinde (UTC gün başı) otomatik devam eder.",
+  sender_unverified:
+    "Göndericinin alan adı artık doğrulanmış görünmüyor. Alan adı ayarlarını düzeltip devam ettirin.",
+  bounce_rate:
+    "Geri dönen (bounce) oranı güvenli sınırı aştı; alan adı itibarınızı korumak için otomatik duraklatıldı. Listenizi temizleyip devam ettirin.",
+  complaint_rate:
+    "Şikayet oranı güvenli sınırı aştı; otomatik duraklatıldı. Kitlenizi ve izin kayıtlarınızı gözden geçirin.",
+  audience_missing: "Kitle (liste/segment/etiket) bulunamadı.",
+  missing_snapshot: "Kampanya içeriği eksik.",
+};
+
+const PROGRESS_LABELS: [string, string][] = [
+  ["queued", "Sırada"],
+  ["sending", "Gönderiliyor"],
+  ["sent", "Gönderildi"],
+  ["delivered", "Teslim edildi"],
+  ["bounced", "Geri döndü"],
+  ["complained", "Şikayet"],
+  ["failed", "Başarısız"],
+  ["skipped", "Atlandı"],
+];
+
+function Progress({ counts }: { counts: Record<string, number> }) {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const done = total - (counts.queued ?? 0) - (counts.sending ?? 0);
+  return (
+    <div className="flex flex-col gap-2" aria-live="polite">
+      <div className="text-sm">
+        <strong>{done.toLocaleString("tr-TR")}</strong> /{" "}
+        {total.toLocaleString("tr-TR")} alıcı işlendi
+      </div>
+      <div
+        className="h-2 overflow-hidden rounded bg-secondary"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={done}
+      >
+        <div
+          className="h-full bg-primary"
+          style={{ width: `${total ? (done / total) * 100 : 0}%` }}
+        />
+      </div>
+      <dl className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+        {PROGRESS_LABELS.filter(([k]) => counts[k]).map(([k, label]) => (
+          <div key={k}>
+            <dt className="inline">{label}: </dt>
+            <dd className="inline font-medium text-foreground">
+              {counts[k]!.toLocaleString("tr-TR")}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }

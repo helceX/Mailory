@@ -135,3 +135,11 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - `apps/web/src/lib/campaigns/service.ts`: RBAC + tenant izolasyonu + denetim kaydı; tüm durum değişiklikleri `transitionCampaign` (CAS). API: `/api/campaigns[/id[/preview|test|schedule|submit|approve|reject|withdraw|cancel|duplicate]]`, `/api/campaign-policy`.
 - Arayüz: `/campaigns` (durum sekmeleri, onay politikası), `/campaigns/[id]` (taslakta bölümlü düzenleyici + hazırlık paneli; diğer durumlarda durum paneli).
 - Faz 8 sınırı: bu faz hiçbir şey **göndermez**; `scheduled` kampanyalarını Faz 8 motoru alır.
+
+## 15. Gönderim motoru (Faz 8)
+
+- `@mailory/sending`: `dispatchDue` (scheduled→sending CAS + alıcı dondurma), `sendBatch` (claim → yeniden kontrol → render → UTM → taşıyıcı → durum), `resumeDailyLimited`, `evaluateHealth`, `tick`; `unsubscribe.ts`; `ses-events.ts`.
+- `@mailory/email`: `transport.ts` (Console/SES, başlık güvenliği, hata sınıflama), `sns.ts` (imza doğrulama).
+- `apps/worker`: `campaign-send` kuyruğu (15 sn scheduler, concurrency 1) + `domain-check`.
+- Web: `/api/webhooks/ses`, `/unsubscribe/[token]` (+ `/api/unsubscribe/[token]`), kampanya duraklat/devam/ilerleme.
+- Akış: onay → `scheduled` → tick → `sending` (+alıcılar) → partiler → `completed` | `paused` (neden `halt_reason`) ; SES olayları → alıcı durumu/bastırma → sağlık kontrolü.

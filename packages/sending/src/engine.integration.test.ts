@@ -156,13 +156,11 @@ suite("send engine (real Postgres)", () => {
 
   it("sends to every eligible contact exactly once and completes", async () => {
     const s = await setup(3);
-    await db
-      .insert(contacts)
-      .values({
-        organizationId: s.org.id,
-        email: `unsub-${randomUUID().slice(0, 5)}@example.org`,
-        status: "unsubscribed",
-      });
+    await db.insert(contacts).values({
+      organizationId: s.org.id,
+      email: `unsub-${randomUUID().slice(0, 5)}@example.org`,
+      status: "unsubscribed",
+    });
     const sup = `sup-${randomUUID().slice(0, 5)}@example.org`;
     await createContact(db, s.oid, { email: sup });
     await db
@@ -432,37 +430,33 @@ suite("send engine (real Postgres)", () => {
       .values(fake(1, "bounced").concat(fake(1, "bounced"), fake(1, "bounced")));
     expect(await evaluateHealth({ db }, s.campaign)).toBe("bounce_rate");
     const s2 = await setup(0);
-    await db
-      .insert(campaignRecipients)
-      .values([
-        ...Array.from({ length: 150 }, (_, i) => ({
-          organizationId: s2.org.id,
-          campaignId: s2.campaign.id,
-          email: `c${i}-${randomUUID().slice(0, 4)}@example.org`,
-          status: "delivered",
-          sentAt: new Date(),
-        })),
-        ...Array.from({ length: 2 }, (_, i) => ({
-          organizationId: s2.org.id,
-          campaignId: s2.campaign.id,
-          email: `x${i}-${randomUUID().slice(0, 4)}@example.org`,
-          status: "complained",
-          sentAt: new Date(),
-        })),
-      ]);
+    await db.insert(campaignRecipients).values([
+      ...Array.from({ length: 150 }, (_, i) => ({
+        organizationId: s2.org.id,
+        campaignId: s2.campaign.id,
+        email: `c${i}-${randomUUID().slice(0, 4)}@example.org`,
+        status: "delivered",
+        sentAt: new Date(),
+      })),
+      ...Array.from({ length: 2 }, (_, i) => ({
+        organizationId: s2.org.id,
+        campaignId: s2.campaign.id,
+        email: `x${i}-${randomUUID().slice(0, 4)}@example.org`,
+        status: "complained",
+        sentAt: new Date(),
+      })),
+    ]);
     expect(await evaluateHealth({ db }, s2.campaign)).toBe("complaint_rate");
     const s3 = await setup(0);
-    await db
-      .insert(campaignRecipients)
-      .values(
-        Array.from({ length: 10 }, (_, i) => ({
-          organizationId: s3.org.id,
-          campaignId: s3.campaign.id,
-          email: `y${i}-${randomUUID().slice(0, 4)}@example.org`,
-          status: "bounced",
-          sentAt: new Date(),
-        })),
-      );
+    await db.insert(campaignRecipients).values(
+      Array.from({ length: 10 }, (_, i) => ({
+        organizationId: s3.org.id,
+        campaignId: s3.campaign.id,
+        email: `y${i}-${randomUUID().slice(0, 4)}@example.org`,
+        status: "bounced",
+        sentAt: new Date(),
+      })),
+    );
     expect(await evaluateHealth({ db }, s3.campaign)).toBeNull(); // 100% but tiny volume
   });
 

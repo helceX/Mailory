@@ -22,6 +22,12 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   "getAssetPublic",
   // senders.ts — the domain-check worker sweeps every tenant; it writes back through tenant-scoped functions
   "listDomainsDueForCheck",
+  // sending.ts — the engine scans every tenant's due/sending campaigns, then acts through tenant-scoped functions
+  "listDueCampaigns",
+  "listSendingCampaigns",
+  "listDailyLimited",
+  "findRecipientByMessageId", // SES identifies a message only by its id; the row carries its organization
+  "recordEmailEvent", // organization travels inside the input (null for events of unknown messages)
   "countSenderDomainClaims", // a count of claims on a domain name; reveals nothing about who claims it
 ]);
 // Identity tables (users, sessions, tokens, outbox) are global by design.

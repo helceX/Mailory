@@ -23,11 +23,23 @@ describe("parseEnv", () => {
     delete rest.DATABASE_URL;
     expect(() => parseEnv(rest)).toThrow(/DATABASE_URL/);
   });
-  it("requires AWS_REGION for ses", () => {
-    expect(() => parseEnv({ ...base, EMAIL_PROVIDER: "ses" })).toThrow(/AWS_REGION/);
+  it("requires region, configuration set and SNS topic for ses", () => {
+    const ses = { ...base, EMAIL_PROVIDER: "ses" };
+    expect(() => parseEnv(ses)).toThrow(/AWS_REGION/);
+    expect(() => parseEnv({ ...ses, AWS_REGION: "eu-west-1" })).toThrow(
+      /SES_CONFIGURATION_SET/,
+    );
+    expect(() =>
+      parseEnv({ ...ses, AWS_REGION: "eu-west-1", SES_CONFIGURATION_SET: "cs" }),
+    ).toThrow(/SES_SNS_TOPIC_ARN/);
     expect(
-      parseEnv({ ...base, EMAIL_PROVIDER: "ses", AWS_REGION: "eu-west-1" }).AWS_REGION,
-    ).toBe("eu-west-1");
+      parseEnv({
+        ...ses,
+        AWS_REGION: "eu-west-1",
+        SES_CONFIGURATION_SET: "cs",
+        SES_SNS_TOPIC_ARN: "arn:aws:sns:eu-west-1:1:t",
+      }).SEND_RATE_PER_SECOND,
+    ).toBe(14);
   });
   it("defaults to the system DNS resolver and the mock domain provider", () => {
     const env = parseEnv(base);

@@ -12,6 +12,10 @@ const envSchema = z
     EMAIL_FROM: z.string().default("Mailory <no-reply@mailory.io>"),
     AWS_REGION: z.string().optional(),
     SES_CONFIGURATION_SET: z.string().optional(),
+    // The SNS topic SES publishes bounce/complaint/delivery events to; the webhook accepts only this topic.
+    SES_SNS_TOPIC_ARN: z.string().optional(),
+    // Emails per second this worker may send (SES accounts start at 14/s).
+    SEND_RATE_PER_SECOND: z.coerce.number().int().min(1).max(500).default(14),
     SENTRY_DSN: z.string().optional(),
     DEFAULT_TIMEZONE: z.string().default("Europe/Istanbul"),
     DEFAULT_LOCALE: z.enum(["tr", "en"]).default("tr"),
@@ -30,13 +34,20 @@ const envSchema = z
         path: ["DNS_RESOLVER"],
       });
     }
-    if (ctx.value.EMAIL_PROVIDER === "ses" && !ctx.value.AWS_REGION) {
-      ctx.issues.push({
-        code: "custom",
-        message: 'AWS_REGION is required when EMAIL_PROVIDER is "ses"',
-        input: ctx.value,
-        path: ["AWS_REGION"],
-      });
+    if (ctx.value.EMAIL_PROVIDER === "ses") {
+      for (const key of [
+        "AWS_REGION",
+        "SES_CONFIGURATION_SET",
+        "SES_SNS_TOPIC_ARN",
+      ] as const) {
+        if (!ctx.value[key])
+          ctx.issues.push({
+            code: "custom",
+            message: `${key} is required when EMAIL_PROVIDER is "ses"`,
+            input: ctx.value,
+            path: [key],
+          });
+      }
     }
   });
 

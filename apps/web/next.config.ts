@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
     "@mailory/core",
     "@mailory/validation",
     "@mailory/email",
+    "@mailory/deliverability",
+    "@mailory/sending",
   ],
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),

@@ -52,7 +52,7 @@ describe("SesTransport", () => {
       tags: { campaign_id: "c1" },
     });
     expect(r).toEqual({ ok: true, messageId: "m-1" });
-    const input = seen!.input as Record<string, any>;
+    const input = seen!.input as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     expect(input.FromEmailAddress).toBe('"Acme" <info@acme.com>');
     expect(input.ConfigurationSetName).toBe("cs");
     expect(input.ReplyToAddresses).toEqual(["r@acme.com"]);

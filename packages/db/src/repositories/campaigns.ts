@@ -99,6 +99,7 @@ export type CampaignTransitionPatch = Partial<
     | "approvedByUserId"
     | "approvedAt"
     | "rejectionReason"
+    | "haltReason"
   >
 >;
 

@@ -430,6 +430,65 @@ suite("campaign engine (real Postgres)", () => {
     });
   });
 
+  describe("pause and resume", () => {
+    it("pauses only a sending campaign and resumes only a paused one; both are RBAC-guarded and audited", async () => {
+      const w = await workspace();
+      const viewer = (await memberOf(w.org.id, "viewer")).actor;
+      const id = await readyDraft(w);
+      expect(await svc.pauseCampaignFor(deps(), w.actor, id)).toMatchObject({
+        code: "conflict",
+      });
+      await svc.scheduleCampaignFor(deps(), w.actor, id);
+      await db.update(campaigns).set({ status: "sending" }).where(eq(campaigns.id, id));
+      expect(await svc.pauseCampaignFor(deps(), viewer, id)).toMatchObject({
+        code: "forbidden",
+      });
+      expect((await svc.pauseCampaignFor(deps(), w.actor, id)).ok).toBe(true);
+      expect(await fetchRow(id)).toMatchObject({
+        status: "paused",
+        haltReason: "manual",
+      });
+      expect(await svc.resumeCampaignFor(deps(), viewer, id)).toMatchObject({
+        code: "forbidden",
+      });
+      expect((await svc.resumeCampaignFor(deps(), w.actor, id)).ok).toBe(true);
+      expect(await fetchRow(id)).toMatchObject({ status: "sending", haltReason: null });
+      expect(await svc.resumeCampaignFor(deps(), w.actor, id)).toMatchObject({
+        code: "conflict",
+      });
+    });
+    it("hides other tenants' campaigns from pause/resume", async () => {
+      const a = await workspace();
+      const b = await workspace();
+      const id = await readyDraft(a);
+      expect(await svc.pauseCampaignFor(deps(), b.actor, id)).toMatchObject({
+        code: "not_found",
+      });
+      expect(await svc.resumeCampaignFor(deps(), b.actor, id)).toMatchObject({
+        code: "not_found",
+      });
+    });
+    it("shows progress counts once a campaign leaves draft", async () => {
+      const w = await workspace();
+      const id = await readyDraft(w);
+      const draft = await svc.getCampaignFor(deps(), w.actor, id);
+      expect(draft.ok && draft.progress).toBeNull();
+      await svc.scheduleCampaignFor(deps(), w.actor, id);
+      const sched = await svc.getCampaignFor(deps(), w.actor, id);
+      expect(sched.ok && sched.progress).toEqual({});
+    });
+    it("test-send subjects have merge tokens resolved", async () => {
+      const w = await workspace();
+      const id = await readyDraft(w);
+      const email = (await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, w.user.id),
+      }))!.email;
+      await svc.sendTestFor(deps(), w.actor, id, [email]);
+      expect(sent[0]!.subject).not.toContain("{{");
+      expect(sent[0]!.subject.startsWith("[TEST] Merhaba ")).toBe(true);
+    });
+  });
+
   describe("approval workflow", () => {
     async function withPolicy() {
       const w = await workspace();

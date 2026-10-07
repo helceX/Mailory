@@ -2,6 +2,8 @@ import { Redis } from "ioredis";
 import { getEnv } from "@mailory/config";
 import { createDb } from "@mailory/db";
 import { createDnsResolver, createDomainProvider } from "@mailory/deliverability";
+import { createEmailTransport } from "@mailory/sending";
+import { startCampaignSend } from "./jobs/campaign-send";
 import { startDomainCheck } from "./jobs/domain-check";
 
 const HEARTBEAT_KEY = "mailory:worker:heartbeat";
@@ -25,11 +27,24 @@ const domainCheck = await startDomainCheck({
   log: (message, summary) =>
     console.log(`[worker] ${message}`, JSON.stringify(summary)),
 });
-console.log("[worker] started (domain-check scheduled)");
+const campaignSend = await startCampaignSend({
+  redis,
+  deps: {
+    db,
+    transport: createEmailTransport(env),
+    appUrl: env.APP_URL.replace(/\/$/, ""),
+    secret: env.SESSION_SECRET,
+    ratePerSecond: env.SEND_RATE_PER_SECOND,
+    log: (message, data) => console.log(`[worker] ${message}`, JSON.stringify(data)),
+  },
+  log: (message, data) => console.log(`[worker] ${message}`, JSON.stringify(data)),
+});
+console.log("[worker] started (domain-check, campaign-send scheduled)");
 
 async function shutdown() {
   clearInterval(timer);
   await domainCheck.close();
+  await campaignSend.close();
   await redis.quit();
   await pool.end();
   process.exit(0);

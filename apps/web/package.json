@@ -19,6 +19,7 @@
     "@mailory/db": "workspace:*",
     "@mailory/deliverability": "workspace:*",
     "@mailory/email": "workspace:*",
+    "@mailory/sending": "workspace:*",
     "@mailory/ui": "workspace:*",
     "@mailory/validation": "workspace:*",
     "ioredis": "6.0.0",

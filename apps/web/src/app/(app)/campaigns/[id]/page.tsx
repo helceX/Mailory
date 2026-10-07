@@ -64,7 +64,9 @@ export default async function CampaignPage({
             submittedAt: c.submittedAt?.toISOString() ?? null,
             approvedAt: c.approvedAt?.toISOString() ?? null,
             submittedByUserId: c.submittedByUserId,
+            haltReason: c.haltReason,
           }}
+          progress={result.progress}
           snapshot={
             snap
               ? {

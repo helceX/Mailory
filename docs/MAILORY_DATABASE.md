@@ -96,3 +96,10 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - `organizations.require_campaign_approval boolean default false`.
 - `sender_identity_id`/`template_id` FK'leri `ON DELETE SET NULL`; tenant tutarlılığı servis katmanında (yabancı id'ler "invalid") doğrulanır. Faz 15 RLS planında bileşik FK değerlendirilecek.
 - Tüm migration'lar ekleme yönlüdür (mevcut üretim verisine dokunmaz).
+
+## Faz 8 notları (migration `0006_big_mockingbird.sql`)
+
+- `campaign_recipients`: UNIQUE(campaign_id, contact_id); indeksler `(campaign_id, status, next_attempt_at)` (iş kuyruğu), kısmi UNIQUE `provider_message_id` (webhook araması), kısmi `(organization_id, sent_at)` (günlük sayaç). `contact_id` silinen kişide NULL olur (satır ve e-posta denetim için kalır). Durumlar CHECK'li: queued/sending/sent/delivered/bounced/complained/failed/skipped.
+- `email_events`: UNIQUE `provider_event_id` (SNS MessageId) → tekrar teslim zararsız; ham yük jsonb.
+- `campaigns.halt_reason` (motorun duraklatma/başarısızlık nedeni), `organizations.daily_send_limit` (varsayılan 2000).
+- Ekleme yönlü migration; mevcut tablolara yalnızca NULL'lanabilir/varsayılanlı sütun.

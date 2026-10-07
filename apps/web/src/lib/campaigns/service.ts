@@ -1,4 +1,5 @@
 import {
+  applyMerge,
   collectMergeKeys,
   DEFAULT_UTM,
   evaluateReadiness,
@@ -19,16 +20,16 @@ import {
   deleteCampaignDraft,
   getCampaign,
   getCampaignPolicy,
-  getList,
-  getSegment,
   getTemplate,
   listCampaigns,
   listContactFields,
   listMembers,
   listSenderDomains,
   listSenderIdentities,
-  listTags,
+  recipientCounts,
   recordAudit,
+  resolveAudienceFilter,
+  resumeCampaign,
   setCampaignPolicy,
   transitionCampaign,
   updateCampaignDraft,
@@ -43,11 +44,7 @@ import {
   buildMergeValues,
   renderEmail,
 } from "@mailory/email";
-import {
-  emailDocSchema,
-  type CampaignDraftInput,
-  type SegmentDefinition,
-} from "@mailory/validation";
+import { emailDocSchema, type CampaignDraftInput } from "@mailory/validation";
 import { authorize, type Actor } from "../org/service";
 import { viewIdentities } from "../senders/service";
 import { loadBrandKit } from "../templates/service";
@@ -122,31 +119,8 @@ async function resolveAudience(
   deps: CampaignDeps,
   actor: Actor,
   audience: CampaignAudience | null,
-): Promise<{ filter: ContactFilter | null; exists: boolean }> {
-  if (!audience) return { filter: null, exists: false };
-  const org = actor.organizationId;
-  switch (audience.kind) {
-    case "all":
-      return { filter: {}, exists: true };
-    case "list": {
-      const list = await getList(deps.db, org, audience.id);
-      return { filter: { listId: audience.id }, exists: Boolean(list) };
-    }
-    case "tag": {
-      const tags = await listTags(deps.db, org);
-      return {
-        filter: { tagId: audience.id },
-        exists: tags.some((t) => t.id === audience.id),
-      };
-    }
-    case "segment": {
-      const segment = await getSegment(deps.db, org, audience.id);
-      return {
-        filter: segment ? { segment: segment.definition as SegmentDefinition } : null,
-        exists: Boolean(segment),
-      };
-    }
-  }
+) {
+  return resolveAudienceFilter(deps.db, actor.organizationId, audience);
 }
 
 async function loadContext(
@@ -180,6 +154,8 @@ async function loadContext(
 }
 
 const SAMPLE = Object.fromEntries(CONTACT_MERGE_FIELDS.map((f) => [f.key, f.sample]));
+const oneLine = (v: string) => v.replace(/[\r\n]+/g, " ");
+const previewValues = () => ({ ...SAMPLE, org_name: "Şirketiniz" });
 
 async function renderFor(
   deps: CampaignDeps,
@@ -300,6 +276,10 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
   return {
     ok: true as const,
     campaign: row,
+    progress:
+      row.status === "draft"
+        ? null
+        : await recipientCounts(deps.db, actor.organizationId, row.id),
     issues: r.issues,
     audienceCount: r.audienceCount,
     requireApproval: policy.requireApproval,
@@ -483,7 +463,7 @@ export async function sendTestFor(
   for (const to of targets)
     await deps.sendTest({
       to,
-      subject: `[TEST] ${row.subject || row.name}`,
+      subject: `[TEST] ${applyMerge(row.subject || row.name, previewValues(), oneLine).trim()}`,
       html: preview.html,
       text: preview.text,
     });
@@ -686,6 +666,36 @@ export async function returnToDraftFor(deps: CampaignDeps, actor: Actor, id: str
   );
   if (!updated) return fail("conflict", "Kampanya artık taslağa döndürülemez.");
   await audit(deps, actor, "campaign.unscheduled", id, { from: row.status });
+  return { ok: true as const, campaign: updated };
+}
+
+export async function pauseCampaignFor(deps: CampaignDeps, actor: Actor, id: string) {
+  if (!need(actor, "campaigns:send")) return denied;
+  const row = await getCampaign(deps.db, actor.organizationId, id);
+  if (!row) return fail("not_found");
+  const updated = await transitionCampaign(
+    deps.db,
+    actor.organizationId,
+    id,
+    ["sending"],
+    {
+      status: "paused",
+      haltReason: "manual",
+    },
+  );
+  if (!updated) return fail("conflict", "Kampanya gönderilmiyor.");
+  await audit(deps, actor, "campaign.paused", id);
+  return { ok: true as const, campaign: updated };
+}
+
+/** A person resumes a paused campaign (after fixing whatever paused it). The engine re-checks everything per batch. */
+export async function resumeCampaignFor(deps: CampaignDeps, actor: Actor, id: string) {
+  if (!need(actor, "campaigns:send")) return denied;
+  const row = await getCampaign(deps.db, actor.organizationId, id);
+  if (!row) return fail("not_found");
+  const updated = await resumeCampaign(deps.db, actor.organizationId, id, clock(deps));
+  if (!updated) return fail("conflict", "Kampanya duraklatılmış değil.");
+  await audit(deps, actor, "campaign.resumed", id, { was: row.haltReason });
   return { ok: true as const, campaign: updated };
 }
 
