@@ -12,14 +12,16 @@ const SHOTS = process.env.SHOTS;
 const { step, finish } = makeSteps();
 const headers = { "Content-Type": "application/json", Origin: BASE };
 
-// Mirrors packages/core/src/signed-token.ts (purpose "unsubscribe").
-function unsubscribeToken(orgId, recipientId) {
-  const body = Buffer.from(JSON.stringify([orgId, recipientId])).toString("base64url");
+// Mirrors packages/core/src/signed-token.ts.
+function signToken(purpose, payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const key = createHmac("sha256", SECRET)
-    .update("mailory:token:v1:unsubscribe")
+    .update(`mailory:token:v1:${purpose}`)
     .digest();
   return `${body}.${createHmac("sha256", key).update(body).digest().toString("base64url")}`;
 }
+const unsubscribeToken = (orgId, recipientId) =>
+  signToken("unsubscribe", [orgId, recipientId]);
 
 (async () => {
   const { browser, page, problems } = await launch();
@@ -42,6 +44,25 @@ function unsubscribeToken(orgId, recipientId) {
   const tpl = await (
     await call("/api/templates", "POST", { name: "Bülten", category: "newsletter" })
   ).json();
+  // Give the template an external link so there is something to track.
+  const tplDoc = await (await call(`/api/templates/${tpl.id}`, "GET")).json();
+  tplDoc.doc.blocks.splice(1, 0, {
+    id: "btn-e2e",
+    type: "button",
+    label: "Alışverişe git",
+    href: "https://shop.example.com/kampanya?a=1&b=2",
+    variant: "solid",
+    align: "center",
+  });
+  const saved = await call(`/api/templates/${tpl.id}`, "PUT", {
+    doc: tplDoc.doc,
+    expectedVersion: tplDoc.version,
+  });
+  step(
+    "template gets an external link",
+    saved.status() === 200,
+    String(saved.status()),
+  );
   const emails = [];
   for (let i = 0; i < 3; i++) {
     const e = `s${i}-${Date.now()}@example.org`;
@@ -108,6 +129,115 @@ function unsubscribeToken(orgId, recipientId) {
     );
     if (SHOTS)
       await page.screenshot({ path: `${SHOTS}/campaign-sent.png`, fullPage: true });
+
+    // ---- tracking: wait out the scanner window, then click + open like a person would
+    const linkRow = psql(
+      `select id||'|'||url from campaign_links where campaign_id='${id}' limit 1`,
+    );
+    step(
+      "a tracked link was registered for the campaign",
+      linkRow.includes("shop.example.com") || linkRow.includes("http"),
+      linkRow.slice(0, 80),
+    );
+    const [linkId, linkUrl] = linkRow.split("|");
+    const [r0, r1] = psql(
+      `select id from campaign_recipients where campaign_id='${id}' order by email limit 2`,
+    ).split("\n");
+    await new Promise((r) => setTimeout(r, 5000));
+    const ua = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+    };
+    const click = await fetch(
+      `${BASE}/c/${signToken("click", [orgId, id, r0, linkId])}`,
+      { redirect: "manual", headers: ua },
+    );
+    step(
+      "click link answers 302 to the stored destination",
+      click.status === 302 && click.headers.get("location") === linkUrl,
+      String(click.status),
+    );
+    const pixel = await fetch(`${BASE}/o/${signToken("open", [orgId, id, r1])}.gif`, {
+      headers: ua,
+    });
+    step(
+      "open pixel serves a no-store GIF",
+      pixel.status === 200 &&
+        pixel.headers.get("content-type") === "image/gif" &&
+        /no-store/.test(pixel.headers.get("cache-control")),
+    );
+    const forged = await fetch(`${BASE}/o/garbage.gif`, { headers: ua });
+    step(
+      "a forged pixel token looks identical (no oracle)",
+      forged.status === 200 && forged.headers.get("content-type") === "image/gif",
+    );
+    step(
+      "forged click token is a 404, never a redirect",
+      (await fetch(`${BASE}/c/garbage`, { redirect: "manual" })).status === 404,
+    );
+    const botClick = await fetch(
+      `${BASE}/c/${signToken("click", [orgId, id, r1, linkId])}`,
+      { redirect: "manual", headers: { "User-Agent": "python-requests/2.31" } },
+    );
+    step("a bot click still redirects", botClick.status === 302);
+    step(
+      "only genuine events counted: 1 click, 2 opens (click implies open)",
+      psql(
+        `select count(*) filter (where clicked_at is not null)||'/'||count(*) filter (where opened_at is not null) from campaign_recipients where campaign_id='${id}'`,
+      ) === "1/2",
+    );
+    step(
+      "bot hit is stored but flagged",
+      psql(
+        `select count(*) from tracking_events where campaign_id='${id}' and is_bot`,
+      ) === "1",
+    );
+    step(
+      "no raw IP or user agent is stored",
+      psql(
+        `select count(*) from tracking_events where campaign_id='${id}' and (ip_hash like '%.%' or device like 'Mozilla%')`,
+      ) === "0",
+    );
+
+    const view = await fetch(`${BASE}/view/${signToken("view", [orgId, r0])}`);
+    const viewHtml = await view.text();
+    step(
+      "view-in-browser serves the personalised email under a script-less CSP",
+      view.status === 200 &&
+        /default-src 'none'/.test(view.headers.get("content-security-policy")) &&
+        viewHtml.includes("<html") &&
+        !viewHtml.includes("/c/") &&
+        !viewHtml.includes("/o/"),
+    );
+    step(
+      "view-in-browser rejects a bad token",
+      (await fetch(`${BASE}/view/nope`)).status === 404,
+    );
+
+    await page.goto(`${BASE}/campaigns/${id}`);
+    await page.getByRole("heading", { name: "Performans" }).waitFor();
+    const report = await page.locator("main").innerText();
+    step(
+      "campaign page shows the performance report with link table",
+      /Gönderilen/.test(report) &&
+        /En çok tıklanan/.test(report) &&
+        report.includes("shop.example.com"),
+    );
+    if (SHOTS)
+      await page.screenshot({ path: `${SHOTS}/campaign-report.png`, fullPage: true });
+    await page.goto(`${BASE}/analytics`);
+    await page.getByText("Gönderim testi").first().waitFor();
+    step("analytics page lists the campaign", true);
+    const csv = await (await page.request.get(`${BASE}/api/analytics/export`)).text();
+    step(
+      "analytics CSV export contains the campaign",
+      csv.includes("Gönderim testi") && csv.startsWith("\uFEFF"),
+    );
+    if (SHOTS)
+      await page.screenshot({ path: `${SHOTS}/analytics.png`, fullPage: true });
+    await page.goto(`${BASE}/dashboard`);
+    await page.getByRole("heading", { name: "Son 30 gün" }).waitFor();
+    step("dashboard shows KPI tiles once there is data", true);
 
     // ---- unsubscribe
     const [recId, recEmail] = psql(

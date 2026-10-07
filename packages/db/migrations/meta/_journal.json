@@ -50,6 +50,13 @@
       "when": 1791380818486,
       "tag": "0006_big_mockingbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791382623285,
+      "tag": "0007_quick_turbo",
+      "breakpoints": true
     }
   ]
 }

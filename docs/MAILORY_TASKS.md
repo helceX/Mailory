@@ -39,9 +39,9 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 | MAIL-082 | SES/SNS webhook                               | P0  | 8     | 081     | İmza doğrulama, idempotency, bounce/complaint                                                                                                                                  | Fixture testleri                                | done    |
 | MAIL-083 | Unsubscribe (sayfa + one-click)               | P0  | 8     | 042,081 | İmzalı token, RFC 8058                                                                                                                                                         | Testler                                         | done    |
 | MAIL-084 | Abuse korumaları                              | P0  | 8     | 081     | Rate/limit/otomatik duraklatma                                                                                                                                                 | Testler                                         | done    |
-| MAIL-090 | Open/click tracking                           | P0  | 9     | 081     | Pixel, link yönlendirme, bot filtresi                                                                                                                                          | Testler                                         | todo    |
-| MAIL-091 | Analitik + dashboard                          | P0  | 9     | 090     | KPI'lar, kampanya karşılaştırma, link analitiği                                                                                                                                | Testler                                         | todo    |
-| MAIL-092 | Rapor dışa aktarma                            | P2  | 9     | 091     | CSV/PDF                                                                                                                                                                        | Testler                                         | todo    |
+| MAIL-090 | Open/click tracking                           | P0  | 9     | 081     | Pixel, link yönlendirme, bot filtresi                                                                                                                                          | Testler                                         | done    |
+| MAIL-091 | Analitik + dashboard                          | P0  | 9     | 090     | KPI'lar, kampanya karşılaştırma, link analitiği                                                                                                                                | Testler                                         | done    |
+| MAIL-092 | Rapor dışa aktarma                            | P2  | 9     | 091     | CSV/PDF                                                                                                                                                                        | Testler                                         | done    |
 | MAIL-100 | Deliverability Center + Campaign Health       | P1  | 10    | 060,091 | Skor + aksiyon listesi, kural tabanlı                                                                                                                                          | Testler                                         | todo    |
 | MAIL-110 | Automation engine                             | P2  | 11    | 081     | Trigger→Condition→Delay→Email→Branch                                                                                                                                           |                                                 | todo    |
 | MAIL-120 | AI Copilot / Review / Analyst                 | P2  | 12    | 100     | Sağlayıcı soyutlaması                                                                                                                                                          | Onaysız gönderim yok testi                      | todo    |
@@ -89,3 +89,13 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 - At-least-once penceresi (D-059) için SES `Tags` ile mutabakat işi (olay gelip DB'de bulunmayan mesajlar).
 - Kısmi gönderim sonrası "devam ettir" kullanıcıya açık; otomatik duraklatma sonrası listeyi temizleme rehberi (UI metni var, sihirbaz yok).
 - E2E: `e2e/sending.e2e.cjs` gerçek worker'ı başlatır; CI işi MAIL-190.
+
+## Faz 9 devam işleri
+
+- PDF rapor dışa aktarma (MAIL-092'nin yalnızca CSV kısmı yapıldı); kampanya bazlı CSV (alıcı düzeyinde etkileşim) ve zamanlanmış e-posta raporu.
+- `campaign_stats` artımlı toplama: büyük kampanyalarda (>1M alıcı) okuma-anı sorguları yavaşlarsa (ölçüm Faz 15 yük testinde).
+- Cihaz/ülke/e-posta istemcisi kırılımı (şimdilik yalnızca cihaz sınıfı saklanıyor, ülke yok — IP'den türetmek ham IP gerektirir).
+- Segment/etiket bazlı karşılaştırma, dönem seçici (şimdi sabit 30 gün) ve kampanya karşılaştırma grafiği.
+- Takip edilen bağlantılar için ters vekil/özel izleme alan adı (özel alan adıyla `/c/` ve `/o/`) — teslim edilebilirlik için Faz 14.
+- SES `Open`/`Click` olayları kullanılmıyor (kendi izlememiz asıl); ikisi arasında mutabakat işi yok.
+- Eski kampanyaların `tracking_events` temizliği/saklama süresi politikası (KVKK saklama) Faz 15.

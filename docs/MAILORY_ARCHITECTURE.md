@@ -143,3 +143,10 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - `apps/worker`: `campaign-send` kuyruğu (15 sn scheduler, concurrency 1) + `domain-check`.
 - Web: `/api/webhooks/ses`, `/unsubscribe/[token]` (+ `/api/unsubscribe/[token]`), kampanya duraklat/devam/ilerleme.
 - Akış: onay → `scheduled` → tick → `sending` (+alıcılar) → partiler → `completed` | `paused` (neden `halt_reason`) ; SES olayları → alıcı durumu/bastırma → sağlık kontrolü.
+
+## 16. İzleme ve analitik (Faz 9)
+
+- `@mailory/sending/message.ts` `renderMessage`: alıcı e-postasının tek üretim noktası (birleştirme → render → UTM → bağlantı yeniden yazma → piksel). Motor ve `/view` aynı fonksiyonu kullanır.
+- Uç noktalar: `/o/<token>.gif`, `/c/<token>`, `/view/<token>` (hepsi oturumsuz, imzalı token; çerez yok). Tokenlar `signed-token.ts`'de amaca bağlı (`open|click|view|unsubscribe`).
+- `@mailory/db` `tracking.ts`: bağlantı kaydı, olay kaydı (alıcı org/kampanya eşleşmesi doğrulanarak), `campaignStats`, `topLinks`, `engagementTimeline`, `compareCampaigns`, `orgOverview`.
+- Web: `lib/analytics/service.ts` (RBAC `analytics:read`, tenant izolasyonu), `/analytics`, kampanya sayfasında Performans bölümü, dashboard KPI'ları, `/api/analytics/export` (CSV).

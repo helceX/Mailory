@@ -57,3 +57,45 @@ export function readUnsubscribeToken(secret: string, token: string) {
   const p = verifyToken(secret, "unsubscribe", token);
   return p && p.length === 2 ? { organizationId: p[0]!, recipientId: p[1]! } : null;
 }
+
+// ---- tracking + view tokens (carried in emails; ids only, never URLs) ------------------------------------------
+
+export const clickToken = (
+  secret: string,
+  organizationId: string,
+  campaignId: string,
+  recipientId: string,
+  linkId: string,
+) => signToken(secret, "click", [organizationId, campaignId, recipientId, linkId]);
+
+export function readClickToken(secret: string, token: string) {
+  const p = verifyToken(secret, "click", token);
+  return p && p.length === 4
+    ? { organizationId: p[0]!, campaignId: p[1]!, recipientId: p[2]!, linkId: p[3]! }
+    : null;
+}
+
+export const openToken = (
+  secret: string,
+  organizationId: string,
+  campaignId: string,
+  recipientId: string,
+) => signToken(secret, "open", [organizationId, campaignId, recipientId]);
+
+export function readOpenToken(secret: string, token: string) {
+  const p = verifyToken(secret, "open", token);
+  return p && p.length === 3
+    ? { organizationId: p[0]!, campaignId: p[1]!, recipientId: p[2]! }
+    : null;
+}
+
+export const viewToken = (
+  secret: string,
+  organizationId: string,
+  recipientId: string,
+) => signToken(secret, "view", [organizationId, recipientId]);
+
+export function readViewToken(secret: string, token: string) {
+  const p = verifyToken(secret, "view", token);
+  return p && p.length === 2 ? { organizationId: p[0]!, recipientId: p[1]! } : null;
+}

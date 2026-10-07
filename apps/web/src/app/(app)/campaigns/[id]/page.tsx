@@ -7,6 +7,9 @@ import { CampaignStatusPanel } from "@/components/campaigns/campaign-status-pane
 import { PageHeader } from "@/components/page-header";
 import { audienceDeps } from "@/lib/audience/deps";
 import { getLists, getSegments, getTags } from "@/lib/audience/service";
+import { CampaignReport } from "@/components/analytics/campaign-report";
+import { getCampaignReport } from "@/lib/analytics/service";
+import { getDb } from "@/lib/db";
 import { campaignDeps } from "@/lib/campaigns/deps";
 import { getCampaignFor, listTestRecipientsFor } from "@/lib/campaigns/service";
 import { getOrgContext } from "@/lib/org/context";
@@ -47,8 +50,12 @@ export default async function CampaignPage({
 
   if (status !== "draft" || !can(actor.role, "campaigns:write")) {
     const snap = c.snapshot;
+    const report =
+      status === "draft" || status === "pending_approval" || status === "scheduled"
+        ? null
+        : await getCampaignReport({ db: getDb().db }, actor, c.id);
     return (
-      <div className="mx-auto flex max-w-4xl flex-col gap-4">
+      <div className="mx-auto flex max-w-4xl flex-col gap-6">
         {header}
         <CampaignStatusPanel
           userId={actor.userId}
@@ -77,6 +84,14 @@ export default async function CampaignPage({
               : null
           }
         />
+        {report?.ok ? (
+          <CampaignReport
+            stats={report.stats}
+            rates={report.rates}
+            links={report.links}
+            timeline={report.timeline}
+          />
+        ) : null}
       </div>
     );
   }

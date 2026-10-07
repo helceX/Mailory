@@ -1,13 +1,8 @@
-import {
-  applyMerge,
-  findCoveringDomain,
-  domainOfEmail,
-  unsubscribeToken,
-  type EmailDoc,
-} from "@mailory/core";
+import { findCoveringDomain, domainOfEmail } from "@mailory/core";
 import {
   campaignHealth,
   claimRecipients,
+  ensureCampaignLinks,
   completeIfDone,
   countSentSince,
   getContactForSend,
@@ -34,14 +29,8 @@ import {
   type CampaignSnapshot,
   type Database,
 } from "@mailory/db";
-import {
-  applyUtm,
-  applyUtmToText,
-  buildMergeValues,
-  renderEmail,
-  type EmailTransport,
-} from "@mailory/email";
-import { logoSrcFor, type BrandKit } from "@mailory/core";
+import type { EmailTransport } from "@mailory/email";
+import { renderMessage } from "./message";
 
 export type EngineDeps = {
   db: Database;
@@ -82,8 +71,6 @@ const utcDayStart = (d: Date) =>
 export function backoffMs(attempt: number): number {
   return Math.min(30_000 * 2 ** (attempt - 1), 30 * 60_000);
 }
-
-const oneLine = (v: string) => v.replace(/[\r\n\u2028\u2029]+/g, " ");
 
 // ---- dispatch --------------------------------------------------------------------------------------
 
@@ -199,15 +186,23 @@ export async function sendBatch(
     return out;
   }
 
+  const linkCache = new Map<string, string>();
+  const resolveLinks = async (urls: string[]) => {
+    const missing = urls.filter((u) => !linkCache.has(u));
+    if (missing.length > 0)
+      for (const [url, id] of await ensureCampaignLinks(
+        deps.db,
+        org,
+        campaign.id,
+        missing,
+      ))
+        linkCache.set(url, id);
+    return new Map(
+      urls.filter((u) => linkCache.has(u)).map((u) => [u, linkCache.get(u)!]),
+    );
+  };
   const organization = await getOrganization(deps.db, org);
   const orgName = organization?.name ?? "";
-  const doc = snapshot.doc as EmailDoc;
-  const brand = snapshot.brand as BrandKit;
-  const skipUtm = [
-    `${deps.appUrl}/unsubscribe/`,
-    `${deps.appUrl}/api/unsubscribe/`,
-    `${deps.appUrl}/view/`,
-  ];
 
   const rate = deps.ratePerSecond ?? 14;
   const concurrency = Math.max(1, Math.min(deps.concurrency ?? 4, rate));
@@ -242,51 +237,26 @@ export async function sendBatch(
       return;
     }
 
-    const token = unsubscribeToken(deps.secret, campaign.organizationId, r.id);
-    const unsubscribeUrl = `${deps.appUrl}/unsubscribe/${token}`;
-    const values = buildMergeValues(
-      {
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email,
-        company: contact.company,
-        position: contact.position,
-        city: contact.city,
-        sector: contact.sector,
-        custom: (contact.custom ?? {}) as Record<
-          string,
-          string | number | boolean | null
-        >,
-      },
-      { unsubscribeUrl, viewInBrowserUrl: deps.appUrl, orgName },
-    );
-    const withPreheader: EmailDoc = {
-      ...doc,
-      settings: {
-        ...doc.settings,
-        preheader: campaign.preheader || doc.settings.preheader,
-      },
-    };
-    const rendered = renderEmail(withPreheader, {
-      values,
+    const message = await renderMessage({
+      campaign,
+      snapshot: snapshot!,
+      recipient: { id: r.id, email: r.email },
+      contact,
+      orgName,
       appUrl: deps.appUrl,
-      brandLogoUrl: logoSrcFor(brand) || undefined,
-      subject: campaign.subject,
+      secret: deps.secret,
+      tracking: { resolveLinks },
     });
-    const html = applyUtm(rendered.html, campaign.utm, skipUtm);
-    const text = applyUtmToText(rendered.text, campaign.utm, skipUtm);
-    // A contact's name must never be able to inject a header line into the subject.
-    const subject = oneLine(applyMerge(campaign.subject, values, oneLine)).trim();
 
     const result = await deps.transport.send({
       from: { name: snapshot!.sender.fromName, email: snapshot!.sender.fromEmail },
       to: r.email,
       replyTo: snapshot!.sender.replyTo,
-      subject,
-      html,
-      text,
+      subject: message.subject,
+      html: message.html,
+      text: message.text,
       headers: {
-        "List-Unsubscribe": `<${deps.appUrl}/api/unsubscribe/${token}>`,
+        "List-Unsubscribe": `<${deps.appUrl}/api/unsubscribe/${message.unsubscribeToken}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
       tags: { campaign_id: campaign.id, recipient_id: r.id },

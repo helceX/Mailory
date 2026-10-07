@@ -128,6 +128,9 @@ export const campaignRecipients = pgTable(
     bouncedAt: timestamp("bounced_at", { withTimezone: true }),
     complainedAt: timestamp("complained_at", { withTimezone: true }),
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+    // First genuine (non-bot) interaction; unique open/click counts are just "is not null".
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    clickedAt: timestamp("clicked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -176,3 +179,50 @@ export const emailEvents = pgTable(
 );
 
 export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
+
+/** A distinct destination URL used in a campaign; click events point here, never to a URL carried in the link itself. */
+export const campaignLinks = pgTable(
+  "campaign_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: orgId(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("campaign_links_campaign_url_uidx").on(t.campaignId, t.url)],
+);
+
+/**
+ * Opens and clicks. Privacy by design (KVKK): no raw IP or user agent is stored — only a daily-rotating salted IP hash
+ * and a coarse device class. `is_bot` events (scanners, prefetchers, instant clicks) are kept for transparency but
+ * excluded from every metric.
+ */
+export const trackingEvents = pgTable(
+  "tracking_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: orgId(),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => campaignRecipients.id, { onDelete: "cascade" }),
+    linkId: uuid("link_id").references(() => campaignLinks.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+    device: text("device").notNull().default("unknown"),
+    ipHash: text("ip_hash"),
+    isBot: boolean("is_bot").notNull().default(false),
+  },
+  (t) => [
+    index("tracking_events_campaign_idx").on(t.campaignId, t.type, t.occurredAt),
+    index("tracking_events_link_idx").on(t.linkId),
+    check("tracking_events_type_check", sql`${t.type} in ('open','click')`),
+  ],
+);
+
+export type CampaignLink = typeof campaignLinks.$inferSelect;

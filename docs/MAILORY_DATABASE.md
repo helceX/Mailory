@@ -103,3 +103,10 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - `email_events`: UNIQUE `provider_event_id` (SNS MessageId) → tekrar teslim zararsız; ham yük jsonb.
 - `campaigns.halt_reason` (motorun duraklatma/başarısızlık nedeni), `organizations.daily_send_limit` (varsayılan 2000).
 - Ekleme yönlü migration; mevcut tablolara yalnızca NULL'lanabilir/varsayılanlı sütun.
+
+## Faz 9 notları (migration `0007_quick_turbo.sql`)
+
+- `campaign_links` (UNIQUE(campaign_id, url)): izlenen hedefler; tıklama olayları buraya bağlanır.
+- `tracking_events` (type open|click, `is_bot`, `device`, `ip_hash`): ham IP/UA yok. İndeksler `(campaign_id, type, occurred_at)` ve `(link_id)`.
+- `campaign_recipients.opened_at / clicked_at`: ilk gerçek etkileşim; benzersiz sayılar `IS NOT NULL` sayımı.
+- Ekleme yönlü migration.

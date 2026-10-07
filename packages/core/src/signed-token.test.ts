@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  clickToken,
+  openToken,
+  readClickToken,
+  readOpenToken,
+  readViewToken,
+  viewToken,
   readUnsubscribeToken,
   signToken,
   unsubscribeToken,
@@ -34,5 +40,35 @@ describe("signed tokens", () => {
     const other = signToken(S, "something-else", [ORG, REC]);
     expect(readUnsubscribeToken(S, other)).toBeNull();
     expect(verifyToken(S, "something-else", other)).toEqual([ORG, REC]);
+  });
+});
+
+describe("tracking and view tokens", () => {
+  const C = "33333333-3333-3333-3333-333333333333";
+  const L = "44444444-4444-4444-4444-444444444444";
+  it("round-trip with the right shape", () => {
+    expect(readClickToken(S, clickToken(S, ORG, C, REC, L))).toEqual({
+      organizationId: ORG,
+      campaignId: C,
+      recipientId: REC,
+      linkId: L,
+    });
+    expect(readOpenToken(S, openToken(S, ORG, C, REC))).toEqual({
+      organizationId: ORG,
+      campaignId: C,
+      recipientId: REC,
+    });
+    expect(readViewToken(S, viewToken(S, ORG, REC))).toEqual({
+      organizationId: ORG,
+      recipientId: REC,
+    });
+  });
+  it("a token for one purpose never works for another (an open pixel cannot unsubscribe or redirect)", () => {
+    const open = openToken(S, ORG, C, REC);
+    expect(readClickToken(S, open)).toBeNull();
+    expect(readUnsubscribeToken(S, open)).toBeNull();
+    expect(readViewToken(S, open)).toBeNull();
+    expect(readOpenToken(S, unsubscribeToken(S, ORG, REC))).toBeNull();
+    expect(readViewToken(S, unsubscribeToken(S, ORG, REC))).toBeNull();
   });
 });
