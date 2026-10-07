@@ -6,9 +6,6 @@ import { Button, EmptyState } from "@mailory/ui";
 import { AiDraftButton } from "@/components/ai/ai-panels";
 import { aiDeps } from "@/lib/ai/deps";
 import { getAiStatus } from "@/lib/ai/service";
-import { UseHubButton } from "@/components/partner/hub-controls";
-import { orgDeps } from "@/lib/org/context";
-import { listHubForChild } from "@/lib/partner/service";
 import { PageHeader } from "@/components/page-header";
 import {
   LibraryGallery,
@@ -34,12 +31,7 @@ export default async function TemplatesPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab: tabParam } = await searchParams;
-  const actor0 = (await getOrgContext())!.actor!;
-  const hub = await listHubForChild(orgDeps(), actor0);
-  const sponsorName = hub.ok ? hub.sponsorName : null;
-  const tabs: { key: string; label: string }[] = sponsorName
-    ? [...TABS, { key: "hub", label: `${sponsorName} Şablonları` }]
-    : [...TABS];
+  const tabs: { key: string; label: string }[] = [...TABS];
   const tab = tabs.find((t) => t.key === tabParam)?.key ?? "mine";
   const actor = (await getOrgContext())!.actor!;
   const canWrite = can(actor.role, "templates:write");
@@ -87,30 +79,7 @@ export default async function TemplatesPage({
         ))}
       </nav>
 
-      {tab === "hub" ? (
-        hub.ok && hub.templates.length > 0 ? (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {hub.templates.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-start justify-between gap-3 rounded-lg border bg-surface p-4"
-              >
-                <div>
-                  <div className="font-medium">{t.name}</div>
-                  {t.description ? (
-                    <div className="text-xs text-muted-foreground">{t.description}</div>
-                  ) : null}
-                </div>
-                <UseHubButton id={t.id} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Sponsorunuz henüz şablon yayınlamadı.
-          </p>
-        )
-      ) : tab === "library" ? (
+      {tab === "library" ? (
         <LibraryGallery
           items={LIBRARY_TEMPLATES.map((t) => ({
             key: t.key,

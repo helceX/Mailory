@@ -1,12 +1,12 @@
 # MAILORY — BTM pilot kılavuzu
 
-Amaç: BTM'nin (ve sponsor olduğu girişimcilerin) SendPulse'tan Mailory'ye **riski düşük, geri dönülebilir** biçimde geçişi. Mailory'nin hiçbir adımı SendPulse'ı kapatmaz; ikisi bir süre paralel yaşar.
+Amaç: BTM'nin (diğer müşteriler gibi bir müşteri) SendPulse'tan Mailory'ye **riski düşük, geri dönülebilir** biçimde geçişi. Mailory'nin hiçbir adımı SendPulse'ı kapatmaz; ikisi bir süre paralel yaşar.
 
 ## 1. Pilot öncesi (BTM + platform yöneticisi)
 
 - [ ] Prod ortamı hazır ve `/api/health/ready` yeşil (bkz. `MAILORY_RUNBOOK.md`).
 - [ ] SES üretim erişimi onaylı (sandbox dışı); DNS: gönderici alan adı için DKIM + sahiplik TXT + SPF/DMARC.
-- [ ] BTM, diğer müşteriler gibi **standart bir çalışma alanı** olarak açıldı (kayıt veya platform yöneticisi); BTM yetkilisi sahip. Girişimci sponsorluğu gerekiyorsa platform yöneticisi BTM'yi isteğe bağlı olarak partner yapar.
+- [ ] BTM, diğer müşteriler gibi **standart bir çalışma alanı** olarak açıldı (kayıt veya platform yöneticisi); BTM yetkilisi sahip.
 - [ ] Hukuki metinler hazır: aydınlatma metni, gizlilik politikası, veri işleme sözleşmesi (OPEN_ITEMS A11).
 - [ ] BTM'nin gönderici alan adı Mailory'de **Doğrulandı** durumunda; Deliverability Merkezi'nde kritik bulgu yok.
 
@@ -33,17 +33,14 @@ SES hesabı ve alan adı yeni olduğundan hacim kademeli artırılır (günlük 
 
 Her ilk kampanyadan önce: test gönderimi (kendi adresin), Hazırlık denetimi tüm maddeler yeşil, abonelikten çık bağlantısı çalışıyor.
 
-## 4. Girişimci (sponsorlu) onboarding
+## 4. Müşteri onboarding
 
-1. BTM yetkilisi `/partner` → "Girişimci ekle" (ad + e-posta); girişimci davet e-postasıyla **sahip** olarak katılır.
-2. BTM plan/limitleri belirler (en çok pro plan değerleri); içerik/kişi verilerini **göremez** (yalnızca durum ve sayaçlar).
-3. Şablon Merkezi'nden BTM'nin yayınladığı şablonlar girişimciye açılır.
-4. Girişimci ilk 3 adımı tamamlar: alan adı doğrulama → ilk liste → ilk test gönderimi (partner panelinde "ilk gönderim yapıldı" görünür).
+Her müşteri (BTM dahil) aynı yolu izler: kayıt/davet → alan adı doğrulama → ilk liste → ilk test gönderimi. Plan ve limitleri platform yöneticisi `/platform` üzerinden atar. Özel bir sponsor/partner akışı yoktur (D-100).
 
 ## 5. Başarı ölçütleri (2 hafta)
 
 - Teslim edilebilirlik: bounce < %2, şikayet < %0,1, otomatik duraklatma tetiklenmedi.
-- Aktif kullanım: BTM en az 3 kampanya gönderdi; ≥ 3 girişimci ilk gönderimini yaptı.
+- Aktif kullanım: BTM en az 3 kampanya gönderdi.
 - Destek: kritik hata yok; ortalama destek yanıtı < 1 iş günü.
 - Geri bildirim: BTM ile haftalık 30 dk gözden geçirme; talepler `MAILORY_TASKS.md`'ye işlenir.
 

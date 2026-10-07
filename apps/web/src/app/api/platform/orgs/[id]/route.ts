@@ -25,11 +25,6 @@ const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("reinstate") }),
   z.object({ action: z.literal("restore") }),
   z.object({ action: z.literal("join") }),
-  z.object({
-    action: z.literal("kind"),
-    type: z.enum(["standard", "partner"]),
-    parentOrganizationId: z.string().uuid().nullable(),
-  }),
 ]);
 
 export function PATCH(
@@ -65,10 +60,7 @@ export function PATCH(
                   ? await platform.restoreOrgFor(deps, admin, id)
                   : b.action === "join"
                     ? await platform.joinOrgFor(deps, admin, id)
-                    : await platform.setKindFor(deps, admin, id, {
-                        type: b.type,
-                        parentOrganizationId: b.parentOrganizationId,
-                      });
+                    : { ok: false as const, code: "invalid" };
     return r.ok ? NextResponse.json({ ok: true }) : serviceFailure(r);
   });
 }

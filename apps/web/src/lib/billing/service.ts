@@ -4,7 +4,7 @@ import { authorize, type Actor } from "../org/service";
 
 const need = (a: Actor, p: Permission) => authorize(a, p);
 
-/** What plan this workspace is on, who granted it (sponsor), and usage against each limit. */
+/** What plan this workspace is on, and usage against each limit. */
 export async function getPlanOverview(
   deps: { db: Database; now?: () => Date },
   actor: Actor,
@@ -16,15 +16,12 @@ export async function getPlanOverview(
     actor.organizationId,
     (deps.now ?? (() => new Date()))(),
   );
-  const sponsorId = o.subscription?.sponsorOrganizationId ?? null;
-  const sponsor = sponsorId ? await getOrganization(deps.db, sponsorId as never) : null;
   const org = await getOrganization(deps.db, actor.organizationId);
   return {
     ok: true as const,
     planKey: o.planKey,
     planName: PLAN_LABELS[o.planKey as PlanKey] ?? o.planKey,
     source: o.subscription?.source ?? "default",
-    sponsorName: sponsor?.name ?? null,
     status: o.subscription?.status ?? "active",
     suspended: Boolean(org?.suspendedAt),
     rows: o.rows,

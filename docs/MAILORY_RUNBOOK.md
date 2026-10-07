@@ -21,7 +21,7 @@ Tüm Dockerfile'lar **repo kökünden** derlenir (`docker build -f apps/web/Dock
 4. Önce **worker**'ı dağıt (migration'ı o çalıştırır), sonra **web**'i. Sonraki dağıtımlarda sıra: migration geriye uyumlu (yalnızca ekleme) tutulduğu için iki servis birlikte dağıtılabilir; yıkıcı bir migration gerekirse iki aşamalı yapılır (önce kodu uyumlu hale getir, sonra kaldır).
 5. Alan adını (`mailory.io`) `web` servisine bağla; `APP_URL=https://mailory.io`.
 6. İlk platform yöneticisi: Railway shell'inde `apps/worker/node_modules/.bin/tsx packages/db/src/platform-admin.ts <e-posta>` (önce o e-postayla kayıt olunmuş olmalı).
-7. BTM de diğer müşteriler gibi normal kayıt/çalışma alanıyla başlar. Sahip olarak herhangi bir çalışma alanına girmek için `/platform/orgs/<id>` → "Sahip olarak katıl" (denetlenir). Sponsorluk gerekirse BTM'yi partner yapın.
+7. BTM de diğer müşteriler gibi normal kayıt/çalışma alanıyla başlar; platform yöneticisi `/platform`'dan "Müşteri çalışma alanı oluştur" ile sahipsiz alan + sahip daveti açabilir veya `/platform/orgs/<id>` → "Sahip olarak katıl" ile (denetlenir) girer.
 
 ## 3. Ortam değişkenleri
 

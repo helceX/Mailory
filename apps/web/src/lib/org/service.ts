@@ -185,8 +185,8 @@ export async function inviteMember(
 }
 
 /**
- * Partner/platform flow: a workspace created for an entrepreneur has no members yet; the invited address becomes its
- * first OWNER on acceptance. The inviter is never a member, so the sponsor gets no access to the workspace's content.
+ * Platform flow: a workspace created by the platform admin has no members yet; the invited address becomes its
+ * first OWNER on acceptance.
  */
 export async function inviteFirstOwner(
   deps: OrgDeps,

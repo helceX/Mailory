@@ -11,7 +11,6 @@ export const dynamic = "force-dynamic";
 const SOURCE = {
   default: "Varsayılan plan",
   manual: "Elle atanmış",
-  sponsored: "Sponsorlu erişim",
   stripe: "Abonelik",
 } as const;
 
@@ -36,11 +35,6 @@ export default async function PlanPage() {
           <div className="text-xl font-extrabold">{r.planName}</div>
         </div>
         <Badge tone="info">{SOURCE[r.source as keyof typeof SOURCE] ?? r.source}</Badge>
-        {r.sponsorName ? (
-          <span className="text-sm text-muted-foreground">
-            Sponsor: {r.sponsorName}
-          </span>
-        ) : null}
         {r.status !== "active" ? <Badge tone="warning">{r.status}</Badge> : null}
         {r.suspended ? <Badge tone="danger">Askıya alındı</Badge> : null}
       </section>
@@ -88,9 +82,8 @@ export default async function PlanPage() {
         })}
       </ul>
       <p className="text-xs text-muted-foreground">
-        Limitleri artırmak için yöneticinizle (veya sponsorunuzla) iletişime geçin.
-        Limit dolduğunda mevcut verileriniz silinmez; yalnızca yeni ekleme/gönderim
-        durur.
+        Limitleri artırmak için yöneticinizle iletişime geçin. Limit dolduğunda mevcut
+        verileriniz silinmez; yalnızca yeni ekleme/gönderim durur.
       </p>
     </div>
   );

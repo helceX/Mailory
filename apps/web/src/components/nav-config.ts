@@ -7,7 +7,6 @@ import {
   Mail,
   Palette,
   Building2,
-  Handshake,
   Settings,
   ShieldCheck,
   Users,
@@ -34,9 +33,8 @@ export const PLANNED_NAV: NavItem[] = [
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
-/** Role-dependent destinations (platform admins, partner organizations); the server decides who gets them. */
-export type ExtraNav = { href: string; label: string; key: "platform" | "partner" };
+/** Role-dependent destinations (platform admins); the server decides who gets them. */
+export type ExtraNav = { href: string; label: string; key: "platform" };
 export const EXTRA_ICONS: Record<ExtraNav["key"], LucideIcon> = {
   platform: Building2,
-  partner: Handshake,
 };

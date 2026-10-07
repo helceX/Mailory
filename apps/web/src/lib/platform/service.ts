@@ -17,7 +17,6 @@ import {
   listOrganizationsOverview,
   recordAudit,
   setDailySendLimit,
-  setOrganizationKind,
   setOverride,
   setSubscription,
   setSuspension,
@@ -168,57 +167,21 @@ export async function suspendFor(
   return { ok: true as const };
 }
 
-export async function setKindFor(
-  deps: PlatformDeps,
-  a: PlatformActor,
-  id: string,
-  input: { type: "standard" | "partner"; parentOrganizationId: string | null },
-) {
-  const g = guard(a);
-  if (g) return g;
-  if (input.parentOrganizationId === id)
-    return fail("invalid", "Bir kurum kendi üst kurumu olamaz.");
-  if (!(await getOrganizationMetrics(deps.db, asOrganizationId(id))))
-    return fail("not_found");
-  if (input.parentOrganizationId) {
-    const parent = await getOrganizationMetrics(
-      deps.db,
-      asOrganizationId(input.parentOrganizationId),
-    );
-    if (!parent || parent.type !== "partner")
-      return fail("invalid", "Üst kurum bir partner olmalı.");
-    if (input.type === "partner")
-      return fail("invalid", "Partner kurumların üst kurumu olamaz.");
-  }
-  await setOrganizationKind(deps.db, asOrganizationId(id), input);
-  await audit(deps, a, id, "kind_set", input);
-  return { ok: true as const };
-}
-
-/** Creates a partner (e.g. BTM) workspace with no members; the invited owner takes it over. */
-export async function createPartnerFor(
+/** Creates a customer workspace with no members; the invited address becomes its owner on acceptance. */
+export async function createCustomerFor(
   deps: PlatformDeps,
   a: PlatformActor,
   input: { name: string; ownerEmail: string },
 ) {
   const g = guard(a);
   if (g) return g;
-  const org = await createOrganizationWithoutOwner(deps.db, {
-    name: input.name,
-    type: "partner",
-  });
-  await setSubscription(deps.db, asOrganizationId(org.id), {
-    planKey: "enterprise",
-    source: "manual",
-    note: "Partner kurum",
-    userId: a.userId,
-  });
+  const org = await createOrganizationWithoutOwner(deps.db, { name: input.name });
   const invited = await inviteFirstOwner(deps, {
     organizationId: asOrganizationId(org.id),
     email: input.ownerEmail.toLowerCase(),
     invitedByUserId: a.userId,
   });
-  await audit(deps, a, org.id, "partner_created", { name: input.name });
+  await audit(deps, a, org.id, "customer_created", { name: input.name });
   return { ok: true as const, id: org.id, invited: invited.ok };
 }
 

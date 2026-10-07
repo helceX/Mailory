@@ -18,25 +18,23 @@
 
 ## 2. Plan limitleri (mevcut tohum veri, migration 0010 + `api_requests`)
 
-| Plan          | Kişi     | E-posta/ay | Üye      | Otomasyon | AI/ay    | Depolama | API/ay   |
-| ------------- | -------- | ---------- | -------- | --------- | -------- | -------- | -------- |
-| Ücretsiz      | 500      | 1.000      | 2        | 1         | 20       | 50 MB    | 0        |
-| Starter       | 2.500    | 10.000     | 3        | 3         | 100      | 200 MB   | 1.000    |
-| Growth        | 10.000   | 50.000     | 10       | 10        | 500      | 1 GB     | 10.000   |
-| Pro           | 50.000   | 250.000    | 25       | 50        | 2.000    | 5 GB     | 100.000  |
-| Enterprise    | sınırsız | sınırsız   | sınırsız | sınırsız  | sınırsız | sınırsız | sınırsız |
-| BTM Sponsorlu | 5.000    | 15.000     | 5        | 5         | 100      | 200 MB   | 0        |
+| Plan       | Kişi     | E-posta/ay | Üye      | Otomasyon | AI/ay    | Depolama | API/ay   |
+| ---------- | -------- | ---------- | -------- | --------- | -------- | -------- | -------- |
+| Ücretsiz   | 500      | 1.000      | 2        | 1         | 20       | 50 MB    | 0        |
+| Starter    | 2.500    | 10.000     | 3        | 3         | 100      | 200 MB   | 1.000    |
+| Growth     | 10.000   | 50.000     | 10       | 10        | 500      | 1 GB     | 10.000   |
+| Pro        | 50.000   | 250.000    | 25       | 50        | 2.000    | 5 GB     | 100.000  |
+| Enterprise | sınırsız | sınırsız   | sınırsız | sınırsız  | sınırsız | sınırsız | sınırsız |
 
 ## 3. Önerilen fiyat hipotezi (aylık, KDV hariç)
 
-| Plan          | Öneri (USD)                      | Tam doluluk değişken maliyeti    | Brüt marj (yaklaşık) |
-| ------------- | -------------------------------- | -------------------------------- | -------------------- |
-| Ücretsiz      | 0                                | ≈ 0,1 USD                        | — (edinim maliyeti)  |
-| Starter       | 15                               | ≈ 1 USD + komisyon ≈ 1,5         | %80+                 |
-| Growth        | 49                               | ≈ 5 USD + AI ≈ 1 + komisyon ≈ 2  | %80                  |
-| Pro           | 149                              | ≈ 25 USD + AI ≈ 4 + komisyon ≈ 5 | %75                  |
-| Enterprise    | teklif                           | ayrılmış IP + destek             | pazarlık             |
-| BTM Sponsorlu | BTM ödemesi / sponsorluk bütçesi | ≈ 2 USD                          | BTM ile sözleşme     |
+| Plan       | Öneri (USD) | Tam doluluk değişken maliyeti    | Brüt marj (yaklaşık) |
+| ---------- | ----------- | -------------------------------- | -------------------- |
+| Ücretsiz   | 0           | ≈ 0,1 USD                        | — (edinim maliyeti)  |
+| Starter    | 15          | ≈ 1 USD + komisyon ≈ 1,5         | %80+                 |
+| Growth     | 49          | ≈ 5 USD + AI ≈ 1 + komisyon ≈ 2  | %80                  |
+| Pro        | 149         | ≈ 25 USD + AI ≈ 4 + komisyon ≈ 5 | %75                  |
+| Enterprise | teklif      | ayrılmış IP + destek             | pazarlık             |
 
 Gerekçeler:
 
@@ -56,8 +54,8 @@ Pazarda benzer ölçekli kişi sayısı için tipik aylık fiyatlar: giriş plan
 2. Plan başına limit kullanım yüzdesi (hangi limite ilk çarpılıyor? yükseltme tetikleyicisi).
 3. Destek talebi/müşteri ve bounce/şikayet oranı (itibar maliyeti).
 4. API kullanım dağılımı (1.000/10.000/100.000 eşikleri doğru mu).
-5. Sponsorlu girişimci → ücretli plana dönüşüm oranı (BTM ile paylaşılacak metrik; yalnızca toplam).
+5. Ücretsiz → ücretli plana dönüşüm oranı.
 
 ## 6. Ödeme entegrasyonu — kapsam dışı (insan kararı)
 
-Plan ataması bugün platform yöneticisi / partner tarafından yapılır (`subscriptions.source`: `manual|sponsored`). Stripe/iyzico/PayTR entegrasyonu için: sözleşme, webhook ile abonelik durumu → `subscriptions` eşlemesi (şema hazır: `source` içinde `stripe` değeri ve `status`; sağlayıcı kimliği alanı eklenecek), fatura bilgileri, vergi. Önerilen sıra: (1) fiyat kararı, (2) sağlayıcı seçimi, (3) checkout + webhook + `past_due` → askıya alma politikası.
+Plan ataması bugün platform yöneticisi tarafından yapılır (`subscriptions.source`: `manual`). Stripe/iyzico/PayTR entegrasyonu için: sözleşme, webhook ile abonelik durumu → `subscriptions` eşlemesi (şema hazır: `source` içinde `stripe` değeri ve `status`; sağlayıcı kimliği alanı eklenecek), fatura bilgileri, vergi. Önerilen sıra: (1) fiyat kararı, (2) sağlayıcı seçimi, (3) checkout + webhook + `past_due` → askıya alma politikası.

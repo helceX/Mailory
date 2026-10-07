@@ -2,8 +2,6 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileNav } from "@/components/mobile-nav";
-import { getDb } from "@/lib/db";
-import { getOrganization } from "@mailory/db";
 import { getOrgContext } from "@/lib/org/context";
 
 export const dynamic = "force-dynamic";
@@ -18,13 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     name: m.name,
   }));
   const activeOrganizationId = context.organization.organizationId;
-  const activeOrg = await getOrganization(getDb().db, activeOrganizationId as never);
-  const extra: { href: string; label: string; key: "platform" | "partner" }[] = [];
-  if (
-    activeOrg?.type === "partner" &&
-    (context.organization.role === "owner" || context.organization.role === "admin")
-  )
-    extra.push({ href: "/partner", label: "Partner paneli", key: "partner" });
+  const extra: { href: string; label: string; key: "platform" }[] = [];
   if (context.user.isPlatformAdmin)
     extra.push({ href: "/platform", label: "Platform", key: "platform" });
 

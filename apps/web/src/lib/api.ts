@@ -112,7 +112,6 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   ],
   limit_reached: [429, "Günlük yapay zekâ kullanım sınırına ulaşıldı."],
   ai_failed: [502, "Yapay zekâ şu anda yanıt veremedi. Lütfen tekrar deneyin."],
-  cap_exceeded: [403, "Bu limit partner yetkisinin üzerinde."],
   plan_limit: [402, "Planınızın sınırına ulaştınız."],
   suspended: [403, "Bu çalışma alanı askıya alınmış."],
   not_ready: [422, "Kampanya henüz gönderime hazır değil."],

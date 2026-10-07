@@ -29,7 +29,6 @@ export const PLAN_KEYS = [
   "growth",
   "pro",
   "enterprise",
-  "btm_sponsored",
 ] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 export const PLAN_LABELS: Record<PlanKey, string> = {
@@ -38,11 +37,10 @@ export const PLAN_LABELS: Record<PlanKey, string> = {
   growth: "Büyüme",
   pro: "Pro",
   enterprise: "Kurumsal",
-  btm_sponsored: "Sponsorlu",
 };
 export const DEFAULT_PLAN: PlanKey = "free";
 
-export const SUBSCRIPTION_SOURCES = ["manual", "sponsored", "stripe"] as const;
+export const SUBSCRIPTION_SOURCES = ["manual", "stripe"] as const;
 export type SubscriptionSource = (typeof SUBSCRIPTION_SOURCES)[number];
 
 /** null = unlimited. */

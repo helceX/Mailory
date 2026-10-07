@@ -7,7 +7,6 @@ import {
   BackLink,
   DailyLimit,
   JoinOrg,
-  KindControls,
   LimitsEditor,
   PlanPicker,
   SuspendControls,
@@ -15,7 +14,7 @@ import {
 import { getDb } from "@/lib/db";
 import { orgDeps } from "@/lib/org/context";
 import { requirePlatformAdmin } from "@/lib/platform/page-guard";
-import { getOrgFor, listOrgsFor } from "@/lib/platform/service";
+import { getOrgFor } from "@/lib/platform/service";
 
 export const metadata = { title: "Çalışma alanı" };
 export const dynamic = "force-dynamic";
@@ -30,12 +29,6 @@ export default async function PlatformOrgPage({
   if (!z.uuid().safeParse(id).success) notFound();
   const r = await getOrgFor(orgDeps(), admin, id);
   if (!r.ok) notFound();
-  const all = await listOrgsFor(orgDeps(), admin);
-  const partners = all.ok
-    ? all.orgs
-        .filter((o) => o.type === "partner" && o.id !== id)
-        .map((o) => ({ id: o.id, name: o.name }))
-    : [];
   void getDb;
   const m = r.metrics;
   const endpoint = `/api/platform/orgs/${id}`;
@@ -44,7 +37,7 @@ export default async function PlatformOrgPage({
       <BackLink href="/platform">Platform</BackLink>
       <PageHeader
         title={m.name}
-        description={`${m.type === "partner" ? "Partner" : "Çalışma alanı"} · ${m.members} üye · ${m.contacts.toLocaleString("tr-TR")} kişi · bu ay ${m.sentThisMonth.toLocaleString("tr-TR")} e-posta`}
+        description={`${m.members} üye · ${m.contacts.toLocaleString("tr-TR")} kişi · bu ay ${m.sentThisMonth.toLocaleString("tr-TR")} e-posta`}
         actions={
           m.suspendedAt ? (
             <Badge tone="danger">Askıda</Badge>
@@ -65,12 +58,6 @@ export default async function PlatformOrgPage({
           current={r.entitlements.planKey}
         />
         <DailyLimit endpoint={endpoint} current={m.dailySendLimit} />
-        <KindControls
-          endpoint={endpoint}
-          type={m.type}
-          parentId={m.parentOrganizationId}
-          partners={partners}
-        />
       </section>
       <JoinOrg endpoint={endpoint} />
       <LimitsEditor endpoint={endpoint} rows={r.entitlements.rows} allowUnlimited />

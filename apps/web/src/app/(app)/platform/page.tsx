@@ -36,10 +36,10 @@ export default async function PlatformPage({
         }
       />
       <CreateOrgForm
-        endpoint="/api/platform/partners"
-        title="Partner kurum oluştur"
-        hint="Bu kişi partnerin sahibi olur; davet e-postası gider."
-        submit="Partner oluştur"
+        endpoint="/api/platform/customers"
+        title="Müşteri çalışma alanı oluştur"
+        hint="Bu kişi çalışma alanının sahibi olur; davet e-postası gider."
+        submit="Çalışma alanı oluştur"
       />
       <form className="flex gap-2" role="search">
         <input
@@ -56,7 +56,6 @@ export default async function PlatformPage({
           <THead>
             <tr>
               <TH>Çalışma alanı</TH>
-              <TH>Tür</TH>
               <TH>Plan</TH>
               <TH>Üye</TH>
               <TH>Kişi</TH>
@@ -74,15 +73,6 @@ export default async function PlatformPage({
                   >
                     {o.name}
                   </Link>
-                </TD>
-                <TD>
-                  {o.type === "partner" ? (
-                    <Badge tone="info">Partner</Badge>
-                  ) : o.parentOrganizationId ? (
-                    "Sponsorlu"
-                  ) : (
-                    "Standart"
-                  )}
                 </TD>
                 <TD>{PLAN_LABELS[o.planKey as PlanKey] ?? o.planKey}</TD>
                 <TD>{o.members}</TD>
