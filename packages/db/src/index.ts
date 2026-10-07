@@ -37,3 +37,6 @@ export * from "./schema/index";
 export * from "./repositories/auth";
 export * from "./repositories/organizations";
 export * from "./repositories/audit";
+export * from "./repositories/contacts";
+export * from "./repositories/audience";
+export * from "./segments";

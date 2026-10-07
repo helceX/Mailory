@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@mailory/core": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {

@@ -15,6 +15,13 @@
       "when": 1791366171284,
       "tag": "0001_ambitious_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791367005729,
+      "tag": "0002_absent_ultimates",
+      "breakpoints": true
     }
   ]
 }
