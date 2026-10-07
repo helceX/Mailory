@@ -54,4 +54,17 @@ describe("parseEnv", () => {
     ).toBe("mock");
     expect(parseEnv({ ...base, NODE_ENV: "production" }).DNS_RESOLVER).toBe("system");
   });
+  it("AI is off by default; mock is refused in production; anthropic needs a key", () => {
+    expect(parseEnv(base).AI_PROVIDER).toBe("none");
+    expect(() =>
+      parseEnv({ ...base, NODE_ENV: "production", AI_PROVIDER: "mock" }),
+    ).toThrow(/AI_PROVIDER/);
+    expect(() => parseEnv({ ...base, AI_PROVIDER: "anthropic" })).toThrow(
+      /ANTHROPIC_API_KEY/,
+    );
+    expect(
+      parseEnv({ ...base, AI_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "k" })
+        .AI_DAILY_LIMIT_PER_ORG,
+    ).toBe(50);
+  });
 });

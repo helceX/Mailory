@@ -3,6 +3,9 @@ import { LayoutTemplate } from "lucide-react";
 import { can } from "@mailory/core";
 import { LIBRARY_TEMPLATES } from "@mailory/email";
 import { Button, EmptyState } from "@mailory/ui";
+import { AiDraftButton } from "@/components/ai/ai-panels";
+import { aiDeps } from "@/lib/ai/deps";
+import { getAiStatus } from "@/lib/ai/service";
 import { PageHeader } from "@/components/page-header";
 import {
   LibraryGallery,
@@ -31,6 +34,10 @@ export default async function TemplatesPage({
   const tab = TABS.find((t) => t.key === tabParam)?.key ?? "mine";
   const actor = (await getOrgContext())!.actor!;
   const canWrite = can(actor.role, "templates:write");
+  const aiStatus = await getAiStatus(aiDeps(), actor);
+  const ai = aiStatus.ok
+    ? { available: aiStatus.available, enabled: aiStatus.enabled }
+    : { available: false, enabled: false };
   const result =
     tab === "library"
       ? null
@@ -51,7 +58,12 @@ export default async function TemplatesPage({
       <PageHeader
         title="Şablonlar"
         description="E-postalarınızı hızla hazırlayın; her şablon markanızla uyumlu başlar."
-        actions={<NewBlankButton canWrite={canWrite} />}
+        actions={
+          <div className="flex gap-2">
+            <AiDraftButton ai={ai} canWrite={canWrite} />
+            <NewBlankButton canWrite={canWrite} />
+          </div>
+        }
       />
       <nav aria-label="Şablon görünümleri" className="flex gap-1 border-b">
         {TABS.map((t) => (

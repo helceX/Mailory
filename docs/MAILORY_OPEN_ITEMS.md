@@ -5,15 +5,16 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 
 ## A. İnsan gerektiren adımlar (yapılmadan canlıya çıkılamaz)
 
-| #   | Konu                  | Gerekli eylem                                                                                                  | Faz |
-| --- | --------------------- | -------------------------------------------------------------------------------------------------------------- | --- |
-| A1  | Amazon SES            | Hesap, production access (sandbox çıkışı), yapılandırma seti + SNS topic + `/api/webhooks/ses` HTTPS aboneliği | 8   |
-| A2  | `DOMAIN_PROVIDER=ses` | Gerçek `CreateEmailIdentity`/DKIM okuması stub; canlı SES ile duman testi yapılmadı                            | 6/8 |
-| A3  | DNS                   | `mailory.io` (uygulama) alan adı ve (isteğe bağlı) özel izleme alan adı                                        | 16  |
-| A4  | Railway               | Ayrı proje, servisler, değişkenler (runbook Faz 16'da)                                                         | 16  |
-| A5  | Hukuki                | KVKK aydınlatma, gizlilik politikası, kullanım şartları, izleme (piksel/tıklama) açıklaması — hukuki görüş     | 15  |
-| A6  | BTM verisi            | Mevcut SendPulse listelerinin CSV'si (izin kayıtlarıyla birlikte)                                              | 17  |
-| A7  | E-posta istemci testi | Outlook/Gmail/Apple Mail render geçişi (Litmus/Email on Acid)                                                  | 5   |
+| #   | Konu                  | Gerekli eylem                                                                                                                                          | Faz |
+| --- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| A1  | Amazon SES            | Hesap, production access (sandbox çıkışı), yapılandırma seti + SNS topic + `/api/webhooks/ses` HTTPS aboneliği                                         | 8   |
+| A2  | `DOMAIN_PROVIDER=ses` | Gerçek `CreateEmailIdentity`/DKIM okuması stub; canlı SES ile duman testi yapılmadı                                                                    | 6/8 |
+| A3  | DNS                   | `mailory.io` (uygulama) alan adı ve (isteğe bağlı) özel izleme alan adı                                                                                | 16  |
+| A4  | Railway               | Ayrı proje, servisler, değişkenler (runbook Faz 16'da)                                                                                                 | 16  |
+| A5  | Hukuki                | KVKK aydınlatma, gizlilik politikası, kullanım şartları, izleme (piksel/tıklama) açıklaması — hukuki görüş                                             | 15  |
+| A6  | BTM verisi            | Mevcut SendPulse listelerinin CSV'si (izin kayıtlarıyla birlikte)                                                                                      | 17  |
+| A8  | Yapay zekâ            | `ANTHROPIC_API_KEY` ekleyip `AI_PROVIDER=anthropic` ile canlı duman testi; veri işleme (üçüncü taraf model) bilgilendirmesi hukuki metinlere eklenmeli | 12  |
+| A7  | E-posta istemci testi | Outlook/Gmail/Apple Mail render geçişi (Litmus/Email on Acid)                                                                                          | 5   |
 
 ## B. Otonom verilen kararlar / öneriler (uygulandı, onayına açık)
 
@@ -23,6 +24,7 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 | B3  | Deliverability eşikleri (bounce %2/%5, şikayet %0,1/%0,3) ve skor ağırlıkları benim önerim; gerçek verilerle kalibre edilmeli                | Sektör pratiği + SES hesap sağlığı eşikleri                | 10  |
 | B4  | Etkileşim skoru formülü (açılma %50 + tıklama×3 %50, 90 gün) benim önerim                                                                    | Açılma Apple MPP ile şişer; tıklama ağırlıklı              | 10  |
 | B5  | Otomasyon: kişi başına tek giriş, terminal dallar, yalnızca etkinleştirme sonrası tetiklenenler, liste tabanlı oluşturucu (görsel tuval yok) | Güvenlik ve basitlik                                       | 11  |
+| B6  | AI varsayılan kapalı + org başına açma onayı; varsayılan model Haiku 4.5 (maliyet); günlük 50 istek/org                                      | KVKK ve maliyet kontrolü                                   | 12  |
 | B2  | Onay politikasında sahipler dahi kendi gönderdiğini onaylayamaz                                                                              | Dört göz ilkesi; tek yöneticili org kendini kilitleyebilir | 7   |
 
 ## C. Ertelenen / kapsam dışı bırakılanlar (neden + öneri)

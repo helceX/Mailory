@@ -44,7 +44,7 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 | MAIL-092 | Rapor dışa aktarma                            | P2  | 9     | 091     | CSV/PDF                                                                                                                                                                        | Testler                                         | done    |
 | MAIL-100 | Deliverability Center + Campaign Health       | P1  | 10    | 060,091 | Skor + aksiyon listesi, kural tabanlı                                                                                                                                          | Testler                                         | done    |
 | MAIL-110 | Automation engine                             | P2  | 11    | 081     | Trigger→Condition→Delay→Email→Branch                                                                                                                                           |                                                 | done    |
-| MAIL-120 | AI Copilot / Review / Analyst                 | P2  | 12    | 100     | Sağlayıcı soyutlaması                                                                                                                                                          | Onaysız gönderim yok testi                      | todo    |
+| MAIL-120 | AI Copilot / Review / Analyst                 | P2  | 12    | 100     | Sağlayıcı soyutlaması                                                                                                                                                          | Onaysız gönderim yok testi                      | done    |
 | MAIL-130 | Partner org + sponsorships + BTM Admin        | P0  | 13    | 030,140 | Girişimci org aç, limit ata                                                                                                                                                    | İçerik erişimi olmadığını doğrulayan test       | todo    |
 | MAIL-131 | Platform Admin                                | P1  | 13    | 030     | Org/kullanım/kuyruk/SES görünümü                                                                                                                                               |                                                 | todo    |
 | MAIL-132 | BTM Template Hub                              | P2  | 13    | 052,130 | Partner şablon paylaşımı                                                                                                                                                       |                                                 | todo    |
@@ -115,3 +115,11 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 - Akış yeniden girişi (re-entry) ve "hedef" (goal) çıkışları; şimdilik kişi başına bir kez.
 - Otomasyon içi e-postalar için günlük sınır/ısınma etkileşimi ayrı izlenmiyor (kampanya sınırıyla ortak).
 - Tetikleme gecikmesi: işçi 30 sn'de bir tarar; yüksek hacimde olay tabanlı (outbox) tetikleme düşünülebilir.
+
+## Faz 12 devam işleri
+
+- Gerçek Anthropic anahtarıyla canlı duman testi yapılmadı (yalnızca enjekte fetch ile sözleşme testi); anahtar eklenince bir kez denenmeli (A8).
+- Çıktı kalitesi/istem ayarı gerçek veriyle; Türkçe pazarlama tonu değerlendirmesi; kullanıcı geri bildirim düğmesi (beğendim/beğenmedim).
+- Gönderim zamanı önerisi (Smart Send), Akıllı yeniden gönderim (Smart Resend), A/B konu testi — V1.1 (AI önerisi + onaylı A/B).
+- AI kullanım maliyeti/token raporu (token sayıları kaydediliyor, arayüz yok); plan bazlı kota Faz 14 entitlement ile.
+- Akış (otomasyon) ve segment için AI yardımı; görsel üretimi yok (bilinçli).

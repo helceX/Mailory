@@ -104,6 +104,13 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   invalid: [400, "Geçersiz istek."],
   too_large: [413, "Dosya çok büyük."],
   conflict: [409, "Kayıt başka biri tarafından değiştirildi."],
+  ai_unavailable: [503, "Yapay zekâ yardımcısı bu ortamda yapılandırılmamış."],
+  ai_disabled: [
+    409,
+    "Yapay zekâ yardımcısı bu çalışma alanı için kapalı. Bir yönetici açabilir.",
+  ],
+  limit_reached: [429, "Günlük yapay zekâ kullanım sınırına ulaşıldı."],
+  ai_failed: [502, "Yapay zekâ şu anda yanıt veremedi. Lütfen tekrar deneyin."],
   not_ready: [422, "Kampanya henüz gönderime hazır değil."],
   approval_required: [409, "Bu kampanya onaya gönderilmelidir."],
   self_approval: [403, "Kendi gönderdiğiniz kampanyayı onaylayamazsınız."],

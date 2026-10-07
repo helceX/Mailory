@@ -7,6 +7,9 @@ import { CampaignStatusPanel } from "@/components/campaigns/campaign-status-pane
 import { PageHeader } from "@/components/page-header";
 import { audienceDeps } from "@/lib/audience/deps";
 import { getLists, getSegments, getTags } from "@/lib/audience/service";
+import { AnalystButton } from "@/components/ai/ai-panels";
+import { aiDeps } from "@/lib/ai/deps";
+import { getAiStatus } from "@/lib/ai/service";
 import { CampaignReport } from "@/components/analytics/campaign-report";
 import { getCampaignReport } from "@/lib/analytics/service";
 import { getDb } from "@/lib/db";
@@ -35,6 +38,10 @@ export default async function CampaignPage({
   const c = result.campaign;
   const status = c.status as CampaignStatus;
   const canSend = can(actor.role, "campaigns:send");
+  const aiStatus = await getAiStatus(aiDeps(), actor);
+  const ai = aiStatus.ok
+    ? { available: aiStatus.available, enabled: aiStatus.enabled }
+    : { available: false, enabled: false };
 
   const header = (
     <>
@@ -84,6 +91,7 @@ export default async function CampaignPage({
               : null
           }
         />
+        {report?.ok ? <AnalystButton campaignId={c.id} ai={ai} /> : null}
         {report?.ok ? (
           <CampaignReport
             stats={report.stats}
@@ -125,6 +133,7 @@ export default async function CampaignPage({
         }}
         issues={result.issues}
         health={result.health}
+        ai={ai}
         audienceCount={result.audienceCount}
         requireApproval={result.requireApproval}
         canSend={canSend}

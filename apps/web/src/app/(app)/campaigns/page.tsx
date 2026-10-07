@@ -11,6 +11,9 @@ import {
   CampaignsTable,
   NewCampaignButton,
 } from "@/components/campaigns/campaigns-list";
+import { AiToggle } from "@/components/ai/ai-panels";
+import { aiDeps } from "@/lib/ai/deps";
+import { getAiStatus } from "@/lib/ai/service";
 import { campaignDeps } from "@/lib/campaigns/deps";
 import { getPolicyFor, listCampaignsFor } from "@/lib/campaigns/service";
 import { getOrgContext } from "@/lib/org/context";
@@ -32,6 +35,7 @@ export default async function CampaignsPage({
   const status = param && isCampaignStatus(param) ? param : undefined;
   const actor = (await getOrgContext())!.actor!;
   const deps = campaignDeps();
+  const ai = await getAiStatus(aiDeps(), actor);
   const [result, policy] = await Promise.all([
     listCampaignsFor(deps, actor, { status }),
     getPolicyFor(deps, actor),
@@ -55,6 +59,9 @@ export default async function CampaignsPage({
       />
       {can(actor.role, "org:manage_settings") && policy.ok ? (
         <ApprovalPolicy initial={policy.requireApproval} />
+      ) : null}
+      {can(actor.role, "org:manage_settings") && ai.ok ? (
+        <AiToggle initial={ai.enabled} available={ai.available} />
       ) : null}
       <nav aria-label="Kampanya durumları" className="flex flex-wrap gap-1 border-b">
         {TABS.map((t) => {

@@ -120,3 +120,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - `automations` (trigger/steps jsonb, durum draft|active|paused|archived), `automation_enrollments` (UNIQUE(automation_id, contact_id); kısmi indeks `(next_run_at) WHERE status='active'`; `last_recipient_id` koşullar için).
 - `campaigns.kind` (`campaign`|`automation_step`), `automation_id`, `automation_step_id` (+ kısmi indeks).
 - `contact_tags.added_at` (etiket tetikleyicisi için; mevcut satırlar migration anına damgalanır, yani tetikleyiciyi geriye dönük etkilemez).
+
+## Faz 12 notları (migration `0009_dry_gertrude_yorkes.sql`)
+
+- `organizations.ai_enabled` (varsayılan false), `ai_requests` (org, user, feature, ok, token sayıları; içerik yok).

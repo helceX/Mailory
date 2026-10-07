@@ -22,6 +22,7 @@ import {
   Input,
   NativeSelect,
 } from "@mailory/ui";
+import { SubjectAssistant, type AiStatus } from "../ai/ai-panels";
 import { HealthPanel } from "../deliverability/health-panel";
 import { FormError } from "../auth/auth-card";
 import { apiCall } from "../audience/labels";
@@ -43,6 +44,7 @@ export type EditorProps = {
     rejectionReason: string | null;
   };
   issues: ReadinessIssue[];
+  ai: AiStatus;
   health: { score: number; band: HealthBand; findings: Finding[] };
   audienceCount: number;
   requireApproval: boolean;
@@ -414,6 +416,15 @@ export function CampaignEditor(props: EditorProps) {
           score={props.health.score}
           band={props.health.band}
           findings={props.health.findings}
+        />
+        <SubjectAssistant
+          campaignId={campaign.id}
+          ai={props.ai}
+          disabled={dirty || !form.templateId}
+          onPick={(subject, preheader) => {
+            set("subject", subject);
+            if (preheader) set("preheader", preheader);
+          }}
         />
         <Button onClick={save} disabled={!dirty || busy !== null}>
           {busy === "save" ? "Kaydediliyor…" : "Kaydet"}

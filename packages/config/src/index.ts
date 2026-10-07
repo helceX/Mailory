@@ -16,6 +16,11 @@ const envSchema = z
     SES_SNS_TOPIC_ARN: z.string().optional(),
     // Emails per second this worker may send (SES accounts start at 14/s).
     SEND_RATE_PER_SECOND: z.coerce.number().int().min(1).max(500).default(14),
+    // AI assistant (Phase 12). "none" disables it entirely; "mock" is for tests/dev only.
+    AI_PROVIDER: z.enum(["none", "mock", "anthropic"]).default("none"),
+    ANTHROPIC_API_KEY: z.string().optional(),
+    AI_MODEL: z.string().default("claude-haiku-4-5-20251001"),
+    AI_DAILY_LIMIT_PER_ORG: z.coerce.number().int().min(0).max(100000).default(50),
     SENTRY_DSN: z.string().optional(),
     DEFAULT_TIMEZONE: z.string().default("Europe/Istanbul"),
     DEFAULT_LOCALE: z.enum(["tr", "en"]).default("tr"),
@@ -34,6 +39,20 @@ const envSchema = z
         path: ["DNS_RESOLVER"],
       });
     }
+    if (ctx.value.NODE_ENV === "production" && ctx.value.AI_PROVIDER === "mock")
+      ctx.issues.push({
+        code: "custom",
+        message: 'AI_PROVIDER="mock" is not allowed in production',
+        input: ctx.value,
+        path: ["AI_PROVIDER"],
+      });
+    if (ctx.value.AI_PROVIDER === "anthropic" && !ctx.value.ANTHROPIC_API_KEY)
+      ctx.issues.push({
+        code: "custom",
+        message: 'ANTHROPIC_API_KEY is required when AI_PROVIDER is "anthropic"',
+        input: ctx.value,
+        path: ["ANTHROPIC_API_KEY"],
+      });
     if (ctx.value.EMAIL_PROVIDER === "ses") {
       for (const key of [
         "AWS_REGION",

@@ -36,6 +36,8 @@ export const organizations = pgTable(
       .default(false),
     // Abuse guard: most e-mails an organization may send per UTC day. New workspaces start low (warm-up);
     // a platform admin raises it. 0 = sending disabled.
+    // AI assistant sends email text to a third-party model, so it is opt-in per organization (KVKK).
+    aiEnabled: boolean("ai_enabled").notNull().default(false),
     dailySendLimit: integer("daily_send_limit").notNull().default(2000),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

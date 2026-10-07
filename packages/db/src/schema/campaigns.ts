@@ -307,3 +307,19 @@ export const automationEnrollments = pgTable(
 
 export type Automation = typeof automations.$inferSelect;
 export type AutomationEnrollment = typeof automationEnrollments.$inferSelect;
+
+/** One row per AI call: powers the daily limit and an audit of who used which feature (never the content). */
+export const aiRequests = pgTable(
+  "ai_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: orgId(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    feature: text("feature").notNull(),
+    ok: boolean("ok").notNull(),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ai_requests_org_idx").on(t.organizationId, t.createdAt)],
+);

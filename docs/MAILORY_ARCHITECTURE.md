@@ -160,3 +160,8 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 
 - `@mailory/sending/automation.ts`: `enrollTriggers`, `runEnrollment` (e-posta→alıcı satırı kuyruğa; bekle→`next_run_at`; koşul→dal), `processEnrollments` (lease'li talep), `automationTick`. Worker `automation-tick` (30 sn) + mevcut `campaign-send` tick'i e-postaları yollar.
 - Web: `lib/automations/service.ts` (RBAC, tenant doğrulaması, etkinleştirme dondurma), `/automations`, `/automations/[id]` (oluşturucu + durum paneli), `/api/automations/*`.
+
+## 19. Yapay zekâ yardımcısı (Faz 12)
+
+- `@mailory/ai`: sağlayıcılar (Anthropic/mock), istem üreticileri + çıktı ayrıştırıcıları (`features.ts`). Web `lib/ai/service.ts`: konu önerisi, içerik incelemesi (kural bulgularına ek), analist (yalnızca toplamlar), taslak yazımı; kapı: sağlayıcı var → org opt-in → günlük sınır. API `/api/ai/*`, `/api/campaigns/[id]/ai/*`.
+- Arayüz: kampanya düzenleyicide yardımcı paneli, raporda 'Sonuçları yorumla', şablonlarda 'Yapay zekâ ile taslak', Kampanyalar sayfasında açma anahtarı.
