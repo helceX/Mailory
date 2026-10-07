@@ -27,7 +27,7 @@ Etkin limit = override ?? plan_entitlement. Tek giriş: `checkEntitlement(orgId,
 
 - `contacts` (organization_id, email, first_name, last_name, company, position, website, phone, sector, city, status `subscribed|unsubscribed|bounced|complained|cleaned`, consent_status `granted|unknown|withdrawn`, consent_source, consent_at, unsubscribed_at, source, custom jsonb, engagement_score smallint, last_activity_at, created_at) — unique(org, lower(email)); indeksler: (org, status), (org, engagement_score), GIN(custom jsonb_path_ops) gerekirse
 - `contact_fields` (organization_id, key, label, type `text|number|date|boolean|select`, options jsonb) — kullanıcı tanımlı alanlar; değerler `contacts.custom`'da
-- `lists` (organization_id, name, description) · `list_contacts` (list_id, contact_id, organization_id, added_at) PK(list_id, contact_id)
+- `lists` (organization_id, name, description; ad org içinde case-insensitive tekil) · `list_contacts` (list_id, contact_id, organization_id, added_at) PK(list_id, contact_id)
 - `tags` (organization_id, name) · `contact_tags` (contact_id, tag_id, organization_id)
 - `segments` (organization_id, name, definition jsonb AST, last_count, last_counted_at)
 - `suppressions` (organization_id, email_lower, reason `unsubscribe|hard_bounce|complaint|manual|import`, source_campaign_id, created_at) — unique(org, email_lower). Gönderim öncesi kontrolün tek kaynağı.
@@ -69,3 +69,10 @@ Org silme = soft delete (`deleted_at`) + zamanlanmış kalıcı silme job'ı. Co
 ## 10. RLS planı (Faz 15)
 
 Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygulama rolü `BYPASSRLS` değil; platform/partner görünümleri `SECURITY DEFINER` görünümleri üzerinden.
+
+## Faz 4 notları
+
+- `list_contacts`/`contact_tags` satırları `organization_id` taşır; ekleme `INSERT … SELECT` ile yapılır ve liste/etiket aynı org'a ait olmak zorundadır — yabancı id sessizce 0 satır etkiler.
+- Drizzle'da tablo `listContactLinks` olarak dışa aktarılır (SQL adı `list_contacts`); `listContacts` repository fonksiyonudur.
+- `import_jobs` içe aktarma özetini, ilk 50 hatayı ve izin beyanının kanıtını (`consent_attested_at`, kullanıcı) tutar.
+- `suppressions.reason`: unsubscribe | hard_bounce | complaint | manual | import.

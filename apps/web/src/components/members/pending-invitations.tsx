@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Button, ConfirmDialog } from "@mailory/ui";
-import type { OrgRole } from "@mailory/core";
+import type { OrgRole } from "@mailory/core/shared";
 import { ROLE_LABELS } from "./role-labels";
 
 type Invitation = { id: string; email: string; role: string; expiresAt: string };

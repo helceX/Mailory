@@ -1,0 +1,12 @@
+/**
+ * Browser-safe subset of @mailory/core: pure logic with no Node built-ins. Client components import
+ * from "@mailory/core/shared"; the main entry also exports password/token code that needs node:crypto.
+ * shared.test.ts guards this boundary.
+ */
+export * from "./authz";
+export * from "./slug";
+export * from "./csv";
+export * from "./email";
+export * from "./segment-fields";
+export * from "./custom-fields";
+export * from "./import-mapping";

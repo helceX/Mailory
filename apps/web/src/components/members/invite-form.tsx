@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { OrgRole } from "@mailory/core";
+import type { OrgRole } from "@mailory/core/shared";
 import { Button, Field, Input } from "@mailory/ui";
 import { FormError, Notice } from "../auth/auth-card";
 import { useAuthForm } from "../auth/use-auth-form";

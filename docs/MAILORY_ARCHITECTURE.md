@@ -88,3 +88,19 @@ Yapılandırılmış JSON log (`request_id`, `organization_id`, `user_id`, `job_
 ## 10. Performans
 
 Keyset sayfalama, `(organization_id, …)` bileşik indeksleri, `lower(email)` unique indeksi, import `COPY`/toplu `INSERT … ON CONFLICT`, event tablosu aylık partisyon adayı (100K+ ölçeği için), analitik önbelleği `campaign_stats` toplama tablosu (olaylarla artımlı güncellenir).
+
+## 11. Ölçülen performans (Faz 4)
+
+Yerel PostgreSQL 16, **25.000 contact**, tek org (`PERF=1 pnpm exec vitest run apps/web/src/lib/audience/perf`):
+
+| İşlem                                    | Süre   |
+| ---------------------------------------- | ------ |
+| İlk sayfa (50 satır) + toplam sayı       | 20 ms  |
+| 101. sayfa (keyset, sayısız)             | 3 ms   |
+| Alt dize arama (ad/e-posta/şirket)       | 29 ms  |
+| Durum filtresi                           | 4 ms   |
+| Segment önizleme (VE/VEYA, sayı + örnek) | 14 ms  |
+| 10.000 satır CSV import                  | 1,5 sn |
+| 5.000 mevcut kişiyi upsert               | 0,6 sn |
+
+Sınırlar (dürüstçe): ölçüm 25k'da; 100k+/1M'de **ölçülmedi**. Alt dize arama `ILIKE '%…%'` kullanır (org içinde tarama, trigram indeksi yok); 100k+ için `pg_trgm` GIN indeksi gerekir (MAIL-192). Toplam sayı `count(*)`'tır; çok büyük org'larda önbelleğe alınmalı.

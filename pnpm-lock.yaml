@@ -16,6 +16,9 @@ importers:
       eslint:
         specifier: 10.11.0
         version: 10.11.0(jiti@2.7.0)
+      playwright-core:
+        specifier: 1.56.0
+        version: 1.56.0
       prettier:
         specifier: 3.6.2
         version: 3.6.2
@@ -3050,6 +3053,14 @@ packages:
       }
     engines: { node: ">=12" }
 
+  playwright-core@1.56.0:
+    resolution:
+      {
+        integrity: sha512-1SXl7pMfemAMSDn5rkPeZljxOCYAmQnYLBTExuh6E8USHXGSX3dx6lYZN/xPpTz1vimXmPA9CDnILvmJaB8aSQ==,
+      }
+    engines: { node: ">=18" }
+    hasBin: true
+
   postcss@8.5.23:
     resolution:
       {
@@ -4984,6 +4995,8 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
+
+  playwright-core@1.56.0: {}
 
   postcss@8.5.23:
     dependencies:

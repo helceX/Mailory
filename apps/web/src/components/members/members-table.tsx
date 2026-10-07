@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { canManageMember, type OrgRole } from "@mailory/core";
+import { canManageMember, type OrgRole } from "@mailory/core/shared";
 import { Badge, Button, ConfirmDialog } from "@mailory/ui";
 import { FormError } from "../auth/auth-card";
 import { assignableRoles, ROLE_LABELS } from "./role-labels";

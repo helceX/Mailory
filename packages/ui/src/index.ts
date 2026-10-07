@@ -8,3 +8,6 @@ export * from "./components/input";
 export * from "./components/label";
 export * from "./components/field";
 export * from "./components/dialog";
+export * from "./components/textarea";
+export * from "./components/native-select";
+export * from "./components/table";

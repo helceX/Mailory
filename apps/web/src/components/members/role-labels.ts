@@ -1,4 +1,4 @@
-import { canAssignRole, type OrgRole } from "@mailory/core";
+import { canAssignRole, type OrgRole } from "@mailory/core/shared";
 
 export const ROLE_LABELS: Record<OrgRole, string> = {
   owner: "Sahip",

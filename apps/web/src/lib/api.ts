@@ -95,3 +95,44 @@ export function failureResponse(code: keyof typeof FAILURE_STATUS) {
   const [status, message] = FAILURE_STATUS[code];
   return apiError(status, code, message);
 }
+
+const SERVICE_STATUS: Record<string, [number, string]> = {
+  forbidden: [403, "Bu işlem için yetkiniz yok."],
+  not_found: [404, "Kayıt bulunamadı."],
+  duplicate: [409, "Bu kayıt zaten var."],
+  suppressed: [409, "Bu adres bastırma listesinde."],
+  invalid: [400, "Geçersiz istek."],
+  too_large: [413, "Dosya çok büyük."],
+};
+
+/** Maps a service `Failure` to an HTTP error, preferring the service's own user-facing message. */
+export function serviceFailure(failure: { code: string; message?: string }) {
+  const [status, fallback] = SERVICE_STATUS[failure.code] ?? [400, "Geçersiz istek."];
+  return apiError(status, failure.code, failure.message ?? fallback);
+}
+
+type ActorContext = { actor: Actor; user: { id: string; email: string } };
+
+/**
+ * One wrapper for every tenant API route: CSRF (for writes) → authenticated actor with live role →
+ * handler. The handler can only ever see the session-derived organization.
+ */
+export async function withActor(
+  request: Request,
+  options: { write: boolean },
+  handler: (ctx: ActorContext) => Promise<Response>,
+): Promise<Response> {
+  if (options.write) {
+    const csrf = assertSameOrigin(request);
+    if (csrf) return csrf;
+  }
+  const auth = await requireActor();
+  if ("response" in auth) return auth.response;
+  return handler({ actor: auth.actor, user: auth.user });
+}
+
+/** JSON body size guard (the import endpoints accept multi-MB CSV text). */
+export function tooLarge(request: Request, maxBytes: number): NextResponse | null {
+  const length = Number(request.headers.get("content-length") ?? 0);
+  return length > maxBytes ? apiError(413, "too_large", "İstek çok büyük.") : null;
+}
