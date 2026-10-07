@@ -104,6 +104,12 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   invalid: [400, "Geçersiz istek."],
   too_large: [413, "Dosya çok büyük."],
   conflict: [409, "Kayıt başka biri tarafından değiştirildi."],
+  free_mail: [400, "Ücretsiz e-posta sağlayıcıları gönderici olarak kullanılamaz."],
+  platform_domain: [400, "Bu alan adı kullanılamaz."],
+  provider_error: [
+    502,
+    "Sağlayıcıya şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyin.",
+  ],
 };
 
 /** Maps a service `Failure` to an HTTP error, preferring the service's own user-facing message. */

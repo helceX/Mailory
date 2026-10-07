@@ -29,4 +29,17 @@ describe("parseEnv", () => {
       parseEnv({ ...base, EMAIL_PROVIDER: "ses", AWS_REGION: "eu-west-1" }).AWS_REGION,
     ).toBe("eu-west-1");
   });
+  it("defaults to the system DNS resolver and the mock domain provider", () => {
+    const env = parseEnv(base);
+    expect([env.DNS_RESOLVER, env.DOMAIN_PROVIDER]).toEqual(["system", "mock"]);
+  });
+  it("refuses the mock DNS resolver in production (it would let anyone 'publish' DNS)", () => {
+    expect(() =>
+      parseEnv({ ...base, NODE_ENV: "production", DNS_RESOLVER: "mock" }),
+    ).toThrow(/DNS_RESOLVER/);
+    expect(
+      parseEnv({ ...base, NODE_ENV: "development", DNS_RESOLVER: "mock" }).DNS_RESOLVER,
+    ).toBe("mock");
+    expect(parseEnv({ ...base, NODE_ENV: "production" }).DNS_RESOLVER).toBe("system");
+  });
 });

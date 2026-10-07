@@ -41,3 +41,4 @@ export * from "./repositories/contacts";
 export * from "./repositories/audience";
 export * from "./segments";
 export * from "./repositories/templates";
+export * from "./repositories/senders";

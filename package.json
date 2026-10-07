@@ -18,7 +18,7 @@
     "test": "vitest run",
     "db:generate": "pnpm --filter @mailory/db generate",
     "db:migrate": "pnpm --filter @mailory/db migrate",
-    "test:e2e": "node e2e/audience.e2e.cjs && node e2e/templates.e2e.cjs"
+    "test:e2e": "node e2e/audience.e2e.cjs && node e2e/templates.e2e.cjs && node e2e/senders.e2e.cjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

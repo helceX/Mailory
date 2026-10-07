@@ -6,6 +6,8 @@ import { cn } from "@mailory/ui";
 
 const TABS = [
   { href: "/settings/members", label: "Üyeler" },
+  { href: "/settings/senders", label: "Göndericiler" },
+  { href: "/settings/domains", label: "Alan adları" },
   { href: "/settings/audit-log", label: "Denetim kaydı" },
 ];
 

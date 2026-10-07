@@ -20,6 +20,9 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   "recordAudit",
   // templates.ts — public image bytes, addressed by an unguessable asset id (like any image URL in an email)
   "getAssetPublic",
+  // senders.ts — the domain-check worker sweeps every tenant; it writes back through tenant-scoped functions
+  "listDomainsDueForCheck",
+  "countSenderDomainClaims", // a count of claims on a domain name; reveals nothing about who claims it
 ]);
 // Identity tables (users, sessions, tokens, outbox) are global by design.
 const EXEMPT_FILES = new Set(["auth.ts"]);

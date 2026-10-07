@@ -15,8 +15,21 @@ const envSchema = z
     SENTRY_DSN: z.string().optional(),
     DEFAULT_TIMEZONE: z.string().default("Europe/Istanbul"),
     DEFAULT_LOCALE: z.enum(["tr", "en"]).default("tr"),
+    // How domain DNS records are looked up. "mock" reads MOCK_DNS_FILE and exists only for tests/dev.
+    DNS_RESOLVER: z.enum(["system", "mock"]).default("system"),
+    MOCK_DNS_FILE: z.string().optional(),
+    // "mock" = verification derived from real DNS only (no SES identity); "ses" arrives with the Phase 8 SES integration.
+    DOMAIN_PROVIDER: z.enum(["mock", "ses"]).default("mock"),
   })
   .check((ctx) => {
+    if (ctx.value.NODE_ENV === "production" && ctx.value.DNS_RESOLVER === "mock") {
+      ctx.issues.push({
+        code: "custom",
+        message: 'DNS_RESOLVER="mock" is not allowed in production',
+        input: ctx.value,
+        path: ["DNS_RESOLVER"],
+      });
+    }
     if (ctx.value.EMAIL_PROVIDER === "ses" && !ctx.value.AWS_REGION) {
       ctx.issues.push({
         code: "custom",

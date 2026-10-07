@@ -12,11 +12,16 @@
   "dependencies": {
     "@mailory/config": "workspace:*",
     "@mailory/db": "workspace:*",
+    "@mailory/deliverability": "workspace:*",
+    "@mailory/email": "workspace:*",
+    "bullmq": "6.3.8",
     "ioredis": "6.0.0"
   },
   "devDependencies": {
     "@types/node": "22.15.0",
+    "drizzle-orm": "0.45.2",
     "tsx": "4.23.15",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
   }
 }

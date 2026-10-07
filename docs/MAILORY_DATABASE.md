@@ -83,3 +83,9 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - `brand_kits` (organization_id **unique**, logo_asset_id → assets, renkler, font, button_radius, footer_text, social_links jsonb). Başka org'a ait logo kimliği bağlanmaz (yoksayılır).
 - `templates`: `unique(organization_id, lower(name)) WHERE archived_at IS NULL` (kısmi); `current_version_id` düz uuid (döngüsel FK yok).
 - Kütüphane şablonları DB'de değil, kodda (`packages/email/src/library.ts`).
+
+## Faz 6 notları
+
+- `sender_domains`: org'a ait; `domain`, `status` (pending/verified/failed), `dkim_tokens[]`, `ownership_token`, `ownership_ok/dkim_ok`, `spf_state/dmarc_state`, `snapshot` (son DNS sonucu), `failing_since`, `last_checked_at`, `verified_at`. (organization_id, domain) tekil; **doğrulanmış** satırlar için domain üzerinde kısmi unique index (tek sahip).
+- `sender_identities`: org'a ait gönderici (ad, e-posta, yanıt adresi, varsayılan). Varsayılan kimlik org başına tek (`FOR UPDATE` ile değiştirilir); silinen varsayılanın yerine en eski kalan terfi eder. Kullanılabilirlik veri değil, doğrulanmış kapsayan alan adından hesaplanır.
+- Migration: `0004_nostalgic_jazinda.sql`.

@@ -121,3 +121,10 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - Gönderimde (Faz 8) aynı `renderEmail` kişi başına çağrılır; bağlantı yeniden yazımı (izleme/UTM) render çıktısı üzerinde yapılır.
 - Önizleme uç noktası gönderilecek HTML'i üretir; `sandbox` iframe + `CSP: sandbox` ile gösterilir.
 - **Doğrulanmadı:** gerçek e-posta istemcilerinde (Outlook masaüstü, Gmail, Apple Mail) görünüm. Yapısal kurallara (tablo, inline CSS, betik/harici CSS yok, mobil `@media`) uyuluyor ama istemci testi (Litmus/Email on Acid) BTM pilotundan önce yapılmalı (MAIL-195).
+
+## 13. Alan adı doğrulama ve worker (Faz 6)
+
+- `@mailory/email`: DNS kayıt üretimi/kontrolü (`dns.ts`), sağlayıcı soyutlaması (`provider.ts`), durum makinesi (`domain-verify.ts`).
+- `@mailory/deliverability`: çözümleyici/sağlayıcı fabrikaları + `checkAndPersistDomain` + `sweepDomains` (web ve worker ortak kullanır).
+- `apps/worker`: BullMQ `domain-check` kuyruğu, 5 dk'lık job scheduler; tek eşzamanlı süpürme. Entegrasyon testi gerçek Postgres+Redis ile koşar.
+- Onboarding: `getOnboarding` 7 adım (organizasyon, logo, marka, gönderici, alan adı, kişiler, şablon); panoda bitene kadar gösterilir.

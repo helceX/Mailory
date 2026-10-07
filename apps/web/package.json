@@ -17,6 +17,7 @@
     "@mailory/config": "workspace:*",
     "@mailory/core": "workspace:*",
     "@mailory/db": "workspace:*",
+    "@mailory/deliverability": "workspace:*",
     "@mailory/email": "workspace:*",
     "@mailory/ui": "workspace:*",
     "@mailory/validation": "workspace:*",

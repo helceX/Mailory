@@ -14,3 +14,4 @@ export * from "./email-doc";
 export * from "./brand";
 export * from "./image-sniff";
 export * from "./email-markup";
+export * from "./domain";

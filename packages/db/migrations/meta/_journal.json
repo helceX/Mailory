@@ -29,6 +29,13 @@
       "when": 1791370316192,
       "tag": "0003_fearless_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791373313330,
+      "tag": "0004_nostalgic_jazinda",
+      "breakpoints": true
     }
   ]
 }
