@@ -1,5 +1,5 @@
 {
-  "name": "@mailory/email",
+  "name": "@mailory/sending",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,14 +9,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-sesv2": "^3.1147.0",
     "@mailory/core": "workspace:*",
-    "sanitize-html": "2.18.0"
+    "@mailory/db": "workspace:*",
+    "@mailory/email": "workspace:*"
   },
   "devDependencies": {
-    "@mailory/validation": "workspace:*",
     "@types/node": "22.15.0",
-    "@types/sanitize-html": "2.16.2",
+    "drizzle-orm": "0.45.2",
     "typescript": "6.0.3"
   }
 }

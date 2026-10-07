@@ -43,6 +43,13 @@
       "when": 1791379975821,
       "tag": "0005_rapid_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791380818486,
+      "tag": "0006_big_mockingbird",
+      "breakpoints": true
     }
   ]
 }

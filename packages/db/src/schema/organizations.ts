@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   index,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -33,6 +34,9 @@ export const organizations = pgTable(
     requireCampaignApproval: boolean("require_campaign_approval")
       .notNull()
       .default(false),
+    // Abuse guard: most e-mails an organization may send per UTC day. New workspaces start low (warm-up);
+    // a platform admin raises it. 0 = sending disabled.
+    dailySendLimit: integer("daily_send_limit").notNull().default(2000),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

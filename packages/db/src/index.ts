@@ -43,3 +43,4 @@ export * from "./segments";
 export * from "./repositories/templates";
 export * from "./repositories/senders";
 export * from "./repositories/campaigns";
+export * from "./repositories/sending";
