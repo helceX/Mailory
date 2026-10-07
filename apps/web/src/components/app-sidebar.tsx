@@ -5,16 +5,18 @@ import { usePathname } from "next/navigation";
 import { cn, Wordmark } from "@mailory/ui";
 import { LogoutButton } from "./logout-button";
 import { OrgSwitcher } from "./org-switcher";
-import { NAV_ITEMS } from "./nav-config";
+import { EXTRA_ICONS, NAV_ITEMS, type ExtraNav } from "./nav-config";
 
 export function AppSidebar({
   userName,
   organizations,
   activeOrganizationId,
+  extra = [],
 }: {
   userName: string;
   organizations: { id: string; name: string }[];
   activeOrganizationId: string;
+  extra?: ExtraNav[];
 }) {
   const pathname = usePathname();
   return (
@@ -31,7 +33,14 @@ export function AppSidebar({
         className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4"
         aria-label="Primary"
       >
-        {NAV_ITEMS.map((item) => {
+        {[
+          ...NAV_ITEMS.map((i) => ({ ...i })),
+          ...extra.map((e) => ({
+            href: e.href,
+            label: e.label,
+            icon: EXTRA_ICONS[e.key],
+          })),
+        ].map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (

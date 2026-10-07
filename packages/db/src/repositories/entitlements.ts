@@ -219,3 +219,20 @@ export async function clearOverride(
       ),
     );
 }
+
+/** The raw limits a plan grants (NULL = unlimited). Used to cap what a partner may hand out. */
+export async function getPlanLimits(
+  db: Database,
+  planKey: string,
+): Promise<Record<EntitlementKey, Limit>> {
+  const rows = await db
+    .select()
+    .from(planEntitlements)
+    .where(eq(planEntitlements.planKey, planKey));
+  const out = {} as Record<EntitlementKey, Limit>;
+  for (const key of ENTITLEMENT_KEYS) {
+    const r = rows.find((x) => x.entitlementKey === key);
+    out[key] = r ? r.limitValue : 0;
+  }
+  return out;
+}

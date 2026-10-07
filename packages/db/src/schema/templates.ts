@@ -122,3 +122,30 @@ export const templateVersions = pgTable(
 export type Template = typeof templates.$inferSelect;
 export type TemplateVersion = typeof templateVersions.$inferSelect;
 export type Asset = typeof assets.$inferSelect;
+
+/**
+ * BTM Template Hub: templates a partner organization publishes for the organizations it sponsors. A snapshot of the
+ * document, owned by the partner. Children copy it into their own workspace; nothing else is shared.
+ */
+export const sharedTemplates = pgTable(
+  "shared_templates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    partnerOrganizationId: uuid("partner_organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    category: text("category").notNull().default("other"),
+    description: text("description"),
+    doc: jsonb("doc").$type<unknown>().notNull(),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("shared_templates_partner_idx").on(t.partnerOrganizationId, t.createdAt),
+  ],
+);
+export type SharedTemplate = typeof sharedTemplates.$inferSelect;

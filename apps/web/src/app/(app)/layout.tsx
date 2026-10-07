@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileNav } from "@/components/mobile-nav";
+import { getDb } from "@/lib/db";
+import { getOrganization } from "@mailory/db";
 import { getOrgContext } from "@/lib/org/context";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     name: m.name,
   }));
   const activeOrganizationId = context.organization.organizationId;
+  const activeOrg = await getOrganization(getDb().db, activeOrganizationId as never);
+  const extra: { href: string; label: string; key: "platform" | "partner" }[] = [];
+  if (
+    activeOrg?.type === "partner" &&
+    (context.organization.role === "owner" || context.organization.role === "admin")
+  )
+    extra.push({ href: "/partner", label: "BTM Admin", key: "partner" });
+  if (context.user.isPlatformAdmin)
+    extra.push({ href: "/platform", label: "Platform", key: "platform" });
 
   return (
     <div className="flex min-h-screen">
@@ -29,11 +40,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         userName={`${context.user.firstName} ${context.user.lastName}`}
         organizations={organizations}
         activeOrganizationId={activeOrganizationId}
+        extra={extra}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileNav
           organizations={organizations}
           activeOrganizationId={activeOrganizationId}
+          extra={extra}
         />
         <main
           id="main-content"

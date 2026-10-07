@@ -170,3 +170,8 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 
 - `@mailory/core/entitlements.ts` (anahtarlar, `decide`, mesajlar), `@mailory/db` `entitlements.ts` (`getEffectiveLimits`, `getUsage` türetilmiş, `checkEntitlement`, `setSubscription`, `setOverride`). Web `lib/billing/enforce.ts` (`enforce`, `ensureNotSuspended`) tek çağrı noktası; motor `checkEntitlement` ile aylık sınırı uygular. `/settings/plan` kullanım sayfası.
 - Testlerde `createTestOrg` varsayılan **enterprise** (sınırsız) plan verir; üretim varsayılanı free'dir.
+
+## 21. Partner, platform ve şablon merkezi (Faz 13)
+
+- `@mailory/db` `platform.ts`: `METRICS` (yalnızca toplamlar), `listOrganizationsOverview`, `listChildOrganizations`/`getChildOrganization` (parent koşullu), `createOrganizationWithoutOwner`, askıya alma/tür/günlük limit, hub CRUD. `packages/db/src/platform-admin.ts` CLI.
+- Web: `lib/platform/service.ts` (PlatformActor = oturumdan `isPlatformAdmin`), `lib/partner/service.ts` (partnerGuard: owner/admin + type partner), `lib/org/service.ts#inviteFirstOwner`. Sayfalar: `/platform`, `/platform/orgs/[id]`, `/platform/system`, `/partner`, `/partner/children/[id]`, `/partner/templates`, şablonlarda sponsor sekmesi. Yan menüde role göre 'BTM Admin' / 'Platform'.

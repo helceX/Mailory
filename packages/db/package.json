@@ -13,7 +13,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "generate": "drizzle-kit generate",
-    "migrate": "tsx --env-file-if-exists=.env.local src/migrate.ts"
+    "migrate": "tsx --env-file-if-exists=.env.local src/migrate.ts",
+    "platform-admin": "tsx --env-file-if-exists=.env.local src/platform-admin.ts"
   },
   "dependencies": {
     "@mailory/config": "workspace:*",

@@ -26,6 +26,10 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   "listActiveAutomations", // the automation engine scans every tenant's active automations
   "getActiveAutomationsByIds", // loads the automations behind a claimed batch
   "claimDueEnrollments", // cross-tenant, row-locked claim of due enrolments
+  "listOrganizationsOverview", // platform-admin listing (aggregate metrics only; service enforces isPlatformAdmin)
+  "createOrganizationWithoutOwner", // creates a tenant (no tenant exists yet to scope by)
+  "listPlans", // plan catalog: global reference data, no tenant column
+  "getPlanLimits", // limits a plan grants (reference data)
   "refreshEngagement", // nightly job across tenants (optionally scoped)
   "listDueCampaigns",
   "listSendingCampaigns",

@@ -112,6 +112,7 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   ],
   limit_reached: [429, "Günlük yapay zekâ kullanım sınırına ulaşıldı."],
   ai_failed: [502, "Yapay zekâ şu anda yanıt veremedi. Lütfen tekrar deneyin."],
+  cap_exceeded: [403, "Bu limit partner yetkisinin üzerinde."],
   plan_limit: [402, "Planınızın sınırına ulaştınız."],
   suspended: [403, "Bu çalışma alanı askıya alınmış."],
   not_ready: [422, "Kampanya henüz gönderime hazır değil."],
@@ -155,4 +156,38 @@ export async function withActor(
 export function tooLarge(request: Request, maxBytes: number): NextResponse | null {
   const length = Number(request.headers.get("content-length") ?? 0);
   return length > maxBytes ? apiError(413, "too_large", "İstek çok büyük.") : null;
+}
+
+/**
+ * Platform-admin routes: CSRF → session → `isPlatformAdmin`. A non-admin gets a plain 404 so these endpoints are not
+ * even discoverable. The admin is a person, not an organization member, so no tenant Actor exists here.
+ */
+export async function withPlatformAdmin(
+  request: Request,
+  options: { write: boolean },
+  handler: (ctx: {
+    admin: {
+      userId: string;
+      isPlatformAdmin: true;
+      ip: string | null;
+      userAgent: string | null;
+    };
+  }) => Promise<Response>,
+): Promise<Response> {
+  if (options.write) {
+    const csrf = assertSameOrigin(request);
+    if (csrf) return csrf;
+  }
+  const context = await getOrgContext();
+  if (!context) return apiError(401, "unauthenticated", "Oturum açmanız gerekiyor.");
+  if (!context.user.isPlatformAdmin)
+    return apiError(404, "not_found", "Kayıt bulunamadı.");
+  return handler({
+    admin: {
+      userId: context.user.id,
+      isPlatformAdmin: true,
+      ip: clientIpFrom(request.headers.get("x-forwarded-for")),
+      userAgent: request.headers.get("user-agent")?.slice(0, 300) ?? null,
+    },
+  });
 }

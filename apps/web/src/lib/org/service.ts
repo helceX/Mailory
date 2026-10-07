@@ -184,6 +184,37 @@ export async function inviteMember(
   return { ok: true, invitationId: invitation.id };
 }
 
+/**
+ * Partner/platform flow: a workspace created for an entrepreneur has no members yet; the invited address becomes its
+ * first OWNER on acceptance. The inviter is never a member, so the sponsor gets no access to the workspace's content.
+ */
+export async function inviteFirstOwner(
+  deps: OrgDeps,
+  input: { organizationId: OrganizationId; email: string; invitedByUserId: string },
+): Promise<Success<{ invitationId: string }> | Failure> {
+  const org = await getOrganization(deps.db, input.organizationId);
+  if (!org) return { ok: false, code: "not_found" };
+  const token = generateToken();
+  const invitation = await createInvitation(deps.db, input.organizationId, {
+    email: input.email,
+    role: "owner",
+    tokenHash: hashToken(token),
+    invitedByUserId: input.invitedByUserId,
+    expiresAt: new Date(now(deps).getTime() + INVITATION_TTL_MS),
+  });
+  try {
+    await deps.sendEmail({
+      to: input.email,
+      kind: "invitation",
+      subject: `${org.name} çalışma alanınız hazır — Mailory`,
+      text: `${org.name} için Mailory çalışma alanı oluşturuldu ve sahibi olarak sizi davet ettik.\n\nKabul etmek için (7 gün geçerli):\n${deps.appUrl}/accept-invite?token=${token}\n\nDavetle aynı e-posta adresiyle giriş yapmanız (gerekirse kayıt olmanız) gerekir.`,
+    });
+  } catch (error) {
+    console.error("[org] owner invitation email failed", error);
+  }
+  return { ok: true, invitationId: invitation.id };
+}
+
 export async function revokeInvitation(
   deps: OrgDeps,
   actor: Actor,

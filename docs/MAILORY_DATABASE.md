@@ -128,3 +128,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Faz 14 notları (migration `0010_…` + `0011_…`)
 
 - `plans`, `plan_entitlements` (tohum veri migration içinde: free/starter/growth/pro/enterprise/btm_sponsored × 7 anahtar), `subscriptions` (org UNIQUE), `entitlement_overrides` (UNIQUE(org, key)). `organizations.suspended_at/suspended_reason`. `invitations.role` artık `owner`'ı da kabul eder (yalnızca partner akışı; normal davet servisi owner'ı hâlâ reddeder).
+
+## Faz 13 notları (migration `0012_…`)
+
+- `shared_templates` (partner_organization_id, name, category, description, doc jsonb, archived_at). `organizations.type/parent_organization_id` (Faz 3'te vardı) artık kullanılıyor.

@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn, Wordmark } from "@mailory/ui";
 import { LogoutButton } from "./logout-button";
-import { NAV_ITEMS } from "./nav-config";
+import { EXTRA_ICONS, NAV_ITEMS, type ExtraNav } from "./nav-config";
 import { OrgSwitcher } from "./org-switcher";
 
 /** Below `md` the sidebar is hidden; this compact header keeps every destination one tap away. */
 export function MobileNav({
   organizations,
   activeOrganizationId,
+  extra = [],
 }: {
   organizations: { id: string; name: string }[];
   activeOrganizationId: string;
+  extra?: ExtraNav[];
 }) {
   const pathname = usePathname();
   return (
@@ -28,7 +30,14 @@ export function MobileNav({
         <LogoutButton compact />
       </div>
       <nav aria-label="Primary" className="flex gap-1 overflow-x-auto px-3 pb-2">
-        {NAV_ITEMS.map((item) => {
+        {[
+          ...NAV_ITEMS.map((i) => ({ ...i })),
+          ...extra.map((e) => ({
+            href: e.href,
+            label: e.label,
+            icon: EXTRA_ICONS[e.key],
+          })),
+        ].map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
