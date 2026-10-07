@@ -7,3 +7,4 @@ export * from "./library";
 export * from "./dns";
 export * from "./provider";
 export * from "./domain-verify";
+export * from "./utm";

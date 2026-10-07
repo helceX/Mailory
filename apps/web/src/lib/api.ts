@@ -104,6 +104,9 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   invalid: [400, "Geçersiz istek."],
   too_large: [413, "Dosya çok büyük."],
   conflict: [409, "Kayıt başka biri tarafından değiştirildi."],
+  not_ready: [422, "Kampanya henüz gönderime hazır değil."],
+  approval_required: [409, "Bu kampanya onaya gönderilmelidir."],
+  self_approval: [403, "Kendi gönderdiğiniz kampanyayı onaylayamazsınız."],
   free_mail: [400, "Ücretsiz e-posta sağlayıcıları gönderici olarak kullanılamaz."],
   platform_domain: [400, "Bu alan adı kullanılamaz."],
   provider_error: [

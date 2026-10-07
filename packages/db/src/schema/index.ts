@@ -5,3 +5,4 @@ export * from "./audit";
 export * from "./audience";
 export * from "./templates";
 export * from "./senders";
+export * from "./campaigns";

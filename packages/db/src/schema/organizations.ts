@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   index,
   pgTable,
@@ -28,6 +29,10 @@ export const organizations = pgTable(
       },
     ),
     defaultTimezone: text("default_timezone").notNull().default("Europe/Istanbul"),
+    // Four-eyes policy: editors must submit campaigns; a different admin approves before they are scheduled.
+    requireCampaignApproval: boolean("require_campaign_approval")
+      .notNull()
+      .default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

@@ -36,6 +36,13 @@
       "when": 1791373313330,
       "tag": "0004_nostalgic_jazinda",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791379975821,
+      "tag": "0005_rapid_sumo",
+      "breakpoints": true
     }
   ]
 }

@@ -208,7 +208,7 @@ export type IdentityView = {
   domain: { id: string; domain: string; status: string } | null;
 };
 
-function viewIdentities(
+export function viewIdentities(
   identities: Awaited<ReturnType<typeof listSenderIdentities>>,
   domains: SenderDomain[],
 ): IdentityView[] {

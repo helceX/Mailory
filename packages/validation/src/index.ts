@@ -4,3 +4,4 @@ export * from "./segment";
 export * from "./audience";
 export * from "./template";
 export * from "./senders";
+export * from "./campaign";
