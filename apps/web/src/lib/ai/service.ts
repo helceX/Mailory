@@ -26,6 +26,7 @@ import {
   type Database,
 } from "@mailory/db";
 import { emailDocSchema } from "@mailory/validation";
+import { enforce } from "../billing/enforce";
 import { authorize, type Actor } from "../org/service";
 import { loadBrandKit } from "../templates/service";
 import { createTemplateFor, saveTemplateFor } from "../templates/service";
@@ -51,6 +52,7 @@ type Code =
   | "ai_disabled"
   | "limit_reached"
   | "ai_failed"
+  | "plan_limit"
   | "duplicate";
 export type Failure = { ok: false; code: Code; message?: string };
 const fail = (code: Code, message?: string): Failure => ({ ok: false, code, message });
@@ -104,6 +106,8 @@ async function guard(deps: AiDeps, actor: Actor): Promise<Failure | null> {
     deps.dailyLimit
   )
     return fail("limit_reached");
+  const plan = await enforce(deps.db, actor.organizationId, "ai_credits", 1, now);
+  if (plan) return plan;
   return null;
 }
 

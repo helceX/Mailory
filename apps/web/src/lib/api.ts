@@ -89,6 +89,7 @@ const FAILURE_STATUS = {
   already_member: [409, "Bu kişi zaten organizasyonun üyesi."],
   invalid: [400, "Geçersiz istek."],
   email_mismatch: [403, "Bu davet farklı bir e-posta adresi için gönderilmiş."],
+  plan_limit: [402, "Planınızın sınırına ulaştınız."],
 } as const;
 
 export function failureResponse(code: keyof typeof FAILURE_STATUS) {
@@ -111,6 +112,8 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   ],
   limit_reached: [429, "Günlük yapay zekâ kullanım sınırına ulaşıldı."],
   ai_failed: [502, "Yapay zekâ şu anda yanıt veremedi. Lütfen tekrar deneyin."],
+  plan_limit: [402, "Planınızın sınırına ulaştınız."],
+  suspended: [403, "Bu çalışma alanı askıya alınmış."],
   not_ready: [422, "Kampanya henüz gönderime hazır değil."],
   approval_required: [409, "Bu kampanya onaya gönderilmelidir."],
   self_approval: [403, "Kendi gönderdiğiniz kampanyayı onaylayamazsınız."],

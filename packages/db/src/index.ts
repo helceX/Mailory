@@ -48,3 +48,4 @@ export * from "./repositories/tracking";
 export * from "./repositories/deliverability";
 export * from "./repositories/automations";
 export * from "./repositories/ai";
+export * from "./repositories/entitlements";

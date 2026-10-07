@@ -53,6 +53,7 @@ import {
   renderEmail,
 } from "@mailory/email";
 import { emailDocSchema, type CampaignDraftInput } from "@mailory/validation";
+import { ensureNotSuspended } from "../billing/enforce";
 import { authorize, type Actor } from "../org/service";
 import { viewIdentities } from "../senders/service";
 import { loadBrandKit } from "../templates/service";
@@ -73,7 +74,8 @@ type Code =
   | "conflict"
   | "not_ready"
   | "approval_required"
-  | "self_approval";
+  | "self_approval"
+  | "suspended";
 export type Failure = {
   ok: false;
   code: Code;
@@ -574,6 +576,8 @@ export async function scheduleCampaignFor(
     );
   const at = resolveSendAt(deps, sendAt);
   if (!at.ok) return at;
+  const suspended = await ensureNotSuspended(deps.db, org);
+  if (suspended) return suspended;
   const ready = await ensureReady(deps, actor, row);
   if (!ready.ok) return ready.failure;
   const snap = await takeSnapshot(deps, actor, row, ready);
@@ -632,6 +636,8 @@ export async function approveCampaignFor(deps: CampaignDeps, actor: Actor, id: s
     return fail("conflict", "Kampanya onay beklemiyor.");
   if (row.submittedByUserId === actor.userId)
     return fail("self_approval", "Kendi gönderdiğiniz kampanyayı onaylayamazsınız.");
+  const suspended = await ensureNotSuspended(deps.db, org);
+  if (suspended) return suspended;
   const ready = await ensureReady(deps, actor, row);
   if (!ready.ok) return ready.failure;
   const snap = await takeSnapshot(deps, actor, row, ready);

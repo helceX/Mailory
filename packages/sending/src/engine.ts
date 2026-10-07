@@ -1,6 +1,7 @@
 import { findCoveringDomain, domainOfEmail } from "@mailory/core";
 import {
   campaignHealth,
+  checkEntitlement,
   claimRecipients,
   ensureCampaignLinks,
   completeIfDone,
@@ -108,11 +109,20 @@ export async function resumeDailyLimited(deps: EngineDeps) {
   let resumed = 0;
   for (const c of await listDailyLimited(deps.db, 50, deps.scope)) {
     const org = asOrganizationId(c.organizationId);
-    const [limit, sent] = await Promise.all([
+    const [limit, sent, plan, organization] = await Promise.all([
       getOrgSendLimit(deps.db, org),
       countSentSince(deps.db, org, utcDayStart(now)),
+      checkEntitlement(deps.db, org, "emails_per_month", 0, now),
+      getOrganization(deps.db, org),
     ]);
-    if (limit - sent > 0 && (await resumeCampaign(deps.db, org, c.id, now))) resumed++;
+    const planOk = plan.remaining === null || plan.remaining > 0;
+    if (
+      limit - sent > 0 &&
+      planOk &&
+      !organization?.suspendedAt &&
+      (await resumeCampaign(deps.db, org, c.id, now))
+    )
+      resumed++;
   }
   return { resumed };
 }
@@ -166,11 +176,15 @@ export async function sendBatch(
     : null;
   if (!cover) return halt("sender_unverified");
 
-  const [limit, sentToday] = await Promise.all([
+  if ((await getOrganization(deps.db, org))?.suspendedAt) return halt("org_suspended");
+
+  const [limit, sentToday, plan] = await Promise.all([
     getOrgSendLimit(deps.db, org),
     countSentSince(deps.db, org, utcDayStart(now)),
+    checkEntitlement(deps.db, org, "emails_per_month", 0, now),
   ]);
-  const room = limit - sentToday;
+  if (plan.remaining !== null && plan.remaining <= 0) return halt("plan_limit");
+  const room = Math.min(limit - sentToday, plan.remaining ?? Number.MAX_SAFE_INTEGER);
   if (room <= 0) return halt("daily_limit");
 
   const batch = await claimRecipients(

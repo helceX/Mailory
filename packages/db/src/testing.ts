@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { slugify } from "@mailory/core";
-import type { OrgRole } from "@mailory/core";
-import { createOrganizationWithOwner, type Database } from "./index";
+import type { OrgRole, PlanKey } from "@mailory/core";
+import {
+  createOrganizationWithOwner,
+  setSubscription,
+  type Database,
+  type OrganizationId,
+} from "./index";
 import { memberships, users } from "./schema/index";
 
 /** Fixtures for integration tests. Unique per call, so tests never need table truncation. */
@@ -26,12 +31,22 @@ export async function createTestOrg(
   db: Database,
   ownerId: string,
   name = `Org ${randomUUID().slice(0, 8)}`,
+  options: { plan?: PlanKey | null } = {},
 ) {
-  return createOrganizationWithOwner(db, {
+  const org = await createOrganizationWithOwner(db, {
     name,
     slug: slugify(name),
     userId: ownerId,
   });
+  // Tests run on an unlimited plan unless they ask otherwise, so unrelated suites are not tripped by plan limits.
+  // (Production default for an organization without a subscription is the "free" plan.)
+  if (options.plan !== null)
+    await setSubscription(db, org.id as OrganizationId, {
+      planKey: options.plan ?? "enterprise",
+      source: "manual",
+      userId: null,
+    });
+  return org;
 }
 
 export async function addTestMember(

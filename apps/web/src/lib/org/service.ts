@@ -1,3 +1,4 @@
+import { enforce } from "../billing/enforce";
 import {
   can,
   canAssignRole,
@@ -57,7 +58,9 @@ export type Failure = {
     | "last_owner"
     | "already_member"
     | "invalid"
-    | "email_mismatch";
+    | "email_mismatch"
+    | "plan_limit";
+  message?: string;
 };
 export type Success<T = object> = { ok: true } & T;
 
@@ -152,6 +155,8 @@ export async function inviteMember(
 
   const org = await getOrganization(deps.db, actor.organizationId);
   if (!org) return { ok: false, code: "not_found" };
+  const limited = await enforce(deps.db, actor.organizationId, "members", 1, now(deps));
+  if (limited) return limited;
 
   const token = generateToken();
   const invitation = await createInvitation(deps.db, actor.organizationId, {

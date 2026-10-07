@@ -351,7 +351,8 @@ export async function createInvitation(
   organizationId: OrganizationId,
   input: {
     email: string;
-    role: Exclude<OrgRole, "owner">;
+    // 'owner' is only reachable through the partner flow (a service-level rule); normal invites exclude it.
+    role: OrgRole;
     tokenHash: string;
     invitedByUserId: string;
     expiresAt: Date;

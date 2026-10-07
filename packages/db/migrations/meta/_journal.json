@@ -71,6 +71,20 @@
       "when": 1791393883254,
       "tag": "0009_dry_gertrude_yorkes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791394614178,
+      "tag": "0010_abandoned_the_executioner",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791394626116,
+      "tag": "0011_elite_dark_beast",
+      "breakpoints": true
     }
   ]
 }

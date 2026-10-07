@@ -463,3 +463,26 @@ export async function* streamContacts(
     if (rows.length < batchSize) return;
   }
 }
+
+/** How many of these (lowercase) emails are not yet contacts of the organization (for plan-limit pre-checks). */
+export async function countNewEmails(
+  db: Database,
+  organizationId: OrganizationId,
+  emails: string[],
+) {
+  let fresh = 0;
+  for (let i = 0; i < emails.length; i += 5000) {
+    const chunk = emails.slice(i, i + 5000);
+    const [row] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.organizationId, organizationId),
+          inArray(contacts.email, chunk),
+        ),
+      );
+    fresh += chunk.length - (row?.n ?? 0);
+  }
+  return fresh;
+}

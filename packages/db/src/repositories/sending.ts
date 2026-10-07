@@ -100,7 +100,8 @@ export async function listDailyLimited(db: Database, limit = 50, scope: Scope = 
     .where(
       and(
         eq(campaigns.status, "paused"),
-        eq(campaigns.haltReason, "daily_limit"),
+        // Paused by a limit or a suspension (not by a person or a health problem): they resume on their own.
+        sql`${campaigns.haltReason} in ('daily_limit','plan_limit','org_suspended')`,
         inScope(scope),
       ),
     )

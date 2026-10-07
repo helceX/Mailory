@@ -12,6 +12,7 @@ import {
   createSenderDomain,
   organizations,
   senderDomains,
+  setOverride,
   suppressions,
   type Campaign,
   type Database,
@@ -361,6 +362,68 @@ suite("send engine (real Postgres)", () => {
       status: "completed",
       haltReason: null,
     });
+  });
+
+  it("stops at the monthly plan limit, resumes when the limit is raised, and counts only this month", async () => {
+    const s = await setup(5);
+    await setOverride(db, s.oid, {
+      key: "emails_per_month",
+      limit: 2,
+      reason: "t",
+      userId: null,
+      byOrganizationId: null,
+    });
+    const t = new ScriptedTransport();
+    const d = deps(t, { batchSize: 10 });
+    await dispatchDue(d);
+    await drain(d, s.campaign);
+    await sendBatch(d, await row(s.campaign.id));
+    expect(t.sent).toHaveLength(2);
+    expect(await row(s.campaign.id)).toMatchObject({
+      status: "paused",
+      haltReason: "plan_limit",
+    });
+    expect((await resumeDailyLimited(d)).resumed).toBe(0); // still capped
+    await setOverride(db, s.oid, {
+      key: "emails_per_month",
+      limit: 10,
+      reason: "t",
+      userId: null,
+      byOrganizationId: null,
+    });
+    expect((await resumeDailyLimited(d)).resumed).toBeGreaterThanOrEqual(1);
+    await drain(d, s.campaign);
+    expect(t.sent).toHaveLength(5);
+    expect(await row(s.campaign.id)).toMatchObject({
+      status: "completed",
+      haltReason: null,
+    });
+  });
+
+  it("a suspended organization's campaign is paused before anything is sent, and resumes on reinstatement", async () => {
+    const s = await setup(3);
+    await db
+      .update(organizations)
+      .set({ suspendedAt: new Date() })
+      .where(eq(organizations.id, s.org.id));
+    const t = new ScriptedTransport();
+    const d = deps(t);
+    await dispatchDue(d);
+    const r = await sendBatch(d, await row(s.campaign.id));
+    expect(r.halted).toBe("org_suspended");
+    expect(t.sent).toHaveLength(0);
+    expect(await row(s.campaign.id)).toMatchObject({
+      status: "paused",
+      haltReason: "org_suspended",
+    });
+    expect((await resumeDailyLimited(d)).resumed).toBe(0);
+    await db
+      .update(organizations)
+      .set({ suspendedAt: null })
+      .where(eq(organizations.id, s.org.id));
+    expect((await resumeDailyLimited(d)).resumed).toBeGreaterThanOrEqual(1);
+    await drain(d, s.campaign);
+    expect(t.sent).toHaveLength(3);
   });
 
   it("refuses to send when the sender's domain is no longer verified", async () => {

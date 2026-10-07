@@ -37,6 +37,9 @@ export const organizations = pgTable(
     // Abuse guard: most e-mails an organization may send per UTC day. New workspaces start low (warm-up);
     // a platform admin raises it. 0 = sending disabled.
     // AI assistant sends email text to a third-party model, so it is opt-in per organization (KVKK).
+    // Set by a platform/partner admin; a suspended organization cannot send (the engine pauses its campaigns).
+    suspendedAt: timestamp("suspended_at", { withTimezone: true }),
+    suspendedReason: text("suspended_reason"),
     aiEnabled: boolean("ai_enabled").notNull().default(false),
     dailySendLimit: integer("daily_send_limit").notNull().default(2000),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -100,7 +103,7 @@ export const invitations = pgTable(
     index("invitations_org_idx").on(table.organizationId, table.createdAt),
     check(
       "invitations_role_check",
-      sql`${table.role} in ('admin', 'editor', 'viewer')`,
+      sql`${table.role} in ('owner', 'admin', 'editor', 'viewer')`,
     ),
   ],
 );

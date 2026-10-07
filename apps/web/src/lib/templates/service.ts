@@ -32,6 +32,7 @@ import {
   renderEmail,
 } from "@mailory/email";
 import { emailDocSchema, type BrandKitInput } from "@mailory/validation";
+import { enforce } from "../billing/enforce";
 import { authorize, type Actor } from "../org/service";
 
 export type TemplateDeps = { db: Database; appUrl: string };
@@ -41,7 +42,8 @@ type Code =
   | "duplicate"
   | "invalid"
   | "conflict"
-  | "too_large";
+  | "too_large"
+  | "plan_limit";
 export type Failure = {
   ok: false;
   code: Code;
@@ -155,6 +157,13 @@ export async function uploadAsset(
       message: "Görsel depolama sınırına ulaşıldı.",
     };
   }
+  const limited = await enforce(
+    deps.db,
+    actor.organizationId,
+    "storage_mb",
+    Math.ceil(input.bytes.length / 1_048_576),
+  );
+  if (limited) return limited;
   const asset = await createAsset(deps.db, actor.organizationId, {
     contentType: type,
     size: input.bytes.length,

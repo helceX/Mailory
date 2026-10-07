@@ -165,3 +165,8 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 
 - `@mailory/ai`: sağlayıcılar (Anthropic/mock), istem üreticileri + çıktı ayrıştırıcıları (`features.ts`). Web `lib/ai/service.ts`: konu önerisi, içerik incelemesi (kural bulgularına ek), analist (yalnızca toplamlar), taslak yazımı; kapı: sağlayıcı var → org opt-in → günlük sınır. API `/api/ai/*`, `/api/campaigns/[id]/ai/*`.
 - Arayüz: kampanya düzenleyicide yardımcı paneli, raporda 'Sonuçları yorumla', şablonlarda 'Yapay zekâ ile taslak', Kampanyalar sayfasında açma anahtarı.
+
+## 20. Plan ve limitler (Faz 14)
+
+- `@mailory/core/entitlements.ts` (anahtarlar, `decide`, mesajlar), `@mailory/db` `entitlements.ts` (`getEffectiveLimits`, `getUsage` türetilmiş, `checkEntitlement`, `setSubscription`, `setOverride`). Web `lib/billing/enforce.ts` (`enforce`, `ensureNotSuspended`) tek çağrı noktası; motor `checkEntitlement` ile aylık sınırı uygular. `/settings/plan` kullanım sayfası.
+- Testlerde `createTestOrg` varsayılan **enterprise** (sınırsız) plan verir; üretim varsayılanı free'dir.

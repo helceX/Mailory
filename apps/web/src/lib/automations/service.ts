@@ -40,6 +40,7 @@ import {
   type Database,
 } from "@mailory/db";
 import { emailDocSchema } from "@mailory/validation";
+import { enforce, ensureNotSuspended } from "../billing/enforce";
 import { authorize, type Actor } from "../org/service";
 import { viewIdentities } from "../senders/service";
 import { loadBrandKit } from "../templates/service";
@@ -313,6 +314,10 @@ export async function activateAutomationFor(
       "approval_required",
       "Bu çalışma alanında otomasyonları yalnızca onay yetkisi olan yöneticiler başlatabilir.",
     );
+  const suspended = await ensureNotSuspended(deps.db, org);
+  if (suspended) return suspended;
+  const limited = await enforce(deps.db, org, "automations", 1, clock(deps));
+  if (limited) return limited;
   const r = await readiness(deps, actor, a);
   if (r.issues.length) return fail("not_ready", r.issues[0]!.message, r.issues);
 

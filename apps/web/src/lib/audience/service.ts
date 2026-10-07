@@ -3,6 +3,7 @@ import {
   coerceCustomValue,
   coerceCustomValues,
   isValidEmail,
+  limitMessage,
   normalizeEmail,
   parseCsv,
   suggestMapping,
@@ -14,7 +15,9 @@ import {
   addContactsToList,
   addSuppressions,
   addTagToContacts,
+  checkEntitlement,
   countContacts,
+  countNewEmails,
   createContact,
   createContactField,
   createList,
@@ -59,6 +62,7 @@ import type {
   ImportRunInput,
   SegmentDefinition,
 } from "@mailory/validation";
+import { enforce } from "../billing/enforce";
 import { authorize, type Actor } from "../org/service";
 
 export type AudienceDeps = { db: Database; now?: () => Date };
@@ -68,7 +72,8 @@ type Code =
   | "duplicate"
   | "suppressed"
   | "invalid"
-  | "too_large";
+  | "too_large"
+  | "plan_limit";
 export type Failure = { ok: false; code: Code; message?: string };
 export type Ok<T = object> = { ok: true } & T;
 
@@ -179,6 +184,14 @@ export async function createContactFor(
   }
   const custom = await prepareCustom(deps, actor, input.custom);
   if (!("value" in custom)) return custom;
+  const limited = await enforce(
+    deps.db,
+    actor.organizationId,
+    "contacts",
+    1,
+    now(deps),
+  );
+  if (limited) return limited;
 
   const granted = input.consentStatus === "granted";
   const contact = await createContact(deps.db, actor.organizationId, {
@@ -468,6 +481,32 @@ export async function runImport(
         message: `"${target}" birden fazla sütuna eşlenemez.`,
       } as Failure;
     columnFor.set(target, index);
+  }
+
+  // Plan limit: only contacts that are NEW to this workspace count (re-importing existing ones just updates them).
+  const emailColumn = columnFor.get("email");
+  if (emailColumn !== undefined) {
+    const room = await checkEntitlement(
+      deps.db,
+      actor.organizationId,
+      "contacts",
+      0,
+      now(deps),
+    );
+    if (room.remaining !== null && parsed.rows.length > room.remaining) {
+      const emails = [
+        ...new Set(
+          parsed.rows.map((r) => normalizeEmail(r[emailColumn] ?? "")).filter(Boolean),
+        ),
+      ];
+      const fresh = await countNewEmails(deps.db, actor.organizationId, emails);
+      if (fresh > room.remaining)
+        return {
+          ok: false,
+          code: "plan_limit",
+          message: `${limitMessage(room)} Dosyada ${fresh.toLocaleString("tr-TR")} yeni kişi var; kalan hakkınız ${room.remaining.toLocaleString("tr-TR")}.`,
+        } as Failure;
+    }
   }
   if (!columnFor.has("email"))
     return {

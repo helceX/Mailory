@@ -124,3 +124,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Faz 12 notları (migration `0009_dry_gertrude_yorkes.sql`)
 
 - `organizations.ai_enabled` (varsayılan false), `ai_requests` (org, user, feature, ok, token sayıları; içerik yok).
+
+## Faz 14 notları (migration `0010_…` + `0011_…`)
+
+- `plans`, `plan_entitlements` (tohum veri migration içinde: free/starter/growth/pro/enterprise/btm_sponsored × 7 anahtar), `subscriptions` (org UNIQUE), `entitlement_overrides` (UNIQUE(org, key)). `organizations.suspended_at/suspended_reason`. `invitations.role` artık `owner`'ı da kabul eder (yalnızca partner akışı; normal davet servisi owner'ı hâlâ reddeder).

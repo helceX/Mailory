@@ -18,3 +18,4 @@ export * from "./domain";
 export * from "./campaign";
 export * from "./deliverability";
 export * from "./automation";
+export * from "./entitlements";
