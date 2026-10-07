@@ -378,3 +378,14 @@ export function collectMergeKeys(doc: EmailDoc): string[] {
   walkBlocks(doc, (block) => blockTexts(block).forEach(scan));
   return [...keys];
 }
+
+/** True when the email carries an unsubscribe link: the footer's switch, or an explicit {{unsubscribe_url}} token. */
+export function docHasUnsubscribe(doc: EmailDoc | null): boolean {
+  if (!doc) return false;
+  if (collectMergeKeys(doc).includes("unsubscribe_url")) return true;
+  let found = false;
+  walkBlocks(doc, (b) => {
+    if (b.type === "footer" && b.showUnsubscribe) found = true;
+  });
+  return found;
+}

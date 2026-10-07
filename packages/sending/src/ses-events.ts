@@ -2,7 +2,7 @@ import {
   applyRecipientEvent,
   asOrganizationId,
   findRecipientByMessageId,
-  getCampaign,
+  getCampaignAny,
   haltCampaign,
   markRecipientFailed,
   recordAudit,
@@ -118,7 +118,7 @@ export async function processSesEvent(
   }
 
   if (halt) {
-    const campaign = await getCampaign(deps.db, org, recipient.campaignId);
+    const campaign = await getCampaignAny(deps.db, org, recipient.campaignId);
     if (campaign?.status === "sending") {
       const verdict = await evaluateHealth(deps, campaign);
       if (verdict) {

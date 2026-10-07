@@ -17,16 +17,22 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 
 ## B. Otonom verilen kararlar / öneriler (uygulandı, onayına açık)
 
-| #   | Karar                                                                                                                         | Gerekçe                                                    | Faz |
-| --- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --- |
-| B1  | Yeni çalışma alanı günlük gönderim sınırı varsayılanı 2000                                                                    | Isınma; platform yöneticisi yükseltir                      | 8   |
-| B3  | Deliverability eşikleri (bounce %2/%5, şikayet %0,1/%0,3) ve skor ağırlıkları benim önerim; gerçek verilerle kalibre edilmeli | Sektör pratiği + SES hesap sağlığı eşikleri                | 10  |
-| B4  | Etkileşim skoru formülü (açılma %50 + tıklama×3 %50, 90 gün) benim önerim                                                     | Açılma Apple MPP ile şişer; tıklama ağırlıklı              | 10  |
-| B2  | Onay politikasında sahipler dahi kendi gönderdiğini onaylayamaz                                                               | Dört göz ilkesi; tek yöneticili org kendini kilitleyebilir | 7   |
+| #   | Karar                                                                                                                                        | Gerekçe                                                    | Faz |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | --- |
+| B1  | Yeni çalışma alanı günlük gönderim sınırı varsayılanı 2000                                                                                   | Isınma; platform yöneticisi yükseltir                      | 8   |
+| B3  | Deliverability eşikleri (bounce %2/%5, şikayet %0,1/%0,3) ve skor ağırlıkları benim önerim; gerçek verilerle kalibre edilmeli                | Sektör pratiği + SES hesap sağlığı eşikleri                | 10  |
+| B4  | Etkileşim skoru formülü (açılma %50 + tıklama×3 %50, 90 gün) benim önerim                                                                    | Açılma Apple MPP ile şişer; tıklama ağırlıklı              | 10  |
+| B5  | Otomasyon: kişi başına tek giriş, terminal dallar, yalnızca etkinleştirme sonrası tetiklenenler, liste tabanlı oluşturucu (görsel tuval yok) | Güvenlik ve basitlik                                       | 11  |
+| B2  | Onay politikasında sahipler dahi kendi gönderdiğini onaylayamaz                                                                              | Dört göz ilkesi; tek yöneticili org kendini kilitleyebilir | 7   |
 
 ## C. Ertelenen / kapsam dışı bırakılanlar (neden + öneri)
 
-| #   | Konu                                                 | Neden                               | Öneri           |
-| --- | ---------------------------------------------------- | ----------------------------------- | --------------- |
-| C2  | Google Postmaster/SNDS entegrasyonu, seed-list testi | Dış hesap/ücretli hizmet gerektirir | Pilot sonrası   |
-| C1  | PDF rapor dışa aktarma                               | CSV yeterli; PDF için ek bağımlılık | İhtiyaç doğunca |
+| #   | Konu                                                                        | Neden                               | Öneri           |
+| --- | --------------------------------------------------------------------------- | ----------------------------------- | --------------- |
+| C2  | Google Postmaster/SNDS entegrasyonu, seed-list testi                        | Dış hesap/ücretli hizmet gerektirir | Pilot sonrası   |
+| C3  | Görsel akış tuvali, birleşen dallar, ek tetikleyici/eylemler, yeniden giriş | Kapsam; V2.1                        | 11+             |
+| C1  | PDF rapor dışa aktarma                                                      | CSV yeterli; PDF için ek bağımlılık | İhtiyaç doğunca |
+
+## D. Altyapı notları
+
+- GitHub push'u 2026-10-07 15:10 UTC'de geçici `500 Internal Server Error` verdi (Faz 10 commit'i yerelde); sonraki push'larda yeniden denendi (bkz. git log / son durum).

@@ -5,3 +5,4 @@ export * from "./transport-factory";
 export * from "./message";
 export * from "./tracking";
 export * from "./track-events";
+export * from "./automation";

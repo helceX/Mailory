@@ -258,7 +258,7 @@ export async function compareCampaigns(
            coalesce((select count(*) from tracking_events e where e.campaign_id = c.id and e.type = 'click' and not e.is_bot), 0)::int as total_clicks
       from campaigns c
       left join campaign_recipients r on r.campaign_id = c.id
-     where c.organization_id = ${organizationId}::uuid and c.started_at is not null
+     where c.organization_id = ${organizationId}::uuid and c.started_at is not null and c.kind = 'campaign'
      group by c.id
      order by c.started_at desc
      limit ${limit}`);
@@ -281,7 +281,7 @@ export async function orgOverview(
   const r = await db.execute<
     StatsRow & { campaigns: number; total_opens: number; total_clicks: number }
   >(sql`
-    select count(distinct c.id)::int as campaigns, ${STATS_SELECT},
+    select count(distinct c.id) filter (where c.kind = 'campaign')::int as campaigns, ${STATS_SELECT},
            coalesce((select count(*) from tracking_events e join campaigns c2 on c2.id = e.campaign_id where e.organization_id = ${organizationId}::uuid and c2.started_at >= ${since} and e.type = 'open' and not e.is_bot), 0)::int as total_opens,
            coalesce((select count(*) from tracking_events e join campaigns c2 on c2.id = e.campaign_id where e.organization_id = ${organizationId}::uuid and c2.started_at >= ${since} and e.type = 'click' and not e.is_bot), 0)::int as total_clicks
       from campaigns c join campaign_recipients r on r.campaign_id = c.id

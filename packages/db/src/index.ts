@@ -46,3 +46,4 @@ export * from "./repositories/campaigns";
 export * from "./repositories/sending";
 export * from "./repositories/tracking";
 export * from "./repositories/deliverability";
+export * from "./repositories/automations";

@@ -80,7 +80,14 @@ export async function listSendingCampaigns(
   return db
     .select()
     .from(campaigns)
-    .where(and(eq(campaigns.status, "sending"), inScope(scope)))
+    .where(
+      and(
+        eq(campaigns.status, "sending"),
+        inScope(scope),
+        // Automation step campaigns stay 'sending' forever; only look at them when they have mail waiting.
+        sql`(${campaigns.kind} = 'campaign' or exists (select 1 from campaign_recipients r where r.campaign_id = ${campaigns.id} and r.status in ('queued','sending')))`,
+      ),
+    )
     .orderBy(campaigns.startedAt)
     .limit(limit);
 }
@@ -337,6 +344,7 @@ export async function completeIfDone(
         eq(campaigns.organizationId, organizationId),
         eq(campaigns.id, campaignId),
         eq(campaigns.status, "sending"),
+        eq(campaigns.kind, "campaign"), // an automation step campaign is never "done"
         sql`not exists (select 1 from campaign_recipients r where r.campaign_id = ${campaignId}::uuid and r.status in ('queued','sending'))`,
       ),
     )

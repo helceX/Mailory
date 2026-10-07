@@ -144,6 +144,7 @@ export const contactTags = pgTable(
       .notNull()
       .references(() => contacts.id, { onDelete: "cascade" }),
     organizationId: orgId(),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.tagId, t.contactId] }),

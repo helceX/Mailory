@@ -23,6 +23,9 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   // senders.ts — the domain-check worker sweeps every tenant; it writes back through tenant-scoped functions
   "listDomainsDueForCheck",
   // sending.ts — the engine scans every tenant's due/sending campaigns, then acts through tenant-scoped functions
+  "listActiveAutomations", // the automation engine scans every tenant's active automations
+  "getActiveAutomationsByIds", // loads the automations behind a claimed batch
+  "claimDueEnrollments", // cross-tenant, row-locked claim of due enrolments
   "refreshEngagement", // nightly job across tenants (optionally scoped)
   "listDueCampaigns",
   "listSendingCampaigns",

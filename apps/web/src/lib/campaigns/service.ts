@@ -1,6 +1,6 @@
 import {
   applyMerge,
-  collectMergeKeys,
+  docHasUnsubscribe,
   domainOfEmail,
   findCoveringDomain,
   healthBand,
@@ -12,7 +12,6 @@ import {
   evaluateReadiness,
   hasBlockers,
   slugifyUtm,
-  walkBlocks,
   CONTACT_MERGE_FIELDS,
   SYSTEM_MERGE_FIELDS,
   type CampaignAudience,
@@ -222,15 +221,7 @@ async function renderFor(
   };
 }
 
-function hasUnsubscribe(doc: EmailDoc | null): boolean {
-  if (!doc) return false;
-  if (collectMergeKeys(doc).includes("unsubscribe_url")) return true;
-  let found = false;
-  walkBlocks(doc, (b) => {
-    if (b.type === "footer" && b.showUnsubscribe) found = true;
-  });
-  return found;
-}
+const hasUnsubscribe = docHasUnsubscribe;
 
 async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
   const ctx = await loadContext(deps, actor, row);

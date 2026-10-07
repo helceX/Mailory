@@ -98,17 +98,15 @@ suite("Deliverability Center (real Postgres)", () => {
         startedAt: new Date(NOW.getTime() - 5 * 86_400_000),
       })
       .returning();
-    await db
-      .insert(campaignRecipients)
-      .values(
-        Array.from({ length: n }, (_, i) => ({
-          organizationId: orgId,
-          campaignId: c!.id,
-          email: `r${i}-${randomUUID().slice(0, 5)}@example.org`,
-          status: i < bounced ? "bounced" : "delivered",
-          sentAt: new Date(NOW.getTime() - 5 * 86_400_000),
-        })),
-      );
+    await db.insert(campaignRecipients).values(
+      Array.from({ length: n }, (_, i) => ({
+        organizationId: orgId,
+        campaignId: c!.id,
+        email: `r${i}-${randomUUID().slice(0, 5)}@example.org`,
+        status: i < bounced ? "bounced" : "delivered",
+        sentAt: new Date(NOW.getTime() - 5 * 86_400_000),
+      })),
+    );
     return c!;
   }
 

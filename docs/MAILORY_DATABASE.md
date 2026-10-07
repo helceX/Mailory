@@ -114,3 +114,9 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Faz 10 notları
 
 - Yeni tablo yok. `contacts.engagement_score` / `last_activity_at` (var olan sütunlar) gece işiyle dolar; bant skordan türetilir (saklanmaz).
+
+## Faz 11 notları (migration `0008_complete_mastermind.sql`)
+
+- `automations` (trigger/steps jsonb, durum draft|active|paused|archived), `automation_enrollments` (UNIQUE(automation_id, contact_id); kısmi indeks `(next_run_at) WHERE status='active'`; `last_recipient_id` koşullar için).
+- `campaigns.kind` (`campaign`|`automation_step`), `automation_id`, `automation_step_id` (+ kısmi indeks).
+- `contact_tags.added_at` (etiket tetikleyicisi için; mevcut satırlar migration anına damgalanır, yani tetikleyiciyi geriye dönük etkilemez).

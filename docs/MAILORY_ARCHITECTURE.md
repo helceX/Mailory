@@ -155,3 +155,8 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 
 - `@mailory/core/deliverability.ts` (saf kurallar + skor + etkileşim formülü); web `lib/deliverability/service.ts` (Merkez), kampanya servisinde `health` (düzenleyicide İçerik sağlığı paneli), analitik raporunda sonuç tabanlı bulgular.
 - `@mailory/db` `deliverability.ts`: `refreshEngagement` (gece işi), `audienceEngagement`, `listHealth`. Worker: `engagement-refresh` (cron `0 3 * * *` UTC).
+
+## 18. Otomasyon (Faz 11)
+
+- `@mailory/sending/automation.ts`: `enrollTriggers`, `runEnrollment` (e-posta→alıcı satırı kuyruğa; bekle→`next_run_at`; koşul→dal), `processEnrollments` (lease'li talep), `automationTick`. Worker `automation-tick` (30 sn) + mevcut `campaign-send` tick'i e-postaları yollar.
+- Web: `lib/automations/service.ts` (RBAC, tenant doğrulaması, etkinleştirme dondurma), `/automations`, `/automations/[id]` (oluşturucu + durum paneli), `/api/automations/*`.

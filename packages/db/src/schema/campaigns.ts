@@ -11,7 +11,12 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { CampaignAudience, CampaignUtm } from "@mailory/core/shared";
+import type {
+  AutomationTrigger,
+  CampaignAudience,
+  CampaignUtm,
+  Step,
+} from "@mailory/core/shared";
 import { organizations } from "./organizations";
 import { senderIdentities } from "./senders";
 import { templates, templateVersions } from "./templates";
@@ -34,6 +39,33 @@ export type CampaignSnapshot = {
   audienceCount: number;
   takenAt: string;
 };
+
+/** A trigger plus a frozen-on-activation tree of steps. Editable only as a draft; activation freezes content. */
+export const automations = pgTable(
+  "automations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: orgId(),
+    name: text("name").notNull(),
+    status: text("status").notNull().default("draft"),
+    trigger: jsonb("trigger").$type<AutomationTrigger>().notNull(),
+    steps: jsonb("steps").$type<Step[]>().notNull().default([]),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+    createdByUserId: userRef("created_by_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("automations_org_idx").on(t.organizationId, t.createdAt),
+    index("automations_active_idx")
+      .on(t.status)
+      .where(sql`${t.status} = 'active'`),
+    check(
+      "automations_status_check",
+      sql`${t.status} in ('draft','active','paused','archived')`,
+    ),
+  ],
+);
 
 export const campaigns = pgTable(
   "campaigns",
@@ -73,6 +105,13 @@ export const campaigns = pgTable(
     rejectionReason: text("rejection_reason"),
     // Why the engine (not a person) paused or failed it: daily cap, bounce rate, complaint rate, sender lost verification.
     haltReason: text("halt_reason"),
+    // 'automation_step' rows are the hidden per-email-step campaigns of an automation: they reuse recipients,
+    // sending, tracking, unsubscribe and analytics unchanged, and never appear in the campaign list.
+    kind: text("kind").notNull().default("campaign"),
+    automationId: uuid("automation_id").references(() => automations.id, {
+      onDelete: "cascade",
+    }),
+    automationStepId: text("automation_step_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -82,6 +121,10 @@ export const campaigns = pgTable(
     index("campaigns_due_idx")
       .on(t.scheduledAt)
       .where(sql`${t.status} = 'scheduled'`),
+    index("campaigns_automation_idx")
+      .on(t.automationId, t.automationStepId)
+      .where(sql`${t.automationId} is not null`),
+    check("campaigns_kind_check", sql`${t.kind} in ('campaign','automation_step')`),
     check(
       "campaigns_status_check",
       sql`${t.status} in ('draft','pending_approval','scheduled','sending','paused','completed','cancelled','failed')`,
@@ -226,3 +269,41 @@ export const trackingEvents = pgTable(
 );
 
 export type CampaignLink = typeof campaignLinks.$inferSelect;
+
+export const automationEnrollments = pgTable(
+  "automation_enrollments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: orgId(),
+    automationId: uuid("automation_id")
+      .notNull()
+      .references(() => automations.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("active"),
+    currentStepId: text("current_step_id"),
+    nextRunAt: timestamp("next_run_at", { withTimezone: true }).notNull().defaultNow(),
+    // The most recent email this contact received from the flow: what "opened/clicked previous" looks at.
+    lastRecipientId: uuid("last_recipient_id").references(() => campaignRecipients.id, {
+      onDelete: "set null",
+    }),
+    enteredAt: timestamp("entered_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    exitReason: text("exit_reason"),
+  },
+  (t) => [
+    // One run per contact per automation: no accidental re-mailing.
+    uniqueIndex("automation_enrollments_uidx").on(t.automationId, t.contactId),
+    index("automation_enrollments_due_idx")
+      .on(t.nextRunAt)
+      .where(sql`${t.status} = 'active'`),
+    check(
+      "automation_enrollments_status_check",
+      sql`${t.status} in ('active','completed','exited')`,
+    ),
+  ],
+);
+
+export type Automation = typeof automations.$inferSelect;
+export type AutomationEnrollment = typeof automationEnrollments.$inferSelect;

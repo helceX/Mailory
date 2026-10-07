@@ -43,7 +43,7 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 | MAIL-091 | Analitik + dashboard                          | P0  | 9     | 090     | KPI'lar, kampanya karşılaştırma, link analitiği                                                                                                                                | Testler                                         | done    |
 | MAIL-092 | Rapor dışa aktarma                            | P2  | 9     | 091     | CSV/PDF                                                                                                                                                                        | Testler                                         | done    |
 | MAIL-100 | Deliverability Center + Campaign Health       | P1  | 10    | 060,091 | Skor + aksiyon listesi, kural tabanlı                                                                                                                                          | Testler                                         | done    |
-| MAIL-110 | Automation engine                             | P2  | 11    | 081     | Trigger→Condition→Delay→Email→Branch                                                                                                                                           |                                                 | todo    |
+| MAIL-110 | Automation engine                             | P2  | 11    | 081     | Trigger→Condition→Delay→Email→Branch                                                                                                                                           |                                                 | done    |
 | MAIL-120 | AI Copilot / Review / Analyst                 | P2  | 12    | 100     | Sağlayıcı soyutlaması                                                                                                                                                          | Onaysız gönderim yok testi                      | todo    |
 | MAIL-130 | Partner org + sponsorships + BTM Admin        | P0  | 13    | 030,140 | Girişimci org aç, limit ata                                                                                                                                                    | İçerik erişimi olmadığını doğrulayan test       | todo    |
 | MAIL-131 | Platform Admin                                | P1  | 13    | 030     | Org/kullanım/kuyruk/SES görünümü                                                                                                                                               |                                                 | todo    |
@@ -106,3 +106,12 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 - Gönderim öncesi **seed-list/inbox testi** (GlockApps vb.) ve gerçek spam skoru (SpamAssassin) — dış hizmet.
 - Uyarı e-postası/bildirimi (Deliverability aksiyonları için) — bildirim altyapısı Faz 13/14 ile.
 - Kural kümesinin dil/sektör bazlı ayarlanması; kullanıcı geri bildirimiyle kalibrasyon.
+
+## Faz 11 devam işleri
+
+- Görsel tuval (sürükle-bırak akış çizimi) ve dalların yeniden birleşmesi; şimdilik liste tabanlı oluşturucu, terminal dallar.
+- Ek tetikleyiciler: form gönderimi, tarih alanı (doğum günü), e-posta etkileşimi (açtı/tıkladı), API olayı (Faz 18 public API ile).
+- Ek eylemler: etiket ekle/çıkar, listeye ekle, başka otomasyona geçir, bildirim; A/B dalı.
+- Akış yeniden girişi (re-entry) ve "hedef" (goal) çıkışları; şimdilik kişi başına bir kez.
+- Otomasyon içi e-postalar için günlük sınır/ısınma etkileşimi ayrı izlenmiyor (kampanya sınırıyla ortak).
+- Tetikleme gecikmesi: işçi 30 sn'de bir tarar; yüksek hacimde olay tabanlı (outbox) tetikleme düşünülebilir.

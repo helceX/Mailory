@@ -1,7 +1,7 @@
 import { readClickToken, readOpenToken, readViewToken } from "@mailory/core";
 import {
   asOrganizationId,
-  getCampaign,
+  getCampaignAny,
   getContactForSend,
   getLinkUrl,
   getOrganization,
@@ -101,7 +101,7 @@ export async function renderForView(
   const org = asOrganizationId(t.organizationId);
   const recipient = await getRecipient(deps.db, org, t.recipientId);
   if (!recipient) return null;
-  const campaign = await getCampaign(deps.db, org, recipient.campaignId);
+  const campaign = await getCampaignAny(deps.db, org, recipient.campaignId);
   const snapshot = campaign?.snapshot as CampaignSnapshot | null | undefined;
   if (!campaign || !snapshot) return null;
   const [contact, organization] = await Promise.all([

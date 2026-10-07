@@ -33,7 +33,17 @@ export async function createCampaign(
   return row!;
 }
 
+/** A user-visible campaign. Hidden automation-step campaigns are not found here (use getCampaignAny in the engine). */
 export async function getCampaign(
+  db: Database,
+  organizationId: OrganizationId,
+  id: string,
+) {
+  const row = await getCampaignAny(db, organizationId, id);
+  return row && row.kind === "campaign" ? row : null;
+}
+
+export async function getCampaignAny(
   db: Database,
   organizationId: OrganizationId,
   id: string,
@@ -57,6 +67,7 @@ export async function listCampaigns(
     .where(
       and(
         eq(campaigns.organizationId, organizationId),
+        eq(campaigns.kind, "campaign"),
         options.status ? eq(campaigns.status, options.status) : undefined,
       ),
     )
