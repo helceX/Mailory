@@ -18,7 +18,7 @@ export default async function HubAdminPage() {
   const mine = await listTemplatesFor(templateDeps(), actor);
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <BackLink href="/partner">BTM Admin</BackLink>
+      <BackLink href="/partner">Partner paneli</BackLink>
       <PageHeader
         title="Şablon Merkezi"
         description="Sponsorlu girişimcilerin kendi çalışma alanlarına kopyalayabileceği şablonlar. Yalnızca şablon içeriği paylaşılır."

@@ -268,3 +268,15 @@ export async function listDeletedOrganizations(db: Database) {
     deletedAt: new Date(x.deleted_at),
   }));
 }
+
+/** Platform admin support access: an explicit, visible owner membership (never a hidden impersonation). Idempotent. */
+export async function grantPlatformAdminAccess(
+  db: Database,
+  organizationId: OrganizationId,
+  userId: string,
+) {
+  await db.execute(sql`
+    insert into memberships (organization_id, user_id, role, status)
+    values (${organizationId}::uuid, ${userId}::uuid, 'owner', 'active')
+    on conflict (organization_id, user_id) do update set role = 'owner', status = 'active'`);
+}

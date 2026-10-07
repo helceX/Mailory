@@ -6,7 +6,7 @@ Amaç: BTM'nin (ve sponsor olduğu girişimcilerin) SendPulse'tan Mailory'ye **r
 
 - [ ] Prod ortamı hazır ve `/api/health/ready` yeşil (bkz. `MAILORY_RUNBOOK.md`).
 - [ ] SES üretim erişimi onaylı (sandbox dışı); DNS: gönderici alan adı için DKIM + sahiplik TXT + SPF/DMARC.
-- [ ] Platform yöneticisi `/platform`'dan **BTM partner kurumunu** oluşturdu; BTM yetkilisi daveti kabul etti.
+- [ ] BTM, diğer müşteriler gibi **standart bir çalışma alanı** olarak açıldı (kayıt veya platform yöneticisi); BTM yetkilisi sahip. Girişimci sponsorluğu gerekiyorsa platform yöneticisi BTM'yi isteğe bağlı olarak partner yapar.
 - [ ] Hukuki metinler hazır: aydınlatma metni, gizlilik politikası, veri işleme sözleşmesi (OPEN_ITEMS A11).
 - [ ] BTM'nin gönderici alan adı Mailory'de **Doğrulandı** durumunda; Deliverability Merkezi'nde kritik bulgu yok.
 

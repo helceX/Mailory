@@ -11,6 +11,7 @@ import {
   createOrganizationWithoutOwner,
   entitlementsOverview,
   getOrganizationMetrics,
+  grantPlatformAdminAccess,
   listDeletedOrganizations,
   restoreOrganization,
   listOrganizationsOverview,
@@ -284,5 +285,19 @@ export async function restoreOrgFor(deps: PlatformDeps, a: PlatformActor, id: st
   const done = await restoreOrganization(deps.db, asOrganizationId(id), now(deps));
   if (!done) return fail("not_found");
   await audit(deps, a, id, "restored");
+  return { ok: true as const };
+}
+
+/**
+ * The platform owner has every right on every workspace: this adds them as a regular OWNER member. It is deliberately
+ * visible (they appear in the member list) and audited, rather than a silent impersonation.
+ */
+export async function joinOrgFor(deps: PlatformDeps, a: PlatformActor, id: string) {
+  const g = guard(a);
+  if (g) return g;
+  if (!(await getOrganizationMetrics(deps.db, asOrganizationId(id))))
+    return fail("not_found");
+  await grantPlatformAdminAccess(deps.db, asOrganizationId(id), a.userId);
+  await audit(deps, a, id, "admin_joined");
   return { ok: true as const };
 }

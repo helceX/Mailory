@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     activeOrg?.type === "partner" &&
     (context.organization.role === "owner" || context.organization.role === "admin")
   )
-    extra.push({ href: "/partner", label: "BTM Admin", key: "partner" });
+    extra.push({ href: "/partner", label: "Partner paneli", key: "partner" });
   if (context.user.isPlatformAdmin)
     extra.push({ href: "/platform", label: "Platform", key: "platform" });
 

@@ -471,6 +471,28 @@ export function RestoreOrg({ endpoint }: { endpoint: string }) {
   );
 }
 
+export function JoinOrg({ endpoint }: { endpoint: string }) {
+  const { error, busy, run } = useAct();
+  return (
+    <div className="flex flex-col gap-1">
+      <Button
+        variant="secondary"
+        disabled={busy}
+        onClick={() =>
+          void run(endpoint, "PATCH", { action: "join" }, "Sahip olarak eklendiniz.")
+        }
+      >
+        Sahip olarak katıl
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Tüm haklarla çalışma alanına girersiniz; üye listesinde görünür ve denetim
+        kaydına yazılır.
+      </p>
+      <FormError message={error} />
+    </div>
+  );
+}
+
 export function BackLink({
   href,
   children,

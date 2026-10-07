@@ -38,7 +38,7 @@ export const PLAN_LABELS: Record<PlanKey, string> = {
   growth: "Büyüme",
   pro: "Pro",
   enterprise: "Kurumsal",
-  btm_sponsored: "BTM Sponsorlu",
+  btm_sponsored: "Sponsorlu",
 };
 export const DEFAULT_PLAN: PlanKey = "free";
 

@@ -61,8 +61,8 @@ async function registerVerifiedLogin(page, email) {
 
   // ---- BTM opens a workspace for an entrepreneur
   await page.goto(`${BASE}/dashboard`);
-  await page.getByRole("link", { name: "BTM Admin" }).first().waitFor();
-  step("a partner organization gets the BTM Admin menu", true);
+  await page.getByRole("link", { name: "Partner paneli" }).first().waitFor();
+  step("a partner organization gets the Partner paneli menu", true);
   await page.goto(`${BASE}/partner`);
   const childName = `Girişimci ${Date.now()}`;
   const ownerEmail = `girisimci-${Date.now()}@example.com`;
@@ -102,7 +102,7 @@ async function registerVerifiedLogin(page, email) {
     psql(`select role from memberships where organization_id='${childId}'`) === "owner",
   );
   await ent.goto(`${BASE}/settings/plan`);
-  await ent.getByText("BTM Sponsorlu").first().waitFor();
+  await ent.getByText("Sponsorlu").first().waitFor();
   step(
     "the plan page shows the sponsored plan and the sponsor",
     (await ent.locator("main").innerText()).includes("BTM Test Merkezi"),

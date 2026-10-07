@@ -74,10 +74,7 @@ const { step, finish } = makeSteps();
     "read key identifies its organization and scope",
     me.status === 200 && meBody.scope === "read" && meBody.organization.id === orgId,
   );
-  step(
-    "responses are not cacheable",
-    me.headers.get("cache-control") === "no-store",
-  );
+  step("responses are not cacheable", me.headers.get("cache-control") === "no-store");
   const denied = await api(readKey, "/contacts", {
     method: "POST",
     body: JSON.stringify({ email: "x@example.org" }),
@@ -126,7 +123,9 @@ const { step, finish } = makeSteps();
 
   // ---- metering: 6 allowed requests so far? count what was billed
   const used = Number(
-    psql(`select coalesce(sum(count),0) from api_usage where organization_id='${orgId}'`),
+    psql(
+      `select coalesce(sum(count),0) from api_usage where organization_id='${orgId}'`,
+    ),
   );
   step(
     "only authenticated requests are metered (me, denied, create, dup, list, get = 6)",
@@ -142,7 +141,9 @@ const { step, finish } = makeSteps();
   step(
     "rejected requests are not metered",
     Number(
-      psql(`select coalesce(sum(count),0) from api_usage where organization_id='${orgId}'`),
+      psql(
+        `select coalesce(sum(count),0) from api_usage where organization_id='${orgId}'`,
+      ),
     ) === 6,
   );
   psql(
@@ -154,7 +155,10 @@ const { step, finish } = makeSteps();
     method: "POST",
     body: JSON.stringify({ emails: ["asla@example.org"], reason: "unsubscribe" }),
   });
-  step("suppressions can be added (write scope)", sup.status === 200 && (await sup.json()).added === 1);
+  step(
+    "suppressions can be added (write scope)",
+    sup.status === 200 && (await sup.json()).added === 1,
+  );
   const blocked = await api(writeKey, "/contacts", {
     method: "POST",
     body: JSON.stringify({ email: "asla@example.org" }),
@@ -183,7 +187,10 @@ const { step, finish } = makeSteps();
   await p2.getByRole("button", { name: "Anahtar oluştur" }).click();
   const keyB = (await p2.getByTestId("shown-once").innerText()).trim();
   const listB = await (await api(keyB, "/contacts")).json();
-  step("another workspace's key sees none of the first workspace's contacts", listB.data.length === 0);
+  step(
+    "another workspace's key sees none of the first workspace's contacts",
+    listB.data.length === 0,
+  );
   step(
     "…and cannot fetch them by id",
     (await api(keyB, `/contacts/${contact.id}`)).status === 404,
@@ -195,7 +202,10 @@ const { step, finish } = makeSteps();
   await row.getByRole("button", { name: "İptal et" }).click();
   await page.getByRole("button", { name: "İptal et" }).last().click();
   await row.getByText("İptal edildi").waitFor();
-  step("a revoked key stops working immediately", (await api(readKey, "/me")).status === 401);
+  step(
+    "a revoked key stops working immediately",
+    (await api(readKey, "/me")).status === 401,
+  );
 
   // ---- webhooks: validation, secret shown once, test ping queued
   await page.getByLabel("Adres (https)").fill("http://169.254.169.254/latest");
@@ -212,7 +222,9 @@ const { step, finish } = makeSteps();
   step(
     "webhook secret is shown once",
     secret.startsWith("whsec_") &&
-      psql(`select count(*) from webhook_endpoints where organization_id='${orgId}'`) === "1",
+      psql(
+        `select count(*) from webhook_endpoints where organization_id='${orgId}'`,
+      ) === "1",
   );
   await page.getByRole("button", { name: "Kopyaladım, kapat" }).click();
   await page.getByRole("button", { name: "Test gönder" }).click();
@@ -233,7 +245,9 @@ const { step, finish } = makeSteps();
 
   await browser.close();
   const unexpected = problems.filter(
-    (p) => !/status of (401|402|403|404|409)/.test(p) && !/HTTP (401|402|403|404|409)/.test(p),
+    (p) =>
+      !/status of (401|402|403|404|409)/.test(p) &&
+      !/HTTP (401|402|403|404|409)/.test(p),
   );
   if (unexpected.length) console.log("\nBrowser problems:\n" + unexpected.join("\n"));
   process.exit(finish(unexpected) || 0);

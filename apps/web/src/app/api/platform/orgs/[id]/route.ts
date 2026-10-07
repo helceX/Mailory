@@ -24,6 +24,7 @@ const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("suspend"), reason: z.string().trim().min(1).max(300) }),
   z.object({ action: z.literal("reinstate") }),
   z.object({ action: z.literal("restore") }),
+  z.object({ action: z.literal("join") }),
   z.object({
     action: z.literal("kind"),
     type: z.enum(["standard", "partner"]),
@@ -62,10 +63,12 @@ export function PATCH(
                 ? await platform.suspendFor(deps, admin, id, null)
                 : b.action === "restore"
                   ? await platform.restoreOrgFor(deps, admin, id)
-                  : await platform.setKindFor(deps, admin, id, {
-                      type: b.type,
-                      parentOrganizationId: b.parentOrganizationId,
-                    });
+                  : b.action === "join"
+                    ? await platform.joinOrgFor(deps, admin, id)
+                    : await platform.setKindFor(deps, admin, id, {
+                        type: b.type,
+                        parentOrganizationId: b.parentOrganizationId,
+                      });
     return r.ok ? NextResponse.json({ ok: true }) : serviceFailure(r);
   });
 }

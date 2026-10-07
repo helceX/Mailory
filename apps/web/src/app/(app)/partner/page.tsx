@@ -8,7 +8,7 @@ import { CreateOrgForm } from "@/components/platform/admin-forms";
 import { getOrgContext, orgDeps } from "@/lib/org/context";
 import { listChildrenFor } from "@/lib/partner/service";
 
-export const metadata = { title: "BTM Admin" };
+export const metadata = { title: "Partner paneli" };
 export const dynamic = "force-dynamic";
 
 export default async function PartnerPage() {
@@ -20,7 +20,7 @@ export default async function PartnerPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <PageHeader
-        title="BTM Admin"
+        title="Partner paneli"
         description="Sponsorlu girişimci çalışma alanları. Yalnızca durum ve kullanım görürsünüz; kişi listesi, kampanya içeriği ve raporlar görünmez."
         actions={
           <Link

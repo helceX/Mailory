@@ -29,7 +29,7 @@ export default async function ChildPage({
   const endpoint = `/api/partner/children/${id}`;
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <BackLink href="/partner">BTM Admin</BackLink>
+      <BackLink href="/partner">Partner paneli</BackLink>
       <PageHeader
         title={c.name}
         description={`${PLAN_LABELS[r.entitlements.planKey as keyof typeof PLAN_LABELS] ?? r.entitlements.planKey} · ${c.members} üye · ${c.contacts.toLocaleString("tr-TR")} kişi · bu ay ${c.sentThisMonth.toLocaleString("tr-TR")} e-posta`}

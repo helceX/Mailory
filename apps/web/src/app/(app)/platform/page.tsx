@@ -37,7 +37,7 @@ export default async function PlatformPage({
       />
       <CreateOrgForm
         endpoint="/api/platform/partners"
-        title="Partner kurum oluştur (ör. BTM)"
+        title="Partner kurum oluştur"
         hint="Bu kişi partnerin sahibi olur; davet e-postası gider."
         submit="Partner oluştur"
       />

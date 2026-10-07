@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import {
   BackLink,
   DailyLimit,
+  JoinOrg,
   KindControls,
   LimitsEditor,
   PlanPicker,
@@ -71,6 +72,7 @@ export default async function PlatformOrgPage({
           partners={partners}
         />
       </section>
+      <JoinOrg endpoint={endpoint} />
       <LimitsEditor endpoint={endpoint} rows={r.entitlements.rows} allowUnlimited />
       <SuspendControls
         endpoint={endpoint}
