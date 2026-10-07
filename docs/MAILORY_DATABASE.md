@@ -110,3 +110,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - `tracking_events` (type open|click, `is_bot`, `device`, `ip_hash`): ham IP/UA yok. İndeksler `(campaign_id, type, occurred_at)` ve `(link_id)`.
 - `campaign_recipients.opened_at / clicked_at`: ilk gerçek etkileşim; benzersiz sayılar `IS NOT NULL` sayımı.
 - Ekleme yönlü migration.
+
+## Faz 10 notları
+
+- Yeni tablo yok. `contacts.engagement_score` / `last_activity_at` (var olan sütunlar) gece işiyle dolar; bant skordan türetilir (saklanmaz).

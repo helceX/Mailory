@@ -1,4 +1,4 @@
-import { CSV_BOM, toCsvLine, type Permission } from "@mailory/core";
+import { CSV_BOM, reviewRates, toCsvLine, type Permission } from "@mailory/core";
 import {
   campaignStats,
   compareCampaigns,
@@ -46,7 +46,14 @@ export async function getCampaignReport(deps: AnalyticsDeps, actor: Actor, id: s
     topLinks(deps.db, org, id),
     engagementTimeline(deps.db, org, id),
   ]);
-  return { ok: true as const, stats, rates: rates(stats), links, timeline };
+  return {
+    ok: true as const,
+    stats,
+    rates: rates(stats),
+    links,
+    timeline,
+    findings: reviewRates(stats),
+  };
 }
 
 export async function getAnalyticsOverview(

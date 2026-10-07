@@ -1,4 +1,6 @@
+import type { Finding } from "@mailory/core/shared";
 import type { CampaignStats } from "@mailory/db";
+import { HealthPanel } from "../deliverability/health-panel";
 import { Table, TableContainer, TBody, TD, TH, THead } from "@mailory/ui";
 import { Kpi, KpiGrid, fmtNum, fmtPct } from "./kpi";
 
@@ -18,11 +20,13 @@ export function CampaignReport({
   rates,
   links,
   timeline,
+  findings = [],
 }: {
   stats: CampaignStats;
   rates: Rates;
   links: { url: string; clicks: number; uniqueClicks: number }[];
   timeline: { bucket: Date; opens: number; clicks: number }[];
+  findings?: Finding[];
 }) {
   return (
     <section aria-labelledby="report" className="flex flex-col gap-4">
@@ -73,6 +77,13 @@ export function CampaignReport({
         sayılmaz. IP adresi ve cihaz bilgisi ham haliyle saklanmaz.
       </p>
 
+      {findings.length > 0 ? (
+        <HealthPanel
+          score={Math.max(0, 100 - findings.length * 15)}
+          band={findings.some((f) => f.severity === "critical") ? "risky" : "attention"}
+          findings={findings}
+        />
+      ) : null}
       <Timeline points={timeline} />
 
       <div>

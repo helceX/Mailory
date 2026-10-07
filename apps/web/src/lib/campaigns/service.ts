@@ -1,6 +1,13 @@
 import {
   applyMerge,
   collectMergeKeys,
+  domainOfEmail,
+  findCoveringDomain,
+  healthBand,
+  reviewAudience,
+  reviewContent,
+  reviewSender,
+  scoreFindings,
   DEFAULT_UTM,
   evaluateReadiness,
   hasBlockers,
@@ -15,7 +22,9 @@ import {
   type ReadinessIssue,
 } from "@mailory/core";
 import {
+  audienceEngagement,
   countSendable,
+  getOrgSendLimit,
   createCampaign,
   deleteCampaignDraft,
   getCampaign,
@@ -109,6 +118,7 @@ function audit(
 // ---- context -----------------------------------------------------------------------------------
 
 type Context = {
+  domain: { spfState: string | null; dmarcState: string | null } | null;
   identity: ReturnType<typeof viewIdentities>[number] | null;
   template: { archived: boolean; version: number; doc: EmailDoc | null } | null;
   audienceFilter: ContactFilter | null;
@@ -139,8 +149,15 @@ async function loadContext(
     viewIdentities(identities, domains).find((i) => i.id === row.senderIdentityId) ??
     null;
   const parsed = found ? emailDocSchema.safeParse(found.version.doc) : null;
+  const verifiedDomains = domains.filter((d) => d.status === "verified");
+  const senderDomain = identity
+    ? findCoveringDomain(verifiedDomains, domainOfEmail(identity.fromEmail) ?? "")
+    : null;
   return {
     identity,
+    domain: senderDomain
+      ? { spfState: senderDomain.spfState, dmarcState: senderDomain.dmarcState }
+      : null,
     template: found
       ? {
           archived: Boolean(found.template.archivedAt),
@@ -248,7 +265,28 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
       severity: "blocker",
       message: "Şablon içeriği okunamadı.",
     });
-  return { ctx, issues, audienceCount, customKeys };
+  const [audienceHealth, dailyLimit] = await Promise.all([
+    ctx.audienceFilter && ctx.audienceExists
+      ? audienceEngagement(deps.db, actor.organizationId, ctx.audienceFilter)
+      : null,
+    getOrgSendLimit(deps.db, actor.organizationId),
+  ]);
+  // Missing unsubscribe link / unverified sender are readiness blockers already; don't list them twice.
+  const findings = [
+    ...reviewContent({
+      subject: row.subject,
+      preheader: row.preheader,
+      doc: ctx.template?.doc ?? null,
+      hasUnsubscribe: hasUnsubscribe(ctx.template?.doc ?? null),
+    }),
+    ...(ctx.identity
+      ? reviewSender(ctx.domain ? { verified: true, ...ctx.domain } : null)
+      : []),
+    ...reviewAudience(audienceHealth, dailyLimit),
+  ].filter((f) => f.code !== "no_unsubscribe" && f.code !== "sender_unverified");
+  const score = scoreFindings(findings);
+  const health = { score, band: healthBand(score), findings };
+  return { ctx, issues, audienceCount, customKeys, health };
 }
 
 // ---- queries -----------------------------------------------------------------------------------
@@ -281,6 +319,7 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
         ? null
         : await recipientCounts(deps.db, actor.organizationId, row.id),
     issues: r.issues,
+    health: r.health,
     audienceCount: r.audienceCount,
     requireApproval: policy.requireApproval,
     sender: r.ctx.identity

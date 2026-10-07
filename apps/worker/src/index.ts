@@ -4,6 +4,7 @@ import { createDb } from "@mailory/db";
 import { createDnsResolver, createDomainProvider } from "@mailory/deliverability";
 import { createEmailTransport } from "@mailory/sending";
 import { startCampaignSend } from "./jobs/campaign-send";
+import { startEngagementRefresh } from "./jobs/engagement";
 import { startDomainCheck } from "./jobs/domain-check";
 
 const HEARTBEAT_KEY = "mailory:worker:heartbeat";
@@ -39,12 +40,18 @@ const campaignSend = await startCampaignSend({
   },
   log: (message, data) => console.log(`[worker] ${message}`, JSON.stringify(data)),
 });
-console.log("[worker] started (domain-check, campaign-send scheduled)");
+const engagement = await startEngagementRefresh({
+  redis,
+  db,
+  log: (message, data) => console.log(`[worker] ${message}`, JSON.stringify(data)),
+});
+console.log("[worker] started (domain-check, campaign-send, engagement scheduled)");
 
 async function shutdown() {
   clearInterval(timer);
   await domainCheck.close();
   await campaignSend.close();
+  await engagement.close();
   await redis.quit();
   await pool.end();
   process.exit(0);

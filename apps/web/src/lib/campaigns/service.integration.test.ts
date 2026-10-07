@@ -430,6 +430,31 @@ suite("campaign engine (real Postgres)", () => {
     });
   });
 
+  describe("content health", () => {
+    it("scores a shouty subject and does not repeat readiness blockers", async () => {
+      const w = await workspace();
+      const id = await readyDraft(w);
+      await svc.updateCampaignFor(deps(), w.actor, id, {
+        subject: "ÜCRETSİZ KAZAN HEMEN!!!",
+      });
+      const r = await svc.getCampaignFor(deps(), w.actor, id);
+      if (!r.ok) throw new Error();
+      const codes = r.health.findings.map((f) => f.code);
+      expect(codes).toEqual(
+        expect.arrayContaining(["subject_caps", "subject_punct", "subject_spam_words"]),
+      );
+      expect(codes).not.toContain("no_unsubscribe");
+      expect(r.health.score).toBeLessThan(85);
+      await svc.updateCampaignFor(deps(), w.actor, id, {
+        subject: "Mart ayı bülteni: yeni özellikler",
+      });
+      const clean = await svc.getCampaignFor(deps(), w.actor, id);
+      expect(clean.ok && clean.health.findings.map((f) => f.code)).not.toContain(
+        "subject_caps",
+      );
+    });
+  });
+
   describe("pause and resume", () => {
     it("pauses only a sending campaign and resumes only a paused one; both are RBAC-guarded and audited", async () => {
       const w = await workspace();

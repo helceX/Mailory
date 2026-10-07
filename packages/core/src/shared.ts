@@ -16,3 +16,4 @@ export * from "./image-sniff";
 export * from "./email-markup";
 export * from "./domain";
 export * from "./campaign";
+export * from "./deliverability";

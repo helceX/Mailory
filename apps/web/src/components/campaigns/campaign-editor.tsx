@@ -8,6 +8,8 @@ import {
   slugifyUtm,
   type CampaignAudience,
   type CampaignUtm,
+  type Finding,
+  type HealthBand,
   type ReadinessIssue,
 } from "@mailory/core/shared";
 import {
@@ -20,6 +22,7 @@ import {
   Input,
   NativeSelect,
 } from "@mailory/ui";
+import { HealthPanel } from "../deliverability/health-panel";
 import { FormError } from "../auth/auth-card";
 import { apiCall } from "../audience/labels";
 
@@ -40,6 +43,7 @@ export type EditorProps = {
     rejectionReason: string | null;
   };
   issues: ReadinessIssue[];
+  health: { score: number; band: HealthBand; findings: Finding[] };
   audienceCount: number;
   requireApproval: boolean;
   canSend: boolean;
@@ -406,6 +410,11 @@ export function CampaignEditor(props: EditorProps) {
           </p>
         ) : null}
 
+        <HealthPanel
+          score={props.health.score}
+          band={props.health.band}
+          findings={props.health.findings}
+        />
         <Button onClick={save} disabled={!dirty || busy !== null}>
           {busy === "save" ? "Kaydediliyor…" : "Kaydet"}
         </Button>

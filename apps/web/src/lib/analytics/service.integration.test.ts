@@ -9,11 +9,7 @@ import {
   createDb,
   type Database,
 } from "@mailory/db";
-import {
-  addTestMember,
-  createTestUser,
-  createTwoTenants,
-} from "@mailory/db/testing";
+import { addTestMember, createTestUser, createTwoTenants } from "@mailory/db/testing";
 import { DEFAULT_UTM, type OrgRole } from "@mailory/core";
 import type { Actor } from "../org/service";
 import {

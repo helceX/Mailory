@@ -150,3 +150,8 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - Uç noktalar: `/o/<token>.gif`, `/c/<token>`, `/view/<token>` (hepsi oturumsuz, imzalı token; çerez yok). Tokenlar `signed-token.ts`'de amaca bağlı (`open|click|view|unsubscribe`).
 - `@mailory/db` `tracking.ts`: bağlantı kaydı, olay kaydı (alıcı org/kampanya eşleşmesi doğrulanarak), `campaignStats`, `topLinks`, `engagementTimeline`, `compareCampaigns`, `orgOverview`.
 - Web: `lib/analytics/service.ts` (RBAC `analytics:read`, tenant izolasyonu), `/analytics`, kampanya sayfasında Performans bölümü, dashboard KPI'ları, `/api/analytics/export` (CSV).
+
+## 17. Teslim edilebilirlik (Faz 10)
+
+- `@mailory/core/deliverability.ts` (saf kurallar + skor + etkileşim formülü); web `lib/deliverability/service.ts` (Merkez), kampanya servisinde `health` (düzenleyicide İçerik sağlığı paneli), analitik raporunda sonuç tabanlı bulgular.
+- `@mailory/db` `deliverability.ts`: `refreshEngagement` (gece işi), `audienceEngagement`, `listHealth`. Worker: `engagement-refresh` (cron `0 3 * * *` UTC).

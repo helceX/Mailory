@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/audience/contacts", label: "Kitle", icon: Users },
   { href: "/campaigns", label: "Kampanyalar", icon: Mail },
   { href: "/analytics", label: "Analitik", icon: BarChart3 },
+  { href: "/deliverability", label: "Teslim edilebilirlik", icon: ShieldCheck },
   { href: "/templates", label: "Şablonlar", icon: LayoutTemplate },
   { href: "/brand-kit", label: "Marka kiti", icon: Palette },
   { href: "/settings/members", label: "Ayarlar", icon: Settings },
@@ -29,5 +30,4 @@ export const NAV_ITEMS: NavItem[] = [
 export const PLANNED_NAV: NavItem[] = [
   { href: "/automation", label: "Automation", icon: Workflow },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/deliverability", label: "Deliverability", icon: ShieldCheck },
 ];

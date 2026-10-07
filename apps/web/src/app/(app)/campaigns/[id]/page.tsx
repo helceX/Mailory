@@ -90,6 +90,7 @@ export default async function CampaignPage({
             rates={report.rates}
             links={report.links}
             timeline={report.timeline}
+            findings={report.findings}
           />
         ) : null}
       </div>
@@ -123,6 +124,7 @@ export default async function CampaignPage({
           rejectionReason: c.rejectionReason,
         }}
         issues={result.issues}
+        health={result.health}
         audienceCount={result.audienceCount}
         requireApproval={result.requireApproval}
         canSend={canSend}
