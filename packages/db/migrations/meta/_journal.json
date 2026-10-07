@@ -22,6 +22,13 @@
       "when": 1791367005729,
       "tag": "0002_absent_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791370316192,
+      "tag": "0003_fearless_ultimates",
+      "breakpoints": true
     }
   ]
 }

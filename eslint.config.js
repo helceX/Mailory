@@ -12,6 +12,7 @@ export default tseslint.config(
       sourceType: "commonjs",
       globals: {
         require: "readonly",
+        Buffer: "readonly",
         process: "readonly",
         console: "readonly",
         fetch: "readonly",

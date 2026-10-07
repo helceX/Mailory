@@ -38,7 +38,7 @@ Etkin limit = override ?? plan_entitlement. Tek giriş: `checkEntitlement(orgId,
 - `sender_domains` (organization_id, domain unique-lower **global** (aynı domain iki org'da olamaz), status `pending|verified|failed`, dkim_tokens jsonb, spf_ok, dkim_ok, dmarc_policy, last_checked_at, verified_at)
 - `sender_identities` (organization_id, sender_domain_id NULL, from_name, from_email, reply_to, is_default, verified_at)
 - `brand_kits` (organization_id unique, logo_key, colors jsonb, fonts jsonb, button_style jsonb, footer_html, social_links jsonb)
-- `templates` (organization_id, name, category, scope `org|library|partner_shared`, source_template_id, archived_at, current_version_id) · `template_versions` (template_id, organization_id, version, blocks jsonb, html_cache, text_cache, created_by)
+- `templates` (organization_id, name, category, scope `org|library|partner_shared`, source_template_id, archived_at, current_version_id) · `template_versions` (template_id, organization_id, version, doc jsonb, note, created_by) — değişmez; HTML/metin saklanmaz, render'da üretilir
 - `campaigns` (organization_id, name, status, sender_identity_id, reply_to, subject, preheader, template_version_id, content_snapshot jsonb, audience jsonb `{list_ids, segment_id, exclude…}`, tracking jsonb `{opens, clicks}`, utm jsonb, scheduled_at, started_at, completed_at, created_by, submitted_by, approved_by, approved_at, ab_test jsonb NULL)
 - `campaign_recipients` (campaign_id, organization_id, contact_id, email, status, ses_message_id, attempts, last_error, queued_at, sent_at, delivered_at, bounced_at, complained_at) — unique(campaign_id, contact_id); indeks (campaign_id, status)
 - `links` (campaign_id, organization_id, url, position) · `link_clicks` (link_id, recipient_id, organization_id, clicked_at, device, ip_hash, country, is_bot)
@@ -76,3 +76,10 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - Drizzle'da tablo `listContactLinks` olarak dışa aktarılır (SQL adı `list_contacts`); `listContacts` repository fonksiyonudur.
 - `import_jobs` içe aktarma özetini, ilk 50 hatayı ve izin beyanının kanıtını (`consent_attested_at`, kullanıcı) tutar.
 - `suppressions.reason`: unsubscribe | hard_bounce | complaint | manual | import.
+
+## Faz 5 notları
+
+- `assets` (organization_id, content_type, size, sha256, filename, data bytea, created_by): yalnızca doğrulanmış raster görseller; herkese açık okuma `getAssetPublic(id)` (uuid kimlik bilgisidir), yazma/sayım tenant-scoped.
+- `brand_kits` (organization_id **unique**, logo_asset_id → assets, renkler, font, button_radius, footer_text, social_links jsonb). Başka org'a ait logo kimliği bağlanmaz (yoksayılır).
+- `templates`: `unique(organization_id, lower(name)) WHERE archived_at IS NULL` (kısmi); `current_version_id` düz uuid (döngüsel FK yok).
+- Kütüphane şablonları DB'de değil, kodda (`packages/email/src/library.ts`).

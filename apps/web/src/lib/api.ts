@@ -103,6 +103,7 @@ const SERVICE_STATUS: Record<string, [number, string]> = {
   suppressed: [409, "Bu adres bastırma listesinde."],
   invalid: [400, "Geçersiz istek."],
   too_large: [413, "Dosya çok büyük."],
+  conflict: [409, "Kayıt başka biri tarafından değiştirildi."],
 };
 
 /** Maps a service `Failure` to an HTTP error, preferring the service's own user-facing message. */

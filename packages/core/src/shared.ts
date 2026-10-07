@@ -10,3 +10,7 @@ export * from "./email";
 export * from "./segment-fields";
 export * from "./custom-fields";
 export * from "./import-mapping";
+export * from "./email-doc";
+export * from "./brand";
+export * from "./image-sniff";
+export * from "./email-markup";

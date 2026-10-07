@@ -104,3 +104,20 @@ Yerel PostgreSQL 16, **25.000 contact**, tek org (`PERF=1 pnpm exec vitest run a
 | 5.000 mevcut kişiyi upsert               | 0,6 sn |
 
 Sınırlar (dürüstçe): ölçüm 25k'da; 100k+/1M'de **ölçülmedi**. Alt dize arama `ILIKE '%…%'` kullanır (org içinde tarama, trigram indeksi yok); 100k+ için `pg_trgm` GIN indeksi gerekir (MAIL-192). Toplam sayı `count(*)`'tır; çok büyük org'larda önbelleğe alınmalı.
+
+## 12. E-posta üretim hattı ve güvenlik (Faz 5)
+
+```
+EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet (immutable sürüm)
+        │
+        └─► renderEmail(doc, {kişi değerleri, appUrl, marka logosu})
+              • metin: escape → markdown-lite → birleştirme({{alan|yedek}})
+              • HTML bloğu: sanitize-html allow-list → birleştirme
+              • bağlantı: allow-list + encodeURIComponent; geçersiz → "#"
+              ▼
+         { html (tablo+inline CSS, @media 620px), text, unknownKeys, warnings }
+```
+
+- Gönderimde (Faz 8) aynı `renderEmail` kişi başına çağrılır; bağlantı yeniden yazımı (izleme/UTM) render çıktısı üzerinde yapılır.
+- Önizleme uç noktası gönderilecek HTML'i üretir; `sandbox` iframe + `CSP: sandbox` ile gösterilir.
+- **Doğrulanmadı:** gerçek e-posta istemcilerinde (Outlook masaüstü, Gmail, Apple Mail) görünüm. Yapısal kurallara (tablo, inline CSS, betik/harici CSS yok, mobil `@media`) uyuluyor ama istemci testi (Litmus/Email on Acid) BTM pilotundan önce yapılmalı (MAIL-195).

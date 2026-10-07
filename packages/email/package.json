@@ -1,0 +1,21 @@
+{
+  "name": "@mailory/email",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mailory/core": "workspace:*",
+    "sanitize-html": "2.18.0"
+  },
+  "devDependencies": {
+    "@mailory/validation": "workspace:*",
+    "@types/node": "22.15.0",
+    "@types/sanitize-html": "2.16.2",
+    "typescript": "6.0.3"
+  }
+}

@@ -40,3 +40,4 @@ export * from "./repositories/audit";
 export * from "./repositories/contacts";
 export * from "./repositories/audience";
 export * from "./segments";
+export * from "./repositories/templates";

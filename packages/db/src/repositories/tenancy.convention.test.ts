@@ -18,6 +18,8 @@ const GLOBAL_REPOSITORY_FUNCTIONS = new Set([
   "setActiveOrganization", // takes organizationId inside an input object and verifies membership
   // audit.ts — write-only; the org travels inside the entry (null for platform-level events)
   "recordAudit",
+  // templates.ts — public image bytes, addressed by an unguessable asset id (like any image URL in an email)
+  "getAssetPublic",
 ]);
 // Identity tables (users, sessions, tokens, outbox) are global by design.
 const EXEMPT_FILES = new Set(["auth.ts"]);
