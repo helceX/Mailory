@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn, Wordmark } from "@mailory/ui";
+import { LogoutButton } from "./logout-button";
 import { NAV_ITEMS } from "./nav-config";
 
-export function AppSidebar() {
+export function AppSidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r bg-surface md:flex md:flex-col">
@@ -39,6 +40,12 @@ export function AppSidebar() {
           );
         })}
       </nav>
+      <div className="flex flex-col gap-1 border-t p-3">
+        <p className="truncate px-3 text-xs text-muted-foreground" title={userName}>
+          {userName}
+        </p>
+        <LogoutButton />
+      </div>
     </aside>
   );
 }

@@ -17,7 +17,8 @@
   "dependencies": {
     "@mailory/config": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "pg": "8.23.0"
+    "pg": "8.23.0",
+    "@mailory/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.15.0",

@@ -4,3 +4,6 @@ export * from "./components/badge";
 export * from "./components/empty-state";
 export * from "./components/skeleton";
 export * from "./components/wordmark";
+export * from "./components/input";
+export * from "./components/label";
+export * from "./components/field";

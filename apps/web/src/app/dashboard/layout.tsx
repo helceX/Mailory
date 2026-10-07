@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
+import { getCurrentUser } from "@/lib/auth/session";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export const dynamic = "force-dynamic";
+
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   return (
     <div className="flex min-h-screen">
       <a
@@ -10,7 +16,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       >
         Skip to content
       </a>
-      <AppSidebar />
+      <AppSidebar userName={`${user.firstName} ${user.lastName}`} />
       <main
         id="main-content"
         tabIndex={-1}

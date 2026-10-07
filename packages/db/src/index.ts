@@ -32,3 +32,6 @@ export async function checkDb(pool: Pool, timeoutMs = 2000): Promise<boolean> {
     return false;
   }
 }
+
+export * from "./schema/index";
+export * from "./repositories/auth";

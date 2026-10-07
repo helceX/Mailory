@@ -12,19 +12,24 @@
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "5.3.0",
     "@mailory/config": "workspace:*",
+    "@mailory/core": "workspace:*",
     "@mailory/db": "workspace:*",
     "@mailory/ui": "workspace:*",
+    "@mailory/validation": "workspace:*",
     "ioredis": "6.0.0",
     "lucide-react": "1.47.0",
     "next": "16.3.5",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "tailwindcss": "4.3.3",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "drizzle-orm": "0.45.2"
   }
 }
