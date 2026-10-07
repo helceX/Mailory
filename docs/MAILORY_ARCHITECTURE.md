@@ -1,6 +1,7 @@
 # Mailory — Architecture
 
 ## 1. Topoloji (Railway, ayrı project)
+
 ```
  Browser ─► web (Next.js, stateless) ─► Postgres (primary)
                 │                          ▲
@@ -10,12 +11,14 @@
                 │     worker (BullMQ) ─► Amazon SES ─► SNS ─► web:/api/webhooks/ses
                 └─► Object storage (S3/R2: logo, import dosyaları, export)
 ```
-- **Faz 1 (sade):** `web`, `worker`, Postgres, Redis = 4 servis. `web` içinde zamanlayıcı yok; zamanlama worker'da *repeatable job*.
+
+- **Faz 1 (sade):** `web`, `worker`, Postgres, Redis = 4 servis. `web` içinde zamanlayıcı yok; zamanlama worker'da _repeatable job_.
 - Migration: web deploy öncesi `pnpm db:migrate` (release command). Forward-only, additive-first.
 - Health: `GET /api/health` (liveness) ve `GET /api/health/ready` (DB + Redis). Worker: HTTP'siz, Redis heartbeat anahtarı → platform admin panelinde görünür.
 - Sır yönetimi: yalnızca Railway Variables; Zod ile boot'ta doğrulama; DKIM/SES sırları loglanmaz; org'a ait üçüncü taraf sırları (ileride) AES-256-GCM ile şifreli saklanır (`APP_ENCRYPTION_KEY`).
 
 ## 2. Monorepo
+
 ```
 apps/web        Next.js (UI + API route handlers, server actions yalnızca UI içi)
 apps/worker     BullMQ işçileri: send, schedule, ses-events, import, scores, domain-check
@@ -27,9 +30,11 @@ packages/validation  Paylaşılan Zod şemaları
 packages/email  EmailTransport (console/ses), şablon render, MIME, tracking URL imzaları
 packages/ai     Sağlayıcı soyutlaması (V2)
 ```
+
 Kural: `core` ve `email` saf (IO'suz) → birim test; IO `db` ve uygulamalardadır.
 
 ## 3. Tenancy ve yetkilendirme
+
 - Her tenant tablosunda `organization_id NOT NULL`, ilk sütun bileşik indekslerde.
 - `db` repository fonksiyonları `(db, organizationId: OrganizationId, …)` imzası zorunlu; org id yalnızca oturum üyeliğinden çözülür (`getOrgContext`), istemci girdisi doğrulanır.
 - Aktif org seçimi: kullanıcı birden çok org üyesi olabilir (BTM yöneticisi + kendi girişimci org'u); aktif org cookie'de tutulur ama **her istekte üyelik tablosuna karşı doğrulanır**.
@@ -39,6 +44,7 @@ Kural: `core` ve `email` saf (IO'suz) → birim test; IO `db` ve uygulamalardad�
 - Test zorunluluğu: her liste/detay/mutasyon için A→B negatif test.
 
 ## 4. Gönderim hattı
+
 ```
 Campaign(scheduled) ──(worker: schedule tick)──► materialize recipients
    │ audience = liste ∪ segment → suppression/consent/unsub filtrele → entitlement kontrol
@@ -50,6 +56,7 @@ render (kişiselleştirme + link yeniden yazma + pixel + List-Unsubscribe) ─�
                                                 ▼ kalıcı (4xx, MessageRejected) → failed
 SES → SNS → /api/webhooks/ses → email_events (idempotent) → recipient.status (delivered/bounced/complained), suppression, org sağlık sayaçları
 ```
+
 - Durum makinesi: `queued → processing → sent → delivered | bounced | complained | rejected | failed` (yalnızca ileri geçişler; geç gelen olay daha ileri durumu geriye almaz).
 - İdempotency: `UNIQUE(campaign_id, contact_id)`; worker işi `recipient_id` ile `jobId`; SES event `UNIQUE(provider_event_id)`; `ON CONFLICT DO NOTHING`.
 - Kampanya durumu: `draft → review → scheduled → sending → sent → completed`; `review` yalnızca approval politikası açıksa; `sending` sırasında iptal = `canceled` (kalan queued → `canceled`).
@@ -57,21 +64,27 @@ SES → SNS → /api/webhooks/ses → email_events (idempotent) → recipient.st
 - Gönderen kimliği: doğrulanmamış domain ile kampanya gönderimi **reddedilir**.
 
 ## 5. Tracking
+
 - Pixel: `/t/o/{token}.gif`; link: `/t/c/{token}` → 302. `token` = HMAC imzalı `(recipient_id, link_id)`; açık yönlendirme yok (hedef URL DB'den, imzalı token'dan değil).
 - Bot/Apple MPP filtresi: user-agent + saniyeler içinde çoklu açılma; açılma "tahmini" etiketi.
 - UTM: gönderim anında link yeniden yazımında uygulanır.
 
 ## 6. Domain doğrulama
+
 SES `CreateEmailIdentity` (Easy DKIM, 3 CNAME) + SPF TXT + DMARC TXT önerisi üretilir; `domain-check` job'ı DNS'i (DoH/`dns.resolve`) yoklar, SES `GetEmailIdentity` doğrulama durumunu okur. DNS kayıtları kullanıcı dostu açıklamalarla sunulur.
 
 ## 7. API katmanı
+
 Route handler'lar ince: `auth → authz → validate (Zod) → service (core/db) → audit`. İş mantığı `core`/`db`'de olduğundan V2'de `/api/v1/*` (API key + scope) aynı servisleri çağırır. Hata biçimi: `{error:{code,message,requestId}}`.
 
 ## 8. Güvenlik kontrol listesi
+
 Argon2id, oturum cookie `__Host-` + httpOnly + SameSite=Lax + Secure, Origin/Referer CSRF kontrolü (CiM deseni), Redis rate limit (login, signup, import, test-send, unsubscribe), Zod giriş doğrulama, parametreli SQL (segment AST beyaz liste), HTML sanitizasyonu (HTML bloğu için allow-list; scriptler atılır), dosya yüklemede MIME + boyut + uzantı sınırı, CSV formül enjeksiyonu kaçışı (export), SNS imza doğrulaması (sertifika URL'i `sns.*.amazonaws.com` doğrulanır), audit log, CSP başlıkları, secret taraması CI'da.
 
 ## 9. Gözlemlenebilirlik
+
 Yapılandırılmış JSON log (`request_id`, `organization_id`, `user_id`, `job_id`), Sentry (DSN opsiyonel), kuyruk derinliği/başarısızlık sayaçları platform admin panelinde, SES hesap durumu (bounce/complaint oranları) periyodik çekilir.
 
 ## 10. Performans
+
 Keyset sayfalama, `(organization_id, …)` bileşik indeksleri, `lower(email)` unique indeksi, import `COPY`/toplu `INSERT … ON CONFLICT`, event tablosu aylık partisyon adayı (100K+ ölçeği için), analitik önbelleği `campaign_stats` toplama tablosu (olaylarla artımlı güncellenir).

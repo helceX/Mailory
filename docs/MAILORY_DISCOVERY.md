@@ -4,13 +4,13 @@ Tarih: 2026-10-07 · Kapsam: salt-okunur audit. Hiçbir mevcut sistem değiştir
 
 ## 1. Mevcut durum
 
-| Kaynak | Durum |
-|---|---|
-| `helceX/Mailory` | Boş (yalnızca `README.md`, 1 commit). Greenfield. Geliştirme dalı: `claude/mailory-saas-platform-hkk3r7`. |
-| `helceX/CiM` (Mediaory — "Communication Intelligence Platform") | Erişildi (read-only klon). 828 dosya, pnpm monorepo, production'da çalışan çok kiracılı SaaS. |
-| `helceX/HRghost`, `helceX/brand-kit` | Listede var; bu audit kapsamında incelenmedi. `brand-kit` (fork) Brand Kit modülü için ileride bakılabilir. |
-| Railway | **Doğrudan denetlenemedi**: bu oturumda Railway CLI/token/MCP yok. Bulgular CiM repo'sundaki referanslardan çıkarıldı (bkz. §4). Mevcut Railway projesine dokunulmadı. |
-| Yerel ortam | Node 22.22, pnpm 10.28, PostgreSQL 16 (kurulu, kapalı), Redis 7, Docker CLI var. Entegrasyon testleri yerelde çalıştırılabilir. |
+| Kaynak                                                          | Durum                                                                                                                                                                  |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `helceX/Mailory`                                                | Boş (yalnızca `README.md`, 1 commit). Greenfield. Geliştirme dalı: `claude/mailory-saas-platform-hkk3r7`.                                                              |
+| `helceX/CiM` (Mediaory — "Communication Intelligence Platform") | Erişildi (read-only klon). 828 dosya, pnpm monorepo, production'da çalışan çok kiracılı SaaS.                                                                          |
+| `helceX/HRghost`, `helceX/brand-kit`                            | Listede var; bu audit kapsamında incelenmedi. `brand-kit` (fork) Brand Kit modülü için ileride bakılabilir.                                                            |
+| Railway                                                         | **Doğrudan denetlenemedi**: bu oturumda Railway CLI/token/MCP yok. Bulgular CiM repo'sundaki referanslardan çıkarıldı (bkz. §4). Mevcut Railway projesine dokunulmadı. |
+| Yerel ortam                                                     | Node 22.22, pnpm 10.28, PostgreSQL 16 (kurulu, kapalı), Redis 7, Docker CLI var. Entegrasyon testleri yerelde çalıştırılabilir.                                        |
 
 > "Media Takip Merkezi" ifadesi CiM kodunda birebir geçmiyor. CiM'in giriş yapılmış paneli (`.mp` kabuğu: `apps/web/src/app/panel.css`, `(app)/layout.tsx`, `app-sidebar.tsx`, `kpi-row.tsx`) medya takip ürünü olduğundan tasarım referansı olarak bu panel alındı. (Varsayım — DECISIONS D-004.)
 
@@ -30,16 +30,16 @@ Tarih: 2026-10-07 · Kapsam: salt-okunur audit. Hiçbir mevcut sistem değiştir
 
 ## 3. Yeniden kullanılabilir parçalar
 
-| CiM parçası | Mailory'de kullanım | Yöntem |
-|---|---|---|
+| CiM parçası                                                                                                           | Mailory'de kullanım     | Yöntem                                                               |
+| --------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------- |
 | `packages/ui` (Button, Input, Field, Badge, Dialog, Sheet, Select, Dropdown, Tooltip, Checkbox, Skeleton, EmptyState) | Component system temeli | **Kopyala + uyarla** (paket adı `@mailory/ui`; CiM'e bağımlılık yok) |
-| `tokens.css` (oklch token seti, radius/space ölçeği, light/dark) | Token sistemi | Kopyala; marka rengi Mailory'e özgü yeniden tanımla |
-| `panel.css` + sidebar/topbar/KPI row/command palette/mobile nav kalıpları | Kabuk dili | Desenleri uygula, dosyaları birebir kopyalama |
-| `core/password.ts` (Argon2id), `authz.ts` desenleri | Auth/RBAC | Desen olarak yeniden yaz |
-| `db/tenant-scope.ts`, tenant-isolation test deseni | Tenant izolasyonu | Desen |
-| `same-origin.ts`, `rate-limit.ts`, `turnstile.ts` | CSRF/abuse koruması | Kopyala + test |
-| `config` Zod env doğrulaması | Env | Desen |
-| Dockerfile'lar, CI workflow | Deploy/CI | Uyarla (paket adları, matrix) |
+| `tokens.css` (oklch token seti, radius/space ölçeği, light/dark)                                                      | Token sistemi           | Kopyala; marka rengi Mailory'e özgü yeniden tanımla                  |
+| `panel.css` + sidebar/topbar/KPI row/command palette/mobile nav kalıpları                                             | Kabuk dili              | Desenleri uygula, dosyaları birebir kopyalama                        |
+| `core/password.ts` (Argon2id), `authz.ts` desenleri                                                                   | Auth/RBAC               | Desen olarak yeniden yaz                                             |
+| `db/tenant-scope.ts`, tenant-isolation test deseni                                                                    | Tenant izolasyonu       | Desen                                                                |
+| `same-origin.ts`, `rate-limit.ts`, `turnstile.ts`                                                                     | CSRF/abuse koruması     | Kopyala + test                                                       |
+| `config` Zod env doğrulaması                                                                                          | Env                     | Desen                                                                |
+| Dockerfile'lar, CI workflow                                                                                           | Deploy/CI               | Uyarla (paket adları, matrix)                                        |
 
 Kopyalama gerekçesi: CiM production sistemi; Mailory'nin ona derleme-zamanı bağımlılığı olmamalı (izolasyon + bağımsız yayın döngüsü). Ortak kod ileride gerekirse özel npm paketine taşınır.
 
@@ -51,18 +51,18 @@ CiM `INTEGRATIONS.md`/`SOCIAL_MEDIA.md`: Postgres ve Redis Railway'de çalışı
 
 ## 5. Riskler
 
-| # | Risk | Etki | Azaltma |
-|---|---|---|---|
-| R1 | SES production access (sandbox) onayı süre alır | İlk gerçek gönderim gecikir | **Hemen** başvuru; geliştirmede `console`/`mock` sağlayıcı |
-| R2 | Domain itibarı / SPF-DKIM-DMARC yanlış | Teslim edilebilirlik | Deliverability Center, DKIM'i SES Easy DKIM ile doğrula, BTM için ısınma planı |
-| R3 | Çok kiracılı veri sızıntısı | Güven/hukuk | ADR-001 deseni + zorunlu cross-tenant testler + Postgres RLS (Faz 15 sertleştirme) |
-| R4 | KVKK / açık rıza | Hukuki | Consent alanları ilk günden, suppression, silme/dışa aktarma; hukuki görüş harici |
-| R5 | Bounce/complaint oranı SES hesabını askıya aldırır | Platformun tamamı düşer | Org başına bounce/complaint eşiği → otomatik duraklatma; plan bazlı kota |
-| R6 | Next.js 16 / TS 6 / Vitest 5: eğitim bilgisinden farklı API'ler | Hatalı kod | CiM'in `AGENTS.md` kuralı: yazmadan önce `node_modules/next/dist/docs` oku |
-| R7 | Open/click takibi (Apple MPP, bot tıklamaları) güvenilmez | Yanıltıcı analitik | Açılmaları "tahmini" etiketle, bot filtresi, engagement skorunda tıklama ağırlığı |
-| R8 | Kapsam şişmesi (brief çok geniş) | Teslim edilemez V1 | Faz sırası + "simple now" ilkesi, V1.1/V2 ayrımı (ROADMAP) |
-| R9 | "BTM → girişimci" veri görünürlüğü | İzolasyon ihlali | Varsayılan **sıfır içerik erişimi**: BTM yalnızca kullanım/durum metriği görür (D-007) |
-| R10 | Railway'e erişimim yok | Deploy doğrulanamaz | Dockerfile + `/api/health` + runbook hazır; kurulum insan adımı |
+| #   | Risk                                                            | Etki                        | Azaltma                                                                                |
+| --- | --------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| R1  | SES production access (sandbox) onayı süre alır                 | İlk gerçek gönderim gecikir | **Hemen** başvuru; geliştirmede `console`/`mock` sağlayıcı                             |
+| R2  | Domain itibarı / SPF-DKIM-DMARC yanlış                          | Teslim edilebilirlik        | Deliverability Center, DKIM'i SES Easy DKIM ile doğrula, BTM için ısınma planı         |
+| R3  | Çok kiracılı veri sızıntısı                                     | Güven/hukuk                 | ADR-001 deseni + zorunlu cross-tenant testler + Postgres RLS (Faz 15 sertleştirme)     |
+| R4  | KVKK / açık rıza                                                | Hukuki                      | Consent alanları ilk günden, suppression, silme/dışa aktarma; hukuki görüş harici      |
+| R5  | Bounce/complaint oranı SES hesabını askıya aldırır              | Platformun tamamı düşer     | Org başına bounce/complaint eşiği → otomatik duraklatma; plan bazlı kota               |
+| R6  | Next.js 16 / TS 6 / Vitest 5: eğitim bilgisinden farklı API'ler | Hatalı kod                  | CiM'in `AGENTS.md` kuralı: yazmadan önce `node_modules/next/dist/docs` oku             |
+| R7  | Open/click takibi (Apple MPP, bot tıklamaları) güvenilmez       | Yanıltıcı analitik          | Açılmaları "tahmini" etiketle, bot filtresi, engagement skorunda tıklama ağırlığı      |
+| R8  | Kapsam şişmesi (brief çok geniş)                                | Teslim edilemez V1          | Faz sırası + "simple now" ilkesi, V1.1/V2 ayrımı (ROADMAP)                             |
+| R9  | "BTM → girişimci" veri görünürlüğü                              | İzolasyon ihlali            | Varsayılan **sıfır içerik erişimi**: BTM yalnızca kullanım/durum metriği görür (D-007) |
+| R10 | Railway'e erişimim yok                                          | Deploy doğrulanamaz         | Dockerfile + `/api/health` + runbook hazır; kurulum insan adımı                        |
 
 ## 6. Eksikler (CiM'de olmayan, Mailory'nin yazması gerekenler)
 

@@ -1,0 +1,37 @@
+{
+  "name": "mailory",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm --filter @mailory/web dev",
+    "dev:worker": "pnpm --filter @mailory/worker dev",
+    "build": "pnpm --filter @mailory/web build && pnpm --filter @mailory/worker build",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "test": "vitest run",
+    "db:generate": "pnpm --filter @mailory/db generate",
+    "db:migrate": "pnpm --filter @mailory/db migrate"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msgpackr-extract"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.15.0",
+    "eslint": "10.11.0",
+    "prettier": "3.6.2",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.0",
+    "vitest": "5.0.1"
+  }
+}
