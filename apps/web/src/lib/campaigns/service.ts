@@ -447,6 +447,19 @@ export async function previewCampaignFor(deps: CampaignDeps, actor: Actor, id: s
   };
 }
 
+export async function listTestRecipientsFor(deps: CampaignDeps, actor: Actor) {
+  if (!need(actor, "campaigns:write")) return denied;
+  const members = await listMembers(deps.db, actor.organizationId);
+  return {
+    ok: true as const,
+    recipients: members.map((m) => ({
+      email: m.email,
+      name: `${m.firstName} ${m.lastName}`.trim(),
+      self: m.userId === actor.userId,
+    })),
+  };
+}
+
 /** Test emails go only to members of this workspace, so the feature cannot be used to mail strangers. */
 export async function sendTestFor(
   deps: CampaignDeps,

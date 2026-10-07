@@ -18,6 +18,7 @@ export type NavItem = { href: string; label: string; icon: LucideIcon };
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/audience/contacts", label: "Kitle", icon: Users },
+  { href: "/campaigns", label: "Kampanyalar", icon: Mail },
   { href: "/templates", label: "Şablonlar", icon: LayoutTemplate },
   { href: "/brand-kit", label: "Marka kiti", icon: Palette },
   { href: "/settings/members", label: "Ayarlar", icon: Settings },
@@ -25,7 +26,6 @@ export const NAV_ITEMS: NavItem[] = [
 
 // Planned destinations (see docs/MAILORY_PRODUCT_SPEC.md); activated as each phase ships.
 export const PLANNED_NAV: NavItem[] = [
-  { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/automation", label: "Automation", icon: Workflow },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },

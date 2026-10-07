@@ -89,3 +89,10 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 - `sender_domains`: org'a ait; `domain`, `status` (pending/verified/failed), `dkim_tokens[]`, `ownership_token`, `ownership_ok/dkim_ok`, `spf_state/dmarc_state`, `snapshot` (son DNS sonucu), `failing_since`, `last_checked_at`, `verified_at`. (organization_id, domain) tekil; **doğrulanmış** satırlar için domain üzerinde kısmi unique index (tek sahip).
 - `sender_identities`: org'a ait gönderici (ad, e-posta, yanıt adresi, varsayılan). Varsayılan kimlik org başına tek (`FOR UPDATE` ile değiştirilir); silinen varsayılanın yerine en eski kalan terfi eder. Kullanılabilirlik veri değil, doğrulanmış kapsayan alan adından hesaplanır.
 - Migration: `0004_nostalgic_jazinda.sql`.
+
+## Faz 7 notları
+
+- `campaigns` (migration `0005_rapid_sumo.sql`): durum CHECK kısıtlı; `audience` jsonb `{kind: all|list|segment|tag, id?}`, `utm` jsonb, `snapshot` jsonb (gönderime alınınca dondurulan doc/marka/gönderici/sayı), `template_version_id`, onay alanları (`submitted_*`, `approved_*`, `rejection_reason`). İndeksler: `(organization_id, status, created_at)` ve kısmi `campaigns_due_idx (scheduled_at) WHERE status='scheduled'` (Faz 8 zamanlayıcısı tenantlar arası tarar).
+- `organizations.require_campaign_approval boolean default false`.
+- `sender_identity_id`/`template_id` FK'leri `ON DELETE SET NULL`; tenant tutarlılığı servis katmanında (yabancı id'ler "invalid") doğrulanır. Faz 15 RLS planında bileşik FK değerlendirilecek.
+- Tüm migration'lar ekleme yönlüdür (mevcut üretim verisine dokunmaz).

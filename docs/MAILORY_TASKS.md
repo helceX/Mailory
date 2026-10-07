@@ -31,9 +31,9 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 | MAIL-053 | Brand Kit                                     | P1  | 5     | 052     | Logo/renk/font/footer                                                                                                                                                          | Yeni mail marka ile açılır                      | done    |
 | MAIL-060 | Sender identity + domain doğrulama            | P0  | 6     | 034     | DNS kayıt üretimi, kontrol job'ı                                                                                                                                               | Pending→Verified akışı                          | done    |
 | MAIL-061 | Onboarding                                    | P1  | 6     | 053,060 | 7 adım ilerleme                                                                                                                                                                | e2e                                             | done    |
-| MAIL-070 | Campaign model + durum makinesi               | P0  | 7     | 052,060 | Draft→…→Completed                                                                                                                                                              | Geçiş testleri                                  | todo    |
-| MAIL-071 | Campaign sihirbazı + UTM + test gönderimi     | P0  | 7     | 070     | 13 adım                                                                                                                                                                        | e2e                                             | todo    |
-| MAIL-072 | Planlama + approval workflow                  | P1  | 7     | 070     | Zamanlama, onay                                                                                                                                                                | Testler                                         | todo    |
+| MAIL-070 | Campaign model + durum makinesi               | P0  | 7     | 052,060 | Draft→…→Completed                                                                                                                                                              | Geçiş testleri                                  | done    |
+| MAIL-071 | Campaign sihirbazı + UTM + test gönderimi     | P0  | 7     | 070     | 13 adım                                                                                                                                                                        | e2e                                             | done    |
+| MAIL-072 | Planlama + approval workflow                  | P1  | 7     | 070     | Zamanlama, onay                                                                                                                                                                | Testler                                         | done    |
 | MAIL-080 | EmailTransport (console + SES)                | P0  | 8     | 014     | SES SDK v3, MIME, header'lar                                                                                                                                                   | Transport sözleşme testleri                     | todo    |
 | MAIL-081 | Send kuyruğu + worker + retry                 | P0  | 8     | 070,080 | Recipient materialize, batch, backoff                                                                                                                                          | Kuyruk entegrasyon testleri                     | todo    |
 | MAIL-082 | SES/SNS webhook                               | P0  | 8     | 081     | İmza doğrulama, idempotency, bounce/complaint                                                                                                                                  | Fixture testleri                                | todo    |
@@ -70,3 +70,12 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 - DMARC alt alan adı mirası (üst alan DMARC'ı) henüz hesaba katılmıyor.
 - Doğrulama başarısızlığı/başarısı için kullanıcıya e-posta bildirimi (Faz 8 outbox ile).
 - Alan adı kaldırıldığında bağlı gönderici kimliklerinin kullanım dışı kalması kampanya doğrulamasında (Faz 7) engellenecek.
+
+## Faz 7 devam işleri
+
+- Faz 8: zamanlanmış kampanyaları alıp alıcıları (`countSendable` koşuluyla) oluşturan ve SES ile gönderen motor; `scheduled → sending` geçişi ve `campaigns_due_idx` taraması orada.
+- Faz 8: test e-postasının HTML gövdesi gerçek taşıyıcıyla gitsin (şu an outbox'ta metin).
+- Çok adımlı sihirbaz yerine tek sayfa bölümlü düzenleyici yapıldı; adım adım rehber ve kitle birleşimi (liste ∪ segment, hariç tutma) V2.
+- Kampanya içi A/B testi (`ab_test`) ve gönderim saati optimizasyonu: V2.
+- Onay bildirimi (e-posta) Faz 8 outbox ile; şimdilik onaylayıcı listeden görür.
+- E2E: `e2e/campaigns.e2e.cjs` yerelde `next dev` ile koşar; CI işi MAIL-190 kapsamında.

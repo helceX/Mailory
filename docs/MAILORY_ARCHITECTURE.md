@@ -128,3 +128,10 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - `@mailory/deliverability`: çözümleyici/sağlayıcı fabrikaları + `checkAndPersistDomain` + `sweepDomains` (web ve worker ortak kullanır).
 - `apps/worker`: BullMQ `domain-check` kuyruğu, 5 dk'lık job scheduler; tek eşzamanlı süpürme. Entegrasyon testi gerçek Postgres+Redis ile koşar.
 - Onboarding: `getOnboarding` 7 adım (organizasyon, logo, marka, gönderici, alan adı, kişiler, şablon); panoda bitene kadar gösterilir.
+
+## 14. Kampanya motoru (Faz 7)
+
+- `@mailory/core/campaign`: durum makinesi, hazırlık denetimi, UTM yardımcıları (saf, tarayıcı güvenli). `@mailory/email/utm`: render çıktısına UTM.
+- `apps/web/src/lib/campaigns/service.ts`: RBAC + tenant izolasyonu + denetim kaydı; tüm durum değişiklikleri `transitionCampaign` (CAS). API: `/api/campaigns[/id[/preview|test|schedule|submit|approve|reject|withdraw|cancel|duplicate]]`, `/api/campaign-policy`.
+- Arayüz: `/campaigns` (durum sekmeleri, onay politikası), `/campaigns/[id]` (taslakta bölümlü düzenleyici + hazırlık paneli; diğer durumlarda durum paneli).
+- Faz 8 sınırı: bu faz hiçbir şey **göndermez**; `scheduled` kampanyalarını Faz 8 motoru alır.
