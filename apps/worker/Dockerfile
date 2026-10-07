@@ -10,9 +10,15 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY apps/worker/package.json apps/worker/package.json
+COPY packages/ai/package.json packages/ai/package.json
 COPY packages/config/package.json packages/config/package.json
+COPY packages/core/package.json packages/core/package.json
 COPY packages/db/package.json packages/db/package.json
+COPY packages/deliverability/package.json packages/deliverability/package.json
+COPY packages/email/package.json packages/email/package.json
+COPY packages/sending/package.json packages/sending/package.json
 COPY packages/ui/package.json packages/ui/package.json
+COPY packages/validation/package.json packages/validation/package.json
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS builder
