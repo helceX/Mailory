@@ -1,7 +1,7 @@
 # Mailory
 
 Multi-tenant email marketing & campaign automation SaaS (mailory.io).
-Planning docs live in `docs/` — start with `docs/MAILORY_DISCOVERY.md`; task status in `docs/MAILORY_TASKS.md`.
+Planning docs live in `docs/` — start with `docs/MAILORY_DISCOVERY.md`; task status in `docs/MAILORY_TASKS.md`. All 18 phases are implemented; what still needs a human (deploy, SES, DNS, legal, pricing) is in `docs/MAILORY_OPEN_ITEMS.md`. Operations: `docs/MAILORY_RUNBOOK.md`; pilot: `docs/MAILORY_PILOT.md`; public API: `docs/MAILORY_API.md`; pricing hypothesis: `docs/MAILORY_PRICING.md`.
 
 ## Layout
 

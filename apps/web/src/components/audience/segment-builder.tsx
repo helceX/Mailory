@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { fieldType, OPERATORS_BY_TYPE, SEGMENT_FIELDS } from "@mailory/core/shared";
@@ -325,11 +325,13 @@ export function SegmentBuilder({
           ) : null}
         </div>
         <div className="flex flex-col gap-2 border-l-2 pl-4">
-          {group.children.map((child, i) =>
-            child.type === "rule"
-              ? renderRule(child, [...path, i])
-              : renderGroup(child, [...path, i]),
-          )}
+          {group.children.map((child, i) => (
+            <Fragment key={i}>
+              {child.type === "rule"
+                ? renderRule(child, [...path, i])
+                : renderGroup(child, [...path, i])}
+            </Fragment>
+          ))}
           {group.children.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Bu grupta koşul yok; en az bir koşul ekleyin.

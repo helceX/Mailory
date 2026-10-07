@@ -36,7 +36,7 @@ Sıralama ilkesi (brief §70): çekirdek e-posta altyapısı → multi-tenant �
 
 ## Pricing analizi (D-019, hipotez)
 
-Maliyet tabanı SES (~$0.10/1000 e-posta) + depolama + Railway. Katman limitleri (contacts, aylık gönderim) tahmini marj ≥ %60 olacak şekilde Faz 14'te hesaplanır; BTM sponsorlu plan maliyeti BTM'ye kullanım raporu ile gösterilir. Rakip fiyat karşılaştırması (Mailchimp/Brevo/SendPulse) Faz 18 öncesi güncel veriyle yapılacak — şimdi tahmin yazılmadı.
+Maliyet tabanı SES (~$0.10/1000 e-posta) + depolama + Railway. Katman limitleri (contacts, aylık gönderim) tahmini marj ≥ %60 olacak şekilde Faz 14'te hesaplanır; BTM sponsorlu plan maliyeti BTM'ye kullanım raporu ile gösterilir. Fiyat hipotezi ve maliyet analizi Faz 18'de `docs/MAILORY_PRICING.md` olarak yazıldı; rakip fiyatları doğrulanmamış tahmindir ve yayından önce güncel veriyle kontrol edilmelidir.
 
 ## İnsan gerektiren adımlar (bloklayıcılar)
 

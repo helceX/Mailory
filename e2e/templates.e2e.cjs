@@ -290,7 +290,9 @@ const { step, finish } = makeSteps();
   await page.getByRole("button", { name: "Düz metin sürümünü göster" }).click();
   step(
     "plain-text alternative is available",
-    /Abonelikten çık:/.test(await page.locator("pre").innerText()),
+    /Abonelikten çık:/.test(
+      await page.locator("pre", { hasText: "Abonelikten çık:" }).first().innerText(),
+    ),
   );
   await page.getByRole("tab", { name: "Düzenle" }).click();
 
