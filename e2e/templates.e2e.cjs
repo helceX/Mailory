@@ -98,7 +98,6 @@ const { step, finish } = makeSteps();
   const blockButtons = () => canvas.getByRole("button", { name: /bloğunu seç$/ });
   const order = async () =>
     (await blockButtons().allInnerTexts()).map((t) => t.split("\n")[0].slice(0, 28));
-  const before = await order();
 
   // edit text; focus must survive typing
   await canvas.getByText("Sizi etkinliğimize davet ediyoruz").click();
