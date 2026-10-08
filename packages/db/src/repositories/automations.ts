@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import type { AutomationTrigger, Step } from "@mailory/core/shared";
 import type { Database, OrganizationId } from "../index";
 import {
@@ -322,6 +322,7 @@ export async function listActiveAutomations(
   db: Database,
   limit = 200,
   scope: { organizationId?: string } = {},
+  afterId?: string,
 ) {
   return db
     .select()
@@ -332,8 +333,10 @@ export async function listActiveAutomations(
         scope.organizationId
           ? eq(automations.organizationId, scope.organizationId)
           : undefined,
+        afterId ? gt(automations.id, afterId) : undefined,
       ),
     )
+    .orderBy(automations.id)
     .limit(limit);
 }
 

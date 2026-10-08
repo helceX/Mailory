@@ -32,18 +32,24 @@ const MAX_NODES_PER_RUN = 25;
 export async function enrollTriggers(deps: AutomationDeps) {
   const now = clock(deps);
   let enrolled = 0;
-  for (const a of await listActiveAutomations(deps.db, 200, deps.scope)) {
-    const first = flatten(a.steps as Step[]).first;
-    if (!first) continue;
-    enrolled += await enrollByTrigger(
-      deps.db,
-      asOrganizationId(a.organizationId),
-      a,
-      first,
-      now,
-    );
+  // Keyset-paged over ALL active automations: a fixed first page would starve everything past it.
+  let afterId: string | undefined;
+  for (;;) {
+    const page = await listActiveAutomations(deps.db, 200, deps.scope, afterId);
+    for (const a of page) {
+      const first = flatten(a.steps as Step[]).first;
+      if (!first) continue;
+      enrolled += await enrollByTrigger(
+        deps.db,
+        asOrganizationId(a.organizationId),
+        a,
+        first,
+        now,
+      );
+    }
+    if (page.length < 200) return enrolled;
+    afterId = page[page.length - 1]!.id;
   }
-  return enrolled;
 }
 
 async function evalCondition(
@@ -143,29 +149,42 @@ export async function runEnrollment(
   return exit("too_many_steps");
 }
 
-/** Processes due enrolments (claimed with a lease so concurrent workers never share one). */
-export async function processEnrollments(deps: AutomationDeps, limit = 200) {
-  const now = clock(deps);
-  const claimed = await claimDueEnrollments(deps.db, now, limit, deps.scope);
-  const cache = new Map<string, Automation>();
+/**
+ * Processes due enrolments (claimed with a lease so concurrent workers never share one). One batch is `limit` rows; a
+ * tick keeps claiming batches until nothing is due or the time budget is spent, so a backlog (many tenants, a big
+ * import) drains in one tick instead of at `limit` rows per tick interval.
+ */
+export async function processEnrollments(
+  deps: AutomationDeps,
+  limit = 200,
+  budgetMs = 20_000,
+) {
   const summary = { processed: 0, waiting: 0, completed: 0, exited: 0, errors: 0 };
-  const all = await getActiveAutomationsByIds(deps.db, [
-    ...new Set(claimed.map((e) => e.automationId)),
-  ]);
-  for (const a of all) cache.set(a.id, a);
-  for (const e of claimed) {
-    const a = cache.get(e.automationId);
-    if (!a) continue; // paused between claim and run: the lease expires and it is retried when active again
-    try {
-      const r = await runEnrollment(deps, a, e);
-      summary.processed++;
-      summary[r]++;
-    } catch (error) {
-      summary.errors++;
-      deps.log?.("enrollment failed", { id: e.id, error: String(error) });
+  const startedAt = Date.now();
+  const cache = new Map<string, Automation>();
+  for (;;) {
+    const now = clock(deps);
+    const claimed = await claimDueEnrollments(deps.db, now, limit, deps.scope);
+    const missing = [...new Set(claimed.map((e) => e.automationId))].filter(
+      (id) => !cache.has(id),
+    );
+    if (missing.length > 0)
+      for (const a of await getActiveAutomationsByIds(deps.db, missing))
+        cache.set(a.id, a);
+    for (const e of claimed) {
+      const a = cache.get(e.automationId);
+      if (!a) continue; // paused between claim and run: the lease expires and it is retried when active again
+      try {
+        const r = await runEnrollment(deps, a, e);
+        summary.processed++;
+        summary[r]++;
+      } catch (error) {
+        summary.errors++;
+        deps.log?.("enrollment failed", { id: e.id, error: String(error) });
+      }
     }
+    if (claimed.length < limit || Date.now() - startedAt >= budgetMs) return summary;
   }
-  return summary;
 }
 
 export async function automationTick(deps: AutomationDeps) {

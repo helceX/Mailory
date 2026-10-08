@@ -391,6 +391,17 @@ suite("automation engine (real Postgres)", () => {
     ).toBe(true);
   });
 
+  it("drains a backlog larger than one batch in a single call, unless the time budget is spent", async () => {
+    const s = await setup([email("a"), wait("w", 1), email("b")]);
+    for (let i = 0; i < 7; i++) await newContact(s, `d${i}`);
+    await enrollTriggers(adeps(s.org.id));
+    const first = await processEnrollments(adeps(s.org.id), 2, 0); // budget 0: one batch only
+    expect(first.processed).toBe(2);
+    const rest = await processEnrollments(adeps(s.org.id), 2);
+    expect(rest.processed).toBe(5);
+    expect(await recipientsOf(s.automation.id, "a")).toHaveLength(7);
+  });
+
   it("a paused automation does nothing and resumes cleanly", async () => {
     const s = await setup([email("a")]);
     const c = await newContact(s);
