@@ -295,65 +295,105 @@ export function LibraryGallery({
   canWrite: boolean;
 }) {
   const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const fold = (v: string) => v.toLocaleLowerCase("tr-TR");
+  const categories = [...new Set(items.map((t) => t.category))];
+  const shown = items.filter(
+    (t) =>
+      (category === "all" || t.category === category) &&
+      (!query.trim() ||
+        fold(`${t.name} ${t.description} ${label(t.category)}`).includes(
+          fold(query.trim()),
+        )),
+  );
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((t) => (
-        <li
-          key={t.key}
-          className="flex flex-col overflow-hidden rounded-lg border bg-surface"
-        >
-          <div
-            className="relative h-56 overflow-hidden border-b bg-surface-muted"
-            aria-hidden="true"
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          type="search"
+          aria-label="Şablon ara"
+          placeholder="Şablon ara…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="max-w-xs"
+        />
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Kategori">
+          {["all", ...categories].map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-pressed={category === c}
+              onClick={() => setCategory(c)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${category === c ? "border-primary bg-primary text-primary-foreground" : "bg-surface text-muted-foreground hover:text-foreground"}`}
+            >
+              {c === "all" ? "Tümü" : label(c)}
+            </button>
+          ))}
+        </div>
+      </div>
+      {shown.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aramanızla eşleşen şablon yok.</p>
+      ) : null}
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {shown.map((t) => (
+          <li
+            key={t.key}
+            className="flex flex-col overflow-hidden rounded-lg border bg-surface"
           >
-            {/* Sandboxed: the preview HTML cannot run script even if it ever contained some. */}
-            <iframe
-              title={`${t.name} önizlemesi`}
-              src={`/api/templates/library/${t.key}/preview`}
-              sandbox=""
-              loading="lazy"
-              tabIndex={-1}
-              className="pointer-events-none absolute left-0 top-0 border-0"
-              style={{
-                width: 640,
-                height: 900,
-                transform: "scale(0.42)",
-                transformOrigin: "top left",
-              }}
-            />
-          </div>
-          <div className="flex flex-1 flex-col gap-2 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-semibold">{t.name}</h3>
-              <Badge>{label(t.category)}</Badge>
-            </div>
-            <p className="flex-1 text-sm text-muted-foreground">{t.description}</p>
-            {canWrite ? (
-              <NameDialog
-                trigger={
-                  <Button variant="secondary" className="w-full">
-                    Bu şablonla başla
-                  </Button>
-                }
-                title={`“${t.name}” ile başla`}
-                description="Şablon markanızla uyarlanıp düzenlenebilir bir kopya olarak eklenir."
-                defaultName={t.name}
-                submitLabel="Oluştur"
-                onSubmit={async ({ name }) => {
-                  const result = await apiCall("/api/templates", "POST", {
-                    name,
-                    category: "other",
-                    libraryKey: t.key,
-                  });
-                  if (!result.ok) return result.message;
-                  router.push(`/templates/${(result.data as { id: string }).id}`);
-                  return null;
+            <div
+              className="relative h-56 overflow-hidden border-b bg-surface-muted"
+              aria-hidden="true"
+            >
+              {/* Sandboxed: the preview HTML cannot run script even if it ever contained some. */}
+              <iframe
+                title={`${t.name} önizlemesi`}
+                src={`/api/templates/library/${t.key}/preview`}
+                sandbox=""
+                loading="lazy"
+                tabIndex={-1}
+                className="pointer-events-none absolute left-0 top-0 border-0"
+                style={{
+                  width: 640,
+                  height: 900,
+                  transform: "scale(0.42)",
+                  transformOrigin: "top left",
                 }}
               />
-            ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
+            </div>
+            <div className="flex flex-1 flex-col gap-2 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold">{t.name}</h3>
+                <Badge>{label(t.category)}</Badge>
+              </div>
+              <p className="flex-1 text-sm text-muted-foreground">{t.description}</p>
+              {canWrite ? (
+                <NameDialog
+                  trigger={
+                    <Button variant="secondary" className="w-full">
+                      Bu şablonla başla
+                    </Button>
+                  }
+                  title={`“${t.name}” ile başla`}
+                  description="Şablon markanızla uyarlanıp düzenlenebilir bir kopya olarak eklenir."
+                  defaultName={t.name}
+                  submitLabel="Oluştur"
+                  onSubmit={async ({ name }) => {
+                    const result = await apiCall("/api/templates", "POST", {
+                      name,
+                      category: "other",
+                      libraryKey: t.key,
+                    });
+                    if (!result.ok) return result.message;
+                    router.push(`/templates/${(result.data as { id: string }).id}`);
+                    return null;
+                  }}
+                />
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

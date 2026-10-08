@@ -196,3 +196,7 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 ## 25. Dashboard
 
 - `/dashboard` birleştirir (hepsi mevcut servislerden, ek sorgu/tablo yok): kurulum listesi, "Dikkat gerektirenler" (teslim edilebilirlik merkezinin kritik/uyarı maddeleri), son 30 gün KPI'ları, son kampanyalar ve plan kullanımı (kişi, aylık e-posta; %80'de amber, dolunca kırmızı). Hızlı eylemler yalnızca `campaigns:write` yetkisi olanlara görünür. Bileşenler `components/dashboard/dashboard-sections.tsx`.
+
+## 26. Şablon kütüphanesi
+
+- 19 hazır şablon (`packages/email/src/library.ts`); yeni kategoriler: E-ticaret, Müşteri ilişkileri. Galeri istemci tarafında arama (Türkçe büyük/küçük harf duyarsız) ve kategori filtresi sunar. Her şablon test edilir: şema geçerli, her iki marka ile temiz render, yalnızca bilinen birleştirme alanları.

@@ -10,6 +10,8 @@ export const TEMPLATE_CATEGORIES = [
   "corporate",
   "marketing",
   "recruitment",
+  "ecommerce",
+  "customer",
   "other",
 ] as const;
 export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
@@ -24,5 +26,7 @@ export const CATEGORY_LABELS: Record<TemplateCategory, string> = {
   corporate: "Kurumsal",
   marketing: "Pazarlama",
   recruitment: "İşe alım",
+  ecommerce: "E-ticaret",
+  customer: "Müşteri ilişkileri",
   other: "Diğer",
 };

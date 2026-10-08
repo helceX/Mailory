@@ -24,7 +24,9 @@ export type LibraryTemplate = {
     | "investor"
     | "corporate"
     | "marketing"
-    | "recruitment";
+    | "recruitment"
+    | "ecommerce"
+    | "customer";
   description: string;
   build: (brand: BrandKit) => EmailDoc;
 };
@@ -269,6 +271,212 @@ export const LIBRARY_TEMPLATES: LibraryTemplate[] = [
         heading("Neler yapacaksınız?", 2),
         para("• Sorumluluk 1\n• Sorumluluk 2\n• Sorumluluk 3"),
         button("Başvur"),
+      ]),
+  },
+
+  {
+    key: "sale",
+    name: "İndirim kampanyası",
+    category: "ecommerce",
+    description: "Süreli indirimi kod, avantajlar ve tek bir net çağrıyla duyurun.",
+    build: (brand) =>
+      shell(brand, "Sınırlı süre: indirim sizi bekliyor", [
+        heading("%20 indirim, sadece bu hafta", 1, "center"),
+        para(
+          "Merhaba {{first_name|merhaba}},\n\nBeğendiğiniz ürünlerde sınırlı süreli indirim başladı. Aşağıdaki kodu ödeme adımında girmeniz yeterli.",
+        ),
+        heading("KOD: INDIRIM20", 2, "center"),
+        button("Alışverişe başla", "https://example.com", "center"),
+        spacer(8),
+        columns(
+          [heading("Ücretsiz kargo", 3), para("500 TL üzeri siparişlerde.")],
+          [heading("Kolay iade", 3), para("14 gün içinde ücretsiz iade.")],
+        ),
+        spacer(8),
+        para("Kampanya stoklarla sınırlıdır; bitiş tarihini buraya yazın."),
+      ]),
+  },
+  {
+    key: "new-collection",
+    name: "Yeni koleksiyon",
+    category: "ecommerce",
+    description: "Yeni gelen ürünleri üç sütunda tanıtın.",
+    build: (brand) =>
+      shell(brand, "Yeni koleksiyon yayında", [
+        heading("Yeni koleksiyon yayında"),
+        para(
+          "Merhaba {{first_name|merhaba}}, bu sezonun öne çıkan ürünlerine göz atın.",
+        ),
+        columns(
+          [heading("Ürün 1", 3), para("Kısa açıklama.")],
+          [heading("Ürün 2", 3), para("Kısa açıklama.")],
+          [heading("Ürün 3", 3), para("Kısa açıklama.")],
+        ),
+        spacer(8),
+        button("Koleksiyonu keşfet"),
+      ]),
+  },
+  {
+    key: "win-back",
+    name: "Sizi özledik",
+    category: "customer",
+    description: "Bir süredir etkileşimde olmayan kişilere geri dönüş daveti.",
+    build: (brand) =>
+      shell(brand, "Sizi özledik", [
+        heading("Sizi özledik, {{first_name|dostum}}"),
+        para(
+          "Bir süredir görüşemedik. Bu arada {{org_name}} tarafında neler değişti, kısaca anlatalım.",
+        ),
+        para("• Yenilik 1\n• Yenilik 2\n• Yenilik 3"),
+        button("Geri dön"),
+        spacer(8),
+        para(
+          "Artık e-posta almak istemiyorsanız aşağıdaki bağlantıyla ayrılabilirsiniz; hiçbir şey kaybetmezsiniz.",
+        ),
+      ]),
+  },
+  {
+    key: "feedback-survey",
+    name: "Geri bildirim anketi",
+    category: "customer",
+    description: "Kısa bir anket için kişiyi nazikçe davet edin.",
+    build: (brand) =>
+      shell(brand, "Görüşünüz bizim için değerli", [
+        heading("Görüşünüz bizim için değerli"),
+        para(
+          "Merhaba {{first_name|merhaba}},\n\n{{org_name}} deneyiminizi iyileştirmek istiyoruz. 2 dakikanızı ayırıp kısa anketimizi yanıtlar mısınız?",
+        ),
+        button("Ankete katıl"),
+        spacer(8),
+        para("Yanıtlarınız yalnızca hizmetimizi geliştirmek için kullanılır."),
+      ]),
+  },
+  {
+    key: "webinar",
+    name: "Webinar daveti",
+    category: "event",
+    description: "Çevrim içi etkinlik: tarih, konuşmacı ve kayıt çağrısı.",
+    build: (brand) =>
+      shell(brand, "Ücretsiz webinara davetlisiniz", [
+        heading("Ücretsiz webinara davetlisiniz"),
+        para(
+          "Merhaba {{first_name|merhaba}}, konuyu uzmanlarından dinlemek için bize katılın.",
+        ),
+        columns(
+          [heading("Tarih", 3), para("00 Ay, 00:00")],
+          [heading("Konuşmacı", 3), para("Ad Soyad, Unvan")],
+        ),
+        spacer(8),
+        heading("Neler öğreneceksiniz?", 2),
+        para("• Konu 1\n• Konu 2\n• Konu 3"),
+        button("Yerimi ayır"),
+      ]),
+  },
+  {
+    key: "thank-you",
+    name: "Teşekkür",
+    category: "customer",
+    description: "Müşteri veya katılımcıya içten bir teşekkür ve sonraki adım.",
+    build: (brand) =>
+      shell(brand, "Teşekkür ederiz", [
+        heading("Teşekkür ederiz, {{first_name|dostum}}!"),
+        para(
+          "Bizi tercih ettiğiniz için çok teşekkür ederiz. Sizinle çalışmak bizim için gerçek bir memnuniyet.",
+        ),
+        para("Bir sonraki adımda sizi bekleyen şey:"),
+        button("Devam et"),
+      ]),
+  },
+  {
+    key: "holiday",
+    name: "Bayram / yılbaşı tebriği",
+    category: "corporate",
+    description: "Kurumsal bir tebrik mesajı; tatil günlerini de duyurur.",
+    build: (brand) =>
+      shell(brand, "Mutlu bayramlar", [
+        heading("Mutlu bayramlar!", 1, "center"),
+        para(
+          "Sevgili {{first_name|dostumuz}},\n\n{{org_name}} ekibi olarak sizin ve sevdiklerinizin bayramını kutlar, sağlık ve huzur dolu günler dileriz.",
+        ),
+        divider(),
+        para("Ofisimiz 00–00 Ay tarihleri arasında kapalı olacaktır."),
+      ]),
+  },
+  {
+    key: "press-release",
+    name: "Basın bülteni",
+    category: "announcement",
+    description: "Medyaya ve paydaşlara resmi haber: özet, detay ve iletişim.",
+    build: (brand) =>
+      shell(brand, "Basın bülteni", [
+        heading("Haber başlığı buraya"),
+        para(
+          "**Şehir, 00 Ay 0000** — Haberin en önemli cümlesi: kim, ne, ne zaman, neden.",
+        ),
+        para("Detay paragrafı. Önemli rakamları ve alıntıları ekleyin."),
+        quote("Yetkili alıntısı buraya.", "Ad Soyad, Unvan"),
+        heading("Basın iletişim", 2),
+        para("Ad Soyad · ornek@firma.com · +90 000 000 00 00"),
+      ]),
+  },
+  {
+    key: "weekly-digest",
+    name: "Haftalık özet",
+    category: "newsletter",
+    description: "Haftanın üç önemli içeriğini kısa kısa derleyin.",
+    build: (brand) =>
+      shell(brand, "Bu haftanın öne çıkanları", [
+        heading("Bu haftanın öne çıkanları"),
+        para("Merhaba {{first_name|merhaba}}, haftanın en önemli üç başlığı:"),
+        heading("1. Başlık", 2),
+        para("Kısa özet. Devamı için bağlantıya tıklayın."),
+        heading("2. Başlık", 2),
+        para("Kısa özet. Devamı için bağlantıya tıklayın."),
+        heading("3. Başlık", 2),
+        para("Kısa özet. Devamı için bağlantıya tıklayın."),
+        button("Tümünü oku"),
+      ]),
+  },
+  {
+    key: "course-launch",
+    name: "Eğitim / kurs duyurusu",
+    category: "marketing",
+    description: "Yeni bir eğitimi içerik, kazanım ve kayıt çağrısıyla tanıtın.",
+    build: (brand) =>
+      shell(brand, "Yeni eğitim için kayıtlar açıldı", [
+        heading("Yeni eğitim için kayıtlar açıldı"),
+        para(
+          "Merhaba {{first_name|merhaba}},\n\nBeklenen eğitimimiz başlıyor. Kontenjan sınırlıdır.",
+        ),
+        columns(
+          metric("0 hafta", "Süre"),
+          metric("0 ders", "İçerik"),
+          metric("Sertifika", "Bitirenlere"),
+        ),
+        spacer(8),
+        heading("Bu eğitimde neler var?", 2),
+        para("• Modül 1\n• Modül 2\n• Modül 3"),
+        button("Kayıt ol"),
+      ]),
+  },
+  {
+    key: "referral",
+    name: "Arkadaşını getir",
+    category: "marketing",
+    description: "Tavsiye programını basit bir ödül anlatımıyla duyurun.",
+    build: (brand) =>
+      shell(brand, "Arkadaşlarınızı getirin, birlikte kazanın", [
+        heading("Arkadaşlarınızı getirin, birlikte kazanın"),
+        para(
+          "Merhaba {{first_name|merhaba}},\n\n{{org_name}} sizin için değerliyse, arkadaşlarınız için de olabilir. Davet ettiğiniz her kişi için ikiniz de ödül kazanırsınız.",
+        ),
+        columns(
+          [heading("1", 2), para("Bağlantınızı paylaşın")],
+          [heading("2", 2), para("Arkadaşınız kaydolsun")],
+          [heading("3", 2), para("İkiniz de kazanın")],
+        ),
+        spacer(8),
+        button("Davet bağlantımı al"),
       ]),
   },
 ];

@@ -60,7 +60,7 @@ const { step, finish } = makeSteps();
   await page.goto(`${BASE}/templates?tab=library`);
   await page.getByRole("heading", { name: "Etkinlik duyurusu" }).waitFor();
   const cards = await page.locator("ul li h3").count();
-  step("library gallery lists 8 templates", cards === 8, `${cards} cards`);
+  step("library gallery lists every template", cards >= 15, `${cards} cards`);
   const frame = page
     .frames()
     .find((f) => f.url().includes("/library/newsletter/preview"));
@@ -76,6 +76,28 @@ const { step, finish } = makeSteps();
     /Bu ayın öne çıkanları/.test(thumb),
   );
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/10-library.png`, fullPage: true });
+
+  const galleryCards = () => page.locator("ul.grid > li").count();
+  const total = await galleryCards();
+  step("the library offers a rich set of templates", total >= 15, `${total}`);
+  await page.getByLabel("Şablon ara").fill("WEBİNAR");
+  step(
+    "search is case- and Turkish-insensitive",
+    (await galleryCards()) === 1 &&
+      (await page.getByText("Webinar daveti").first().isVisible()),
+  );
+  await page.getByLabel("Şablon ara").fill("zzzz-yok");
+  step(
+    "no match shows a message",
+    await page.getByText("Aramanızla eşleşen şablon yok.").isVisible(),
+  );
+  await page.getByLabel("Şablon ara").fill("");
+  await page.getByRole("button", { name: "E-ticaret" }).click();
+  step(
+    "category filter narrows the gallery",
+    (await galleryCards()) >= 2 && (await galleryCards()) < total,
+  );
+  await page.getByRole("button", { name: "Tümü" }).click();
 
   await page
     .locator("li", { hasText: "Etkinlik duyurusu" })
@@ -335,7 +357,11 @@ const { step, finish } = makeSteps();
     .getByRole("button", { name: "Arşivle" })
     .click();
   await page.getByRole("dialog").getByRole("button", { name: "Arşivle" }).click();
-  await page.waitForTimeout(600);
+  await page
+    .getByText("(kopya)")
+    .first()
+    .waitFor({ state: "detached", timeout: 10_000 })
+    .catch(() => {});
   step(
     "archive removes it from the list",
     (await page.getByText("(kopya)").count()) === 0,
