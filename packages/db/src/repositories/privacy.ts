@@ -37,26 +37,30 @@ export async function exportContactData(
   if (!contact) return null;
   const rows = async <T>(q: ReturnType<typeof sql>) =>
     (await db.execute<T & Record<string, unknown>>(q)).rows;
-  const [lists, tagRows, suppression, received, journeys, events] = await Promise.all([
-    rows<{ name: string; added_at: string }>(
-      sql`select l.name, lc.added_at from list_contacts lc join lists l on l.id = lc.list_id where lc.organization_id = ${org} and lc.contact_id = ${cid} order by l.name`,
-    ),
-    rows<{ name: string; added_at: string }>(
-      sql`select t.name, ct.added_at from contact_tags ct join tags t on t.id = ct.tag_id where ct.organization_id = ${org} and ct.contact_id = ${cid} order by t.name`,
-    ),
-    rows<{ reason: string; created_at: string }>(
-      sql`select reason, created_at from suppressions where organization_id = ${org} and email = ${contact.email}`,
-    ),
-    rows(sql`select c.name as campaign, c.subject, r.status, r.sent_at, r.delivered_at, r.opened_at, r.clicked_at, r.bounced_at, r.complained_at, r.unsubscribed_at
+  const [lists, tagRows, suppression, received, journeys, events, outcomes] =
+    await Promise.all([
+      rows<{ name: string; added_at: string }>(
+        sql`select l.name, lc.added_at from list_contacts lc join lists l on l.id = lc.list_id where lc.organization_id = ${org} and lc.contact_id = ${cid} order by l.name`,
+      ),
+      rows<{ name: string; added_at: string }>(
+        sql`select t.name, ct.added_at from contact_tags ct join tags t on t.id = ct.tag_id where ct.organization_id = ${org} and ct.contact_id = ${cid} order by t.name`,
+      ),
+      rows<{ reason: string; created_at: string }>(
+        sql`select reason, created_at from suppressions where organization_id = ${org} and email = ${contact.email}`,
+      ),
+      rows(sql`select c.name as campaign, c.subject, r.status, r.sent_at, r.delivered_at, r.opened_at, r.clicked_at, r.bounced_at, r.complained_at, r.unsubscribed_at
                from campaign_recipients r join campaigns c on c.id = r.campaign_id
               where r.organization_id = ${org} and r.contact_id = ${cid} order by r.created_at`),
-    rows(
-      sql`select a.name as automation, e.status, e.entered_at, e.finished_at, e.exit_reason from automation_enrollments e join automations a on a.id = e.automation_id where e.organization_id = ${org} and e.contact_id = ${cid} order by e.entered_at`,
-    ),
-    rows(
-      sql`select t.type, t.occurred_at, t.device, t.is_bot from tracking_events t join campaign_recipients r on r.id = t.recipient_id where t.organization_id = ${org} and r.contact_id = ${cid} order by t.occurred_at`,
-    ),
-  ]);
+      rows(
+        sql`select a.name as automation, e.status, e.entered_at, e.finished_at, e.exit_reason from automation_enrollments e join automations a on a.id = e.automation_id where e.organization_id = ${org} and e.contact_id = ${cid} order by e.entered_at`,
+      ),
+      rows(
+        sql`select t.type, t.occurred_at, t.device, t.is_bot from tracking_events t join campaign_recipients r on r.id = t.recipient_id where t.organization_id = ${org} and r.contact_id = ${cid} order by t.occurred_at`,
+      ),
+      rows(
+        sql`select name, value, currency, attribution, occurred_at from conversions where organization_id = ${org} and (contact_id = ${cid} or email = ${contact.email}) order by occurred_at`,
+      ),
+    ]);
   return {
     generatedAt: new Date().toISOString(),
     contact: {
@@ -104,6 +108,13 @@ export async function exportContactData(
       enteredAt: iso(j.entered_at),
       finishedAt: iso(j.finished_at),
       exitReason: j.exit_reason,
+    })),
+    outcomes: outcomes.map((o) => ({
+      name: o.name,
+      value: Number(o.value),
+      currency: o.currency,
+      attribution: o.attribution,
+      at: iso(o.occurred_at),
     })),
     interactions: events.map((e) => ({
       type: e.type,
@@ -155,6 +166,11 @@ export async function eraseContact(
       await tx.execute(sql`update campaign_recipients set email = 'erased-' || substr(id::text, 1, 8) || '@erased.invalid', last_error = null
                             where organization_id = ${org} and contact_id = ${c.id}::uuid`);
     }
+    // Outcome records stay for the campaign totals, but no longer identify anyone.
+    await tx.execute(
+      sql`update conversions set email = 'erased-' || substr(id::text, 1, 8) || '@erased.invalid', contact_id = null
+           where organization_id = ${org} and (contact_id = ${c.id}::uuid or email = ${c.email})`,
+    );
     const supp = await tx.execute(
       sql`delete from suppressions where organization_id = ${org} and email = ${c.email} and reason not in ('unsubscribe','hard_bounce','complaint')`,
     );

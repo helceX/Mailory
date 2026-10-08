@@ -77,6 +77,25 @@ Kısmi güncelleme (aynı alanlar, hepsi isteğe bağlı; `custom` verilen anaht
 
 En yeniden eskiye: `{ "data": [{ email, reason, createdAt }], "total": n }` (`limit` ≤ 200).
 
+### `POST /conversions` _(write)_ — sonuç bildirme
+
+Satış, kayıt gibi **gerçek sonuçları** bildirin; Mailory bunu kampanyalara atfeder ve kampanya raporunda “Sonuçlar” olarak gösterir.
+
+```json
+{
+  "name": "purchase",
+  "email": "ayse@ornek.com",
+  "value": 249.9,
+  "currency": "TRY",
+  "occurredAt": "2026-06-15T12:00:00Z",
+  "externalId": "siparis-1001"
+}
+```
+
+`email` veya `contactId` zorunlu; `value` (varsayılan 0), `currency` (varsayılan TRY), `occurredAt` (varsayılan şimdi; gelecekte olamaz, en çok 90 gün önce) ve `externalId` isteğe bağlıdır. **`externalId` gönderin** (örn. sipariş no): aynı kimlikle tekrar çağrı çift sayılmaz (`200`, `duplicate: true`). Yanıt: `201 { id, campaignId, attribution, duplicate }`.
+
+**Atıf kuralı:** kişinin dönüşümden önceki 30 günde **en son tıkladığı** kampanya (`attribution: "click"`); tıklama yoksa en son **aldığı** kampanya (`"send"`, yalnızca etki); hiçbiri yoksa `campaignId: null`. Atıf kayıt anında bir kez hesaplanır, sonradan değişmez. Listede olmayan kişilerin sonuçları da saklanır (atıfsız). Kişi KVKK silme talebinde silinirse sonuç kayıtları anonimleşir, kampanya toplamları kalır.
+
 ### `GET /campaigns?status=sent` → `{ "data": [{ id, name, subject, status, scheduledAt, startedAt, completedAt, createdAt }] }`
 
 ### `GET /campaigns/{id}/stats` → `{ "stats": {recipients, sent, delivered, bounced, complained, …}, "rates": {…} }`

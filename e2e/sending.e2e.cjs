@@ -223,6 +223,73 @@ const unsubscribeToken = (orgId, recipientId) =>
         /En çok tıklanan/.test(report) &&
         report.includes("shop.example.com"),
     );
+    // ---- outcomes: a conversion reported through the public API is attributed to the campaign the person clicked
+    const crypto = require("node:crypto");
+    const prefix = crypto.randomBytes(4).toString("hex");
+    const secret = crypto.randomBytes(32).toString("base64url");
+    const apiKey = `mlk_${prefix}_${secret}`;
+    const userId = psql(
+      `select user_id from memberships where organization_id='${orgId}' limit 1`,
+    );
+    psql(
+      `insert into api_keys(organization_id,name,prefix,secret_hash,scope,created_by_user_id) values('${orgId}','e2e','${prefix}','${crypto.createHash("sha256").update(secret).digest("hex")}','write','${userId}')`,
+    );
+    psql(
+      `insert into entitlement_overrides(organization_id,entitlement_key,limit_value,reason) values('${orgId}','api_requests',100,'e2e')`,
+    );
+    const clicker = psql(
+      `select email from campaign_recipients where campaign_id='${id}' and clicked_at is not null limit 1`,
+    );
+    const conv = (body) =>
+      fetch(`${BASE}/api/v1/conversions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    const c1 = await conv({
+      email: clicker,
+      name: "purchase",
+      value: 249.9,
+      externalId: "order-1",
+    });
+    const c1b = await c1.json();
+    step(
+      "a conversion is attributed to the campaign the person clicked",
+      c1.status === 201 && c1b.campaignId === id && c1b.attribution === "click",
+    );
+    const dup = await conv({
+      email: clicker,
+      name: "purchase",
+      value: 249.9,
+      externalId: "order-1",
+    });
+    step(
+      "a retry with the same externalId does not double count",
+      dup.status === 200 && (await dup.json()).duplicate === true,
+    );
+    const stranger = await (
+      await conv({ email: "yabanci@example.org", name: "purchase", value: 10 })
+    ).json();
+    step(
+      "an unknown person is stored but not attributed",
+      stranger.campaignId === null,
+    );
+    step(
+      "a bad payload is rejected (no identity)",
+      (await conv({ name: "purchase" })).status === 400,
+    );
+    await page.goto(`${BASE}/campaigns/${id}`);
+    await page.getByRole("heading", { name: "Sonuçlar" }).waitFor();
+    const outcomeText = await page.locator("main").innerText();
+    step(
+      "the campaign report shows the outcome (people, value, click attribution)",
+      /Dönüşen kişi/.test(outcomeText) &&
+        /249,9/.test(outcomeText) &&
+        /purchase/.test(outcomeText),
+    );
     if (SHOTS)
       await page.screenshot({ path: `${SHOTS}/campaign-report.png`, fullPage: true });
     await page.goto(`${BASE}/analytics`);

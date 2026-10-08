@@ -94,6 +94,7 @@ export default async function CampaignPage({
         {report?.ok ? <AnalystButton campaignId={c.id} ai={ai} /> : null}
         {report?.ok ? (
           <CampaignReport
+            outcomes={report.outcomes}
             stats={report.stats}
             rates={report.rates}
             links={report.links}

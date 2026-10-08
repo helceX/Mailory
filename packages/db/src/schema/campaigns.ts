@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  numeric,
   jsonb,
   pgTable,
   text,
@@ -322,4 +323,46 @@ export const aiRequests = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("ai_requests_org_idx").on(t.organizationId, t.createdAt)],
+);
+
+/**
+ * Outcomes reported by the customer's own systems (a purchase, a registration, a reply) through the public API.
+ * Attribution to a campaign is computed once, at recording time (last click in the window, else last send), and stored,
+ * so reports stay stable. `external_id` makes retries idempotent.
+ */
+export const conversions = pgTable(
+  "conversions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: orgId(),
+    name: text("name").notNull(),
+    email: text("email"),
+    contactId: uuid("contact_id").references(() => contacts.id, {
+      onDelete: "set null",
+    }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, {
+      onDelete: "set null",
+    }),
+    recipientId: uuid("recipient_id").references(() => campaignRecipients.id, {
+      onDelete: "set null",
+    }),
+    /** How the campaign was chosen: a click before the conversion, or just the latest send. */
+    attribution: text("attribution"),
+    value: numeric("value", { precision: 14, scale: 2 }).notNull().default("0"),
+    currency: text("currency").notNull().default("TRY"),
+    externalId: text("external_id"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("conversions_campaign_idx").on(t.organizationId, t.campaignId, t.occurredAt),
+    uniqueIndex("conversions_external_uidx")
+      .on(t.organizationId, t.externalId)
+      .where(sql`${t.externalId} is not null`),
+    check(
+      "conversions_attribution_chk",
+      sql`${t.attribution} in ('click','send') or ${t.attribution} is null`,
+    ),
+    check("conversions_value_chk", sql`${t.value} >= 0`),
+  ],
 );

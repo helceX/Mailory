@@ -149,3 +149,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Strateji paketi notu (migration `0017_contact_weekly_cap.sql`)
 
 - `organizations.contact_weekly_cap` (NULL veya 1–50, CHECK).
+
+## Sonuç ölçümü (migration `0018_conversions.sql`)
+
+- `conversions` (org, name, email, contact_id, campaign_id, recipient_id, attribution click|send|NULL, value numeric(14,2), currency, external_id [org içinde tekil], occurred_at). Silme: kişi/kampanya silinirse FK `set null`; KVKK silmede e-posta anonimleşir.

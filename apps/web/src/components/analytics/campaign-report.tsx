@@ -1,5 +1,5 @@
 import type { Finding } from "@mailory/core/shared";
-import type { CampaignStats } from "@mailory/db";
+import type { CampaignStats, ConversionStats } from "@mailory/db";
 import { HealthPanel } from "../deliverability/health-panel";
 import { Table, TableContainer, TBody, TD, TH, THead } from "@mailory/ui";
 import { Kpi, KpiGrid, fmtNum, fmtPct } from "./kpi";
@@ -21,12 +21,14 @@ export function CampaignReport({
   links,
   timeline,
   findings = [],
+  outcomes,
 }: {
   stats: CampaignStats;
   rates: Rates;
   links: { url: string; clicks: number; uniqueClicks: number }[];
   timeline: { bucket: Date; opens: number; clicks: number }[];
   findings?: Finding[];
+  outcomes?: ConversionStats;
 }) {
   return (
     <section aria-labelledby="report" className="flex flex-col gap-4">
@@ -72,6 +74,7 @@ export function CampaignReport({
         />
         <Kpi label="Açanlar içinde tıklayan" value={fmtPct(rates.clickToOpen)} />
       </KpiGrid>
+      {outcomes ? <Outcomes outcomes={outcomes} stats={stats} /> : null}
       <p className="text-xs text-muted-foreground">
         Botlar, güvenlik tarayıcıları ve gönderimden hemen sonraki otomatik tıklamalar
         sayılmaz. IP adresi ve cihaz bilgisi ham haliyle saklanmaz.
@@ -219,5 +222,75 @@ function Timeline({
         </TableContainer>
       </details>
     </div>
+  );
+}
+
+const money = (v: number) =>
+  v.toLocaleString("tr-TR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+/** What the campaign actually achieved, as reported by the customer's own systems (conversion API). */
+function Outcomes({
+  outcomes,
+  stats,
+}: {
+  outcomes: ConversionStats;
+  stats: CampaignStats;
+}) {
+  if (outcomes.total === 0)
+    return (
+      <div className="rounded-lg border border-dashed bg-surface p-4 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">Sonuçlar:</span> Henüz bu
+        kampanyaya atfedilen bir dönüşüm yok. Satış, kayıt gibi sonuçları API ile
+        bildirirseniz (<code>POST /api/v1/conversions</code>) burada açılma yerine
+        gerçek sonucu görürsünüz.
+      </div>
+    );
+  const base = stats.delivered || stats.sent;
+  return (
+    <section aria-labelledby="outcomes" className="flex flex-col gap-3">
+      <h3 id="outcomes" className="text-base font-semibold">
+        Sonuçlar
+      </h3>
+      <KpiGrid>
+        <Kpi
+          label="Dönüşen kişi"
+          value={fmtNum(outcomes.people)}
+          sub={base > 0 ? `${fmtPct(outcomes.people / base)} dönüşüm oranı` : undefined}
+        />
+        <Kpi
+          label="Dönüşüm"
+          value={fmtNum(outcomes.total)}
+          sub={`${fmtNum(outcomes.viaClick)} tıklamadan sonra`}
+        />
+        <Kpi
+          label="Değer"
+          value={money(outcomes.revenue)}
+          sub={
+            stats.sent > 0
+              ? `1.000 e-posta başına ${money((outcomes.revenue / stats.sent) * 1000)}`
+              : undefined
+          }
+        />
+      </KpiGrid>
+      <ul className="divide-y rounded-lg border bg-surface text-sm">
+        {outcomes.byName.map((n) => (
+          <li
+            key={n.name}
+            className="flex flex-wrap items-center justify-between gap-2 p-3"
+          >
+            <span className="font-medium">{n.name}</span>
+            <span className="text-muted-foreground">
+              {fmtNum(n.count)} adet · {money(n.value)} · {fmtNum(n.viaClick)} tıklama
+              atfı
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted-foreground">
+        Atıf: kişinin dönüşümden önceki 30 günde en son tıkladığı kampanya; tıklama
+        yoksa en son aldığı kampanya. “Tıklama atfı” güçlü sinyaldir, diğerleri yalnızca
+        etkiyi gösterir.
+      </p>
+    </section>
   );
 }
