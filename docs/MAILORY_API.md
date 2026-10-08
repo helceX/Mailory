@@ -12,10 +12,10 @@ Authorization: Bearer mlk_1a2b3c4d_<43 karakter>
 
 (`x-api-key` başlığı da kabul edilir.) Anahtar tek bir çalışma alanına bağlıdır; başka alanın verisine erişemez.
 
-| Yetki   | Neler yapabilir                                       |
-| ------- | ----------------------------------------------------- |
-| `read`  | Okuma uçları                                          |
-| `write` | Okuma + kişi ekleme + bastırma listesine adres ekleme |
+| Yetki   | Neler yapabilir                                                                  |
+| ------- | -------------------------------------------------------------------------------- |
+| `read`  | Okuma uçları                                                                     |
+| `write` | Okuma + kişi ekleme/güncelleme + liste üyeliği + bastırma listesine adres ekleme |
 
 **API’den yapılamayanlar (bilinçli):** kampanya gönderme/zamanlama/onaylama, kişi silme, plan/üye/anahtar yönetimi. Gönderim kararı her zaman uygulamada, insan onayıyla verilir.
 
@@ -59,11 +59,23 @@ Anahtarı doğrulamak için: `{ "organization": { "id", "name" }, "scope": "read
 
 Gövde: `email` (zorunlu), `firstName`, `lastName`, `company`, `position`, `website`, `phone`, `sector`, `city`, `source`, `consentStatus` (`granted`|`unknown`|`withdrawn`), `consentSource`, `custom` (özel alanlar). `source` verilmezse `api`; `consentStatus: "granted"` ise ve `consentSource` yoksa `api` yazılır — **iznin kanıtı entegratörün sorumluluğudur.** `201 Contact`. Bastırma listesindeki adres `409 suppressed`, mevcut adres `409 duplicate`.
 
+### `PATCH /contacts/{id}` _(write)_
+
+Kısmi güncelleme (aynı alanlar, hepsi isteğe bağlı; `custom` verilen anahtarları günceller). Bastırma listesindeki bir adrese taşınamaz/yeniden abone yapılamaz (`409 suppressed`). `consentStatus: "granted"` verilir ve `consentSource` yoksa `api` yazılır. Güncel `Contact` döner.
+
 ### `GET /lists` → `{ "data": [{ id, name, description, contactCount, createdAt }] }`
 
 ### `POST /suppressions` _(write)_
 
 `{ "emails": ["a@b.co"], "reason": "unsubscribe" }` (en çok 1000) → `{ "added": n, "alreadyPresent": n }`. Başka sistemde abonelikten çıkan kişileri Mailory’ye bildirmek için.
+
+### `POST /lists/{id}/contacts` _(write)_
+
+`{ "contactIds": ["uuid", …] }` (en çok 100) → `{ "added": n }`. Bu çalışma alanına ait olmayan kimlikler sayılmaz. `DELETE /lists/{id}/contacts/{contactId}` → `{ "removed": 0|1 }` (kişinin kendisi silinmez).
+
+### `GET /suppressions?q=&limit=50&offset=0`
+
+En yeniden eskiye: `{ "data": [{ email, reason, createdAt }], "total": n }` (`limit` ≤ 200).
 
 ### `GET /campaigns?status=sent` → `{ "data": [{ id, name, subject, status, scheduledAt, startedAt, completedAt, createdAt }] }`
 

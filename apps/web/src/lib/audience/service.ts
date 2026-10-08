@@ -390,6 +390,29 @@ export async function exportContacts(
   return { ok: true as const, count, lines: lines() };
 }
 
+/** Suppression list as CSV (e.g. to carry opt-outs to another system). Same guards as the contact export; audited. */
+export async function exportSuppressions(deps: AudienceDeps, actor: Actor) {
+  if (!need(actor, "contacts:export")) return denied;
+  const first = await listSuppressions(deps.db, actor.organizationId, { limit: 1 });
+  await audit(deps, actor, "suppressions.exported", "suppression", null, {
+    count: first.total,
+  });
+  async function* lines() {
+    yield CSV_BOM + toCsvLine(["E-posta", "Neden", "Eklenme"]);
+    const PAGE = 200;
+    for (let offset = 0; ; offset += PAGE) {
+      const { rows } = await listSuppressions(deps.db, actor.organizationId, {
+        limit: PAGE,
+        offset,
+      });
+      for (const r of rows)
+        yield toCsvLine([r.email, r.reason, r.createdAt.toISOString()]);
+      if (rows.length < PAGE) return;
+    }
+  }
+  return { ok: true as const, count: first.total, lines: lines() };
+}
+
 // ---- import ---------------------------------------------------------------------------------------
 
 export async function previewImport(deps: AudienceDeps, actor: Actor, csv: string) {

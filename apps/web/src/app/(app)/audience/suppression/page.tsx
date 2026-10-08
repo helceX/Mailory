@@ -45,6 +45,7 @@ export default async function SuppressionPage({
         q={q}
         canWrite={can(actor.role, "contacts:write")}
         canLift={can(actor.role, "org:manage_settings")}
+        canExport={can(actor.role, "contacts:export")}
       />
     </>
   );

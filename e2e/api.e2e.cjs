@@ -165,6 +165,83 @@ const { step, finish } = makeSteps();
   });
   step("a suppressed address cannot be re-added as a contact", blocked.status === 409);
 
+  // ---- update, list membership, suppression listing / export
+  const readKey2 = await createKey("Okuma 2", "Okuma");
+  const patched = await api(writeKey, `/contacts/${contact.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ company: "Acme", custom: {}, city: "Ankara" }),
+  });
+  const patchedBody = await patched.json();
+  step(
+    "PATCH updates only the given fields",
+    patched.status === 200 &&
+      patchedBody.company === "Acme" &&
+      patchedBody.city === "Ankara" &&
+      patchedBody.firstName === "Api",
+  );
+  step(
+    "PATCH with a read key → 403",
+    (
+      await api(readKey2, `/contacts/${contact.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ city: "x" }),
+      })
+    ).status === 403,
+  );
+  const supMove = await api(writeKey, `/contacts/${contact.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ email: "asla@example.org" }),
+  });
+  step("moving a contact onto a suppressed address is refused", supMove.status === 409);
+  const listRow = await (
+    await page.request.fetch(`${BASE}/api/lists`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: BASE },
+      data: { name: "API listesi" },
+    })
+  ).json();
+  const added = await api(writeKey, `/lists/${listRow.id}/contacts`, {
+    method: "POST",
+    body: JSON.stringify({ contactIds: [contact.id] }),
+  });
+  step(
+    "add a contact to a list",
+    added.status === 200 && (await added.json()).added === 1,
+  );
+  const listsAfter = await (await api(writeKey, "/lists")).json();
+  step(
+    "the list count reflects it",
+    listsAfter.data.find((l) => l.id === listRow.id)?.contactCount === 1,
+  );
+  const removed = await api(writeKey, `/lists/${listRow.id}/contacts/${contact.id}`, {
+    method: "DELETE",
+  });
+  step(
+    "remove it again",
+    removed.status === 200 && (await removed.json()).removed === 1,
+  );
+  const supList = await (await api(readKey2, "/suppressions?limit=10")).json();
+  step(
+    "suppressions are listed",
+    supList.total >= 1 && supList.data.some((s) => s.email === "asla@example.org"),
+  );
+  step(
+    "bad paging is a 400",
+    (await api(readKey2, "/suppressions?limit=9999")).status === 400,
+  );
+  await page.goto(`${BASE}/audience/suppression`);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "CSV dışa aktar" }).click(),
+  ]);
+  const csv = require("node:fs").readFileSync(await download.path(), "utf8");
+  step(
+    "suppressions export as CSV",
+    csv.includes("asla@example.org") && csv.startsWith("\uFEFFE-posta"),
+  );
+  // keep the dashboard session on the developers page for the steps below
+  await page.goto(`${BASE}/settings/developers`);
+
   // ---- an API key can never reach session-only routes
   const cross = await fetch(`${BASE}/api/campaigns`, {
     headers: { Authorization: `Bearer ${writeKey}` },

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Download } from "lucide-react";
 import {
   Badge,
   Button,
@@ -29,6 +30,7 @@ export function SuppressionManager({
   q,
   canWrite,
   canLift,
+  canExport = false,
 }: {
   rows: Row[];
   total: number;
@@ -37,6 +39,7 @@ export function SuppressionManager({
   q: string;
   canWrite: boolean;
   canLift: boolean;
+  canExport?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +83,15 @@ export function SuppressionManager({
         eklenir.
         {canLift ? "" : " Listeden çıkarma yalnızca yöneticilere açıktır."}
       </p>
+      {canExport ? (
+        <div>
+          <Button asChild variant="secondary">
+            <a href="/api/suppressions/export" download>
+              <Download className="size-4" aria-hidden="true" /> CSV dışa aktar
+            </a>
+          </Button>
+        </div>
+      ) : null}
       {canWrite ? (
         <form
           onSubmit={add}
