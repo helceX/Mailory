@@ -127,7 +127,17 @@ export type EmailSettings = {
   font: FontKey;
   preheader: string;
 };
-export type EmailDoc = { version: 1; settings: EmailSettings; blocks: Block[] };
+/**
+ * A complete, imported HTML email (e.g. a purchased template). When present, `blocks` is empty and this is what is sent.
+ * It is ALWAYS sanitized at render time (see @mailory/email `renderRawEmail`), whatever was stored.
+ */
+export type RawEmail = { html: string; css: string };
+export type EmailDoc = {
+  version: 1;
+  settings: EmailSettings;
+  blocks: Block[];
+  raw?: RawEmail;
+};
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   heading: "Başlık",
@@ -166,6 +176,8 @@ export const LIMITS = {
   maxDocBytes: 200_000,
   maxTextLength: 5000,
   maxHtmlLength: 20_000,
+  maxRawHtmlLength: 300_000,
+  maxRawCssLength: 60_000,
 } as const;
 
 let counter = 0;
@@ -375,6 +387,7 @@ export function collectMergeKeys(doc: EmailDoc): string[] {
     for (const m of text.matchAll(MERGE_TOKEN)) keys.add(m[1]!.toLowerCase());
   };
   scan(doc.settings.preheader);
+  if (doc.raw) scan(doc.raw.html);
   walkBlocks(doc, (block) => blockTexts(block).forEach(scan));
   return [...keys];
 }
@@ -382,6 +395,9 @@ export function collectMergeKeys(doc: EmailDoc): string[] {
 /** True when the email carries an unsubscribe link: the footer's switch, or an explicit {{unsubscribe_url}} token. */
 export function docHasUnsubscribe(doc: EmailDoc | null): boolean {
   if (!doc) return false;
+  // An imported HTML email must carry the token as a real link target, not just mention it.
+  if (doc.raw)
+    return /href\s*=\s*["']\s*\{\{\s*unsubscribe_url\s*\}\}\s*["']/i.test(doc.raw.html);
   if (collectMergeKeys(doc).includes("unsubscribe_url")) return true;
   let found = false;
   walkBlocks(doc, (b) => {

@@ -125,9 +125,19 @@ export const emailDocSchema = z
       preheader: text(200),
     }),
     blocks: z.array(block).max(LIMITS.maxBlocks),
+    raw: z
+      .object({
+        html: z.string().max(LIMITS.maxRawHtmlLength),
+        css: z.string().max(LIMITS.maxRawCssLength),
+      })
+      .optional(),
   })
   .superRefine((doc, ctx) => {
-    if (JSON.stringify(doc).length > LIMITS.maxDocBytes)
+    if (doc.raw && doc.blocks.length > 0)
+      ctx.addIssue({ code: "custom", message: "HTML şablonunda blok olamaz." });
+    const { raw, ...rest } = doc as { raw?: unknown };
+    void raw;
+    if (JSON.stringify(rest).length > LIMITS.maxDocBytes)
       ctx.addIssue({ code: "custom", message: "E-posta içeriği çok büyük." });
     const ids = new Set<string>();
     const dup = (b: { id: string }) => {

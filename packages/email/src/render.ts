@@ -10,6 +10,7 @@ import { escapeHtml } from "./escape";
 import { applyMerge, type MergeValues } from "./merge";
 import { inlineToHtml, inlineToText } from "./markup";
 import { sanitizeHtmlBlock } from "./sanitize";
+import { renderRawEmail } from "./raw-html";
 
 export type RenderOptions = {
   values: MergeValues;
@@ -34,6 +35,12 @@ export type RenderResult = {
 const WHOLE_TOKEN = /^\{\{\s*([a-z_]+)\s*\}\}$/i;
 
 export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult {
+  if (doc.raw)
+    return renderRawEmail(doc, {
+      values: options.values,
+      appUrl: options.appUrl,
+      subject: options.subject,
+    });
   const { settings } = doc;
   const unknown = new Set<string>();
   const warnings: RenderWarning[] = [];

@@ -224,6 +224,9 @@ async function renderFor(
 }
 
 const hasUnsubscribe = docHasUnsubscribe;
+/** How much content a document holds: blocks, or 1 for a non-empty imported HTML email. */
+const contentUnits = (doc: EmailDoc) =>
+  doc.raw ? (doc.raw.html.trim() ? 1 : 0) : doc.blocks.length;
 
 async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
   const ctx = await loadContext(deps, actor, row);
@@ -250,7 +253,7 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
     audienceCount,
     hasUnsubscribe: hasUnsubscribe(ctx.template?.doc ?? null),
     unknownMergeKeys: unknown,
-    blockCount: ctx.template?.doc?.blocks.length ?? 0,
+    blockCount: ctx.template?.doc ? contentUnits(ctx.template.doc) : 0,
   });
   if (ctx.template && !ctx.template.doc)
     issues.push({

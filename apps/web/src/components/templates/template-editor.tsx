@@ -40,6 +40,7 @@ import {
   isKnownMergeKey,
   settingsFromBrand,
   walkBlocks,
+  docHasUnsubscribe,
   type Block,
   type BlockType,
   type BrandKit,
@@ -68,6 +69,7 @@ import {
   updateBlock,
 } from "./doc-utils";
 import { Inspector } from "./inspector";
+import { RawHtmlPanel } from "./raw-html-panel";
 
 type Preview = { html: string; text: string; unknownKeys: string[] };
 type VersionRow = {
@@ -398,10 +400,9 @@ export function TemplateEditor({
       out.push(
         `Bilinmeyen kişiselleştirme alanı: ${unknown.map((k) => `{{${k}}}`).join(", ")} (boş görünecek).`,
       );
-    let hasUnsub = false;
+    const hasUnsub = docHasUnsubscribe(doc);
     let missingAlt = 0;
     walkBlocks(doc, (b) => {
-      if (b.type === "footer" && b.showUnsubscribe) hasUnsub = true;
       if (b.type === "image" && b.src && !b.alt.trim()) missingAlt++;
     });
     if (!hasUnsub)
@@ -601,6 +602,8 @@ export function TemplateEditor({
             halidir. HTML blokları güvenlik için temizlenmiştir.
           </p>
         </div>
+      ) : doc.raw ? (
+        <RawHtmlPanel doc={doc} canWrite={canWrite} onChange={commit} />
       ) : (
         <DndContext
           id="template-editor-dnd"

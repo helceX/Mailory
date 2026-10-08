@@ -143,6 +143,24 @@ export function reviewContent(input: ContentInput): Finding[] {
   let shortened = 0;
   const allText: string[] = [];
   const urls: string[] = [];
+  if (doc.raw) {
+    // An imported HTML email: judge it by what a recipient would see.
+    const html = doc.raw.html;
+    const text = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    textChars += text.length;
+    allText.push(text);
+    htmlBlocks++;
+    for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+      images++;
+      if (!/\balt\s*=\s*["'][^"']*\S[^"']*["']/i.test(m[0])) missingAlt++;
+    }
+    for (const m of html.matchAll(/href\s*=\s*["'](https?:\/\/[^"']+)["']/gi))
+      urls.push(m[1]!);
+  }
   walkBlocks(doc, (b) => {
     switch (b.type) {
       case "heading":

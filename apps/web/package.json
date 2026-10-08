@@ -23,6 +23,7 @@
     "@mailory/sending": "workspace:*",
     "@mailory/ui": "workspace:*",
     "@mailory/validation": "workspace:*",
+    "fflate": "^0.8.3",
     "ioredis": "6.0.0",
     "lucide-react": "1.47.0",
     "next": "16.3.6",

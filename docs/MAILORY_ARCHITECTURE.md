@@ -188,3 +188,7 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 - `apps/web/src/lib/api-v1.ts#withApiKey`: başarısız-kimlik sınırı → anahtar → kapsam → anahtar başına hız → plan kotası → ölçüm → handler. Handler'a anahtardan türetilmiş `Actor` verilir; mevcut `*For` servisleri aynen çağrılır. Uçlar `app/api/v1/*`; şekiller `api-v1-dto.ts`. Yönetim (oturum + `api_keys:manage`): `app/api/developers/*`, `lib/developers/service.ts`, sayfa `/settings/developers`. Belge: `docs/MAILORY_API.md`.
 - Webhook olayları `packages/sending` içindeki üç noktada (`ses-events`, `unsubscribe`, `track-events`) `emitRecipientWebhook` ile outbox'a yazılır; `apps/worker/src/jobs/webhook-deliver.ts` 10 sn'de bir kiralayıp teslim eder.
 - Fiyat/maliyet analizi: `docs/MAILORY_PRICING.md`.
+
+## 24. HTML şablon içe aktarma (D-102)
+
+- `@mailory/core` `RawEmail`/`EmailDoc.raw`; `@mailory/email`: `raw-css.ts` (CSS süzgeci), `raw-html.ts` (`sanitizeRawEmailHtml`, `renderRawEmail`), `import-html.ts` (gövde/CSS çıkarma, etiket eşleme, yerel görsel bulma, abonelik ekleme). Web: `lib/templates/import.ts` (ZIP/HTML → varlık yükleme → şablon), `POST /api/templates/import`, arayüz `ImportTemplateButton` + `RawHtmlPanel`. `renderEmail` raw belgeyi otomatik ayırır; hazırlık/teslim edilebilirlik denetimleri raw'ı alıcının gördüğüne göre değerlendirir.

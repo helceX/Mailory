@@ -186,7 +186,7 @@ async function readiness(
           stepId: s.id,
           message: "Şablonda abonelikten çıkma bağlantısı yok.",
         });
-      if (doc.blocks.length === 0)
+      if (doc.raw ? !doc.raw.html.trim() : doc.blocks.length === 0)
         issues.push({ stepId: s.id, message: "Şablon boş." });
       const findings = reviewContent({
         subject: s.subject,

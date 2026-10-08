@@ -3,9 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Plus } from "lucide-react";
-import { Badge, Button, ConfirmDialog } from "@mailory/ui";
-import { CATEGORY_LABELS } from "@mailory/validation/labels";
+import { Plus, Upload } from "lucide-react";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  Dialog,
+  DialogContent,
+  Field,
+  Input,
+  NativeSelect,
+} from "@mailory/ui";
+import { CATEGORY_LABELS, TEMPLATE_CATEGORIES } from "@mailory/validation/labels";
 import { FormError } from "../auth/auth-card";
 import { apiCall } from "../audience/labels";
 import { NameDialog } from "./name-dialog";
@@ -43,6 +52,137 @@ export function NewBlankButton({ canWrite }: { canWrite: boolean }) {
         return null;
       }}
     />
+  );
+}
+
+/** Imports a purchased/third-party HTML email (.html, or a .zip with its images) as a new template. */
+export function ImportTemplateButton({ canWrite }: { canWrite: boolean }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [choices, setChoices] = useState<string[] | null>(null);
+  const [warnings, setWarnings] = useState<string[] | null>(null);
+  const [newId, setNewId] = useState<string | null>(null);
+  if (!canWrite) return null;
+
+  async function submit(form: HTMLFormElement, entry?: string) {
+    const data = new FormData(form);
+    if (entry) data.set("entry", entry);
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/templates/import", {
+        method: "POST",
+        body: data,
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) return setError(body?.error?.message ?? "İçe aktarılamadı.");
+      if (body.choices) return setChoices(body.choices as string[]);
+      setChoices(null);
+      setNewId(body.id as string);
+      setWarnings(body.warnings as string[]);
+    } catch {
+      setError("İçe aktarılamadı.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) {
+          setChoices(null);
+          setWarnings(null);
+          setNewId(null);
+          setError(null);
+        }
+      }}
+    >
+      <span onClick={() => setOpen(true)} className="contents">
+        <Button variant="secondary">
+          <Upload aria-hidden="true" /> HTML içe aktar
+        </Button>
+      </span>
+      <DialogContent
+        title="HTML şablonu içe aktar"
+        description="Satın aldığınız veya hazırladığınız bir e-posta şablonunu (.html ya da görselleriyle birlikte .zip) yükleyin. Betikler ve güvensiz içerik temizlenir, görseller Mailory'ye taşınır."
+      >
+        {warnings && newId ? (
+          <div className="mt-4 flex flex-col gap-3">
+            <p role="status" className="text-sm font-medium">
+              Şablon içe aktarıldı.
+            </p>
+            <ul className="list-disc pl-5 text-sm text-muted-foreground">
+              {warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+            <div>
+              <Button onClick={() => router.push(`/templates/${newId}`)}>
+                Şablonu aç
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form
+            className="mt-4 flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit(e.currentTarget);
+            }}
+          >
+            <FormError message={error} />
+            <Field id="imp-name" label="Şablon adı" required>
+              <Input name="name" maxLength={120} required />
+            </Field>
+            <Field id="imp-category" label="Kategori">
+              <NativeSelect name="category" defaultValue="other">
+                {TEMPLATE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {label(c)}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            <Field
+              id="imp-file"
+              label="Dosya (.html veya .zip, en fazla 15 MB)"
+              required
+            >
+              <Input name="file" type="file" accept=".html,.htm,.zip" required />
+            </Field>
+            {choices ? (
+              <Field
+                id="imp-entry"
+                label="Arşivde birden fazla HTML var; hangisi kullanılsın?"
+              >
+                <NativeSelect name="entry" defaultValue={choices[0]}>
+                  {choices.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            ) : null}
+            <p className="text-xs text-muted-foreground">
+              Lisans: şablonu yalnızca kullanım hakkınız olan içerik için içe aktarın.
+            </p>
+            <Button type="submit" disabled={busy}>
+              {busy
+                ? "İçe aktarılıyor…"
+                : choices
+                  ? "Seçilenle içe aktar"
+                  : "İçe aktar"}
+            </Button>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

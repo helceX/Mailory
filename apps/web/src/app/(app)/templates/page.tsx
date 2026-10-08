@@ -9,6 +9,7 @@ import { getAiStatus } from "@/lib/ai/service";
 import { PageHeader } from "@/components/page-header";
 import {
   LibraryGallery,
+  ImportTemplateButton,
   NewBlankButton,
   TemplatesList,
 } from "@/components/templates/templates-view";
@@ -62,6 +63,7 @@ export default async function TemplatesPage({
         actions={
           <div className="flex gap-2">
             <AiDraftButton ai={ai} canWrite={canWrite} />
+            <ImportTemplateButton canWrite={canWrite} />
             <NewBlankButton canWrite={canWrite} />
           </div>
         }
