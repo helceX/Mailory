@@ -183,9 +183,11 @@ const headers = { "Content-Type": "application/json", Origin: BASE };
     step("a started automation cannot be edited (409)", locked.status() === 409);
   } finally {
     worker.kill("SIGTERM");
+    console.log(
+      "\n--- worker log (tail) ---\n" + log.split("\n").slice(-12).join("\n"),
+    );
   }
   await browser.close();
-  console.log("\n--- worker log (tail) ---\n" + log.split("\n").slice(-5).join("\n"));
   const unexpected = problems.filter(
     (p) => !/status of 409/.test(p) && !/HTTP 409/.test(p),
   );
