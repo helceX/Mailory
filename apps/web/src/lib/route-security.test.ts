@@ -39,6 +39,8 @@ const PUBLIC_API: Record<string, string> = {
   "api/webhooks/ses/route.ts": "authenticated by SNS signature + topic allow-list",
   "api/unsubscribe/[token]/route.ts":
     "signed token is the credential (RFC 8058 one-click)",
+  "api/public/domain-check/route.ts":
+    "public free tool: read-only DNS lookups of a valid hostname, rate-limited and cached",
   "api/assets/[id]/route.ts": "n/a",
 };
 /** Mutating routes allowed to skip the same-origin check: no cookie is involved, a signed token / signature is. */

@@ -30,11 +30,13 @@ Mevcut araçlar **göndermeyi** iyi yapar, **sonucu** değil. Kullanıcıya edit
 - **Türkçe ek uyumu ve ad düzeltme** (D-103): `{{first_name:e}}` → Ayşe'ye / Ali'ye / Ahmet'e / Can'a; `:in`, `:i`, `:de`, `:den`, `:title`, `:upper`, `:lower`.
 - **Yorgunluk kalkanı** (D-104): kişi başına haftalık (kayan 7 gün) en fazla kampanya e-postası; sınıra ulaşan kişi o kampanyada atlanır.
 - **Sonuç ölçümü** (D-106): `POST /api/v1/conversions`; kampanya raporunda dönüşen kişi, değer ve tıklama atfı.
+- **Ücretsiz alan adı sağlık raporu** (D-109): giriş gerektirmeyen herkese açık araç, "Ücretsiz dene" çağrısıyla.
+- **Liste temizliği ve ulaşılabilir kişi sayımı** (D-107), **Türkiye gönderim takvimi** (D-108).
 - **Gönderim öncesi ön otopsi** (D-105): hedef kitleden zorlayıcı gerçek kişilerle (adı boş/büyük harfli/çok uzun…) e-postanın nasıl görüneceği ve neyin bozulacağı.
 
 ## Pazara giriş
 
-1. Dar kapı: "SendPulse'tan bir günde taşı, teslim edilebilirliğini düzelt" + ücretsiz alan adı sağlık raporu (SPF/DKIM/DMARC + itibar).
+1. Dar kapı: "SendPulse'tan bir günde taşı, teslim edilebilirliğini düzelt" + **ücretsiz alan adı sağlık raporu** (`/domain-check`, D-109 — yapıldı; SPF/DKIM/DMARC/MX).
 2. Türkçe içerik: KVKK, İYS, Gmail/Yahoo toplu gönderici kuralları, spama düşmemek.
 3. Kanallar: ajanslar (çok marka), mali müşavirler, girişim ekosistemleri (BTM gibi bir müşteri referans olur).
 4. İlk 10–15 müşteriyle elle çalışarak ihtiyacı doğrula; büyük özellikleri veriyle seç.

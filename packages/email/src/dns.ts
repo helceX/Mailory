@@ -10,6 +10,8 @@ export interface DnsResolver {
   txt(name: string): Promise<string[]>;
   /** CNAME targets. Same contract as txt(). */
   cname(name: string): Promise<string[]>;
+  /** MX exchange hostnames, best priority first. Same contract as txt(). */
+  mx(name: string): Promise<string[]>;
 }
 
 export class DnsLookupError extends Error {
@@ -46,11 +48,18 @@ export class SystemDnsResolver implements DnsResolver {
   cname(name: string) {
     return this.lookup(name, () => this.resolver.resolveCname(name));
   }
+  mx(name: string) {
+    return this.lookup(name, async () =>
+      (await this.resolver.resolveMx(name))
+        .sort((a, b) => a.priority - b.priority)
+        .map((r) => r.exchange),
+    );
+  }
 }
 
 export type MockZone = Record<
   string,
-  { TXT?: string[]; CNAME?: string[]; FAIL?: boolean }
+  { TXT?: string[]; CNAME?: string[]; MX?: string[]; FAIL?: boolean }
 >;
 
 /**
@@ -88,6 +97,11 @@ export class MockDnsResolver implements DnsResolver {
     const e = this.entry(name);
     if (e?.FAIL) throw new DnsLookupError(name, new Error("simulated failure"));
     return e?.CNAME ?? [];
+  }
+  async mx(name: string) {
+    const e = this.entry(name);
+    if (e?.FAIL) throw new DnsLookupError(name, new Error("simulated failure"));
+    return e?.MX ?? [];
   }
 }
 
