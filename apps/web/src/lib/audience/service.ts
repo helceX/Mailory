@@ -235,6 +235,18 @@ export async function updateContactFor(
     }
   }
 
+  // Becoming subscribed again takes up a contact slot (only reachable people count toward the plan).
+  if (becomingSubscribed) {
+    const limited = await enforce(
+      deps.db,
+      actor.organizationId,
+      "contacts",
+      1,
+      now(deps),
+    );
+    if (limited) return limited;
+  }
+
   const { custom: customInput, ...rest } = patch;
   const custom = await prepareCustom(deps, actor, customInput);
   if (!("value" in custom)) return custom;

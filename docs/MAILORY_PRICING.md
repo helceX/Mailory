@@ -16,6 +16,8 @@
 
 Çıkarım: bir e-posta başına maliyet ≈ 0,0001 USD. **10.000 e-posta ≈ 1 USD**, 250.000 e-posta ≈ 25 USD. Değişken maliyet düşük olduğundan fiyatın asıl dayanağı **değer/kolaylık** ve **kişi sayısı**dır; gönderim hacmi limiti ise kötüye kullanımı ve itibar riskini sınırlamak içindir.
 
+> **Kişi tanımı (D-107):** plan limitinde yalnızca _ulaşılabilir_ (abone durumundaki) kişiler sayılır; abonelikten çıkan, geri dönen, şikayet eden ve “temizlenmiş” kişiler sayılmaz. Bu, fiyat teşviklerini müşteriyle hizalar.
+
 ## 2. Plan limitleri (mevcut tohum veri, migration 0010 + `api_requests`)
 
 | Plan       | Kişi     | E-posta/ay | Üye      | Otomasyon | AI/ay    | Depolama | API/ay   |

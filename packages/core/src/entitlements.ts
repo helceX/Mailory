@@ -14,7 +14,7 @@ export const ENTITLEMENT_LABELS: Record<
   EntitlementKey,
   { label: string; unit: string; period: "total" | "month" }
 > = {
-  contacts: { label: "Kişi", unit: "kişi", period: "total" },
+  contacts: { label: "Ulaşılabilir kişi", unit: "kişi", period: "total" },
   emails_per_month: { label: "Aylık e-posta", unit: "e-posta", period: "month" },
   members: { label: "Ekip üyesi", unit: "üye", period: "total" },
   automations: { label: "Etkin otomasyon", unit: "otomasyon", period: "total" },

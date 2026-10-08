@@ -18,7 +18,7 @@
     "test": "vitest run",
     "db:generate": "pnpm --filter @mailory/db generate",
     "db:migrate": "pnpm --filter @mailory/db migrate",
-    "test:e2e": "node e2e/audience.e2e.cjs && node e2e/templates.e2e.cjs && node e2e/senders.e2e.cjs && node e2e/campaigns.e2e.cjs && node e2e/sending.e2e.cjs && node e2e/automation.e2e.cjs && node e2e/ai.e2e.cjs && node e2e/api.e2e.cjs && node e2e/import.e2e.cjs && node e2e/dashboard.e2e.cjs"
+    "test:e2e": "node e2e/audience.e2e.cjs && node e2e/templates.e2e.cjs && node e2e/senders.e2e.cjs && node e2e/campaigns.e2e.cjs && node e2e/sending.e2e.cjs && node e2e/automation.e2e.cjs && node e2e/ai.e2e.cjs && node e2e/api.e2e.cjs && node e2e/import.e2e.cjs && node e2e/dashboard.e2e.cjs && node e2e/cleanup.e2e.cjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

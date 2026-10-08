@@ -82,8 +82,10 @@ export async function getUsage(
     Number((await db.execute<{ n: string | number }>(q)).rows[0]?.n ?? 0);
   switch (key) {
     case "contacts":
+      // Only REACHABLE people count (D-107): unsubscribed, bounced, complained and cleaned contacts cost nothing
+      // to mail, so retiring them frees room instead of silently billing the customer for a dead list.
       return one(
-        sql`select count(*) as n from contacts where organization_id = ${org}`,
+        sql`select count(*) as n from contacts where organization_id = ${org} and status = 'subscribed'`,
       );
     case "emails_per_month":
       return one(

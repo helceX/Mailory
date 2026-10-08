@@ -90,3 +90,51 @@ export async function listHealth(db: Database, organizationId: OrganizationId) {
     .where(eq(contacts.organizationId, organizationId));
   return row!;
 }
+
+// ---- list cleanup ("sunset") -----------------------------------------------------------------------------------
+
+/** Subscribed contacts who were mailed 3+ times in the last 90 days and reacted to none (score 0), excluding new ones. */
+const CANDIDATES = sql`status = 'subscribed' and engagement_score = 0 and created_at < now() - interval '60 days'`;
+
+export async function countCleanupCandidates(
+  db: Database,
+  organizationId: OrganizationId,
+) {
+  const [r] = await db
+    .execute<{ candidates: number; cleaned: number }>(
+      sql`
+    select count(*) filter (where ${CANDIDATES})::int as candidates,
+           count(*) filter (where status = 'cleaned')::int as cleaned
+      from contacts where organization_id = ${organizationId}::uuid`,
+    )
+    .then((x) => x.rows);
+  return r ?? { candidates: 0, cleaned: 0 };
+}
+
+/** Retires the candidates (status → cleaned). Reversible: nothing is deleted and no opt-out is recorded. */
+export async function cleanDormantContacts(
+  db: Database,
+  organizationId: OrganizationId,
+) {
+  const r = await db.execute(sql`
+    update contacts set status = 'cleaned', updated_at = now()
+     where organization_id = ${organizationId}::uuid and ${CANDIDATES}`);
+  return r.rowCount ?? 0;
+}
+
+/** Brings cleaned contacts back (oldest first), at most `limit`, never one that is suppressed. Returns how many. */
+export async function restoreCleanedContacts(
+  db: Database,
+  organizationId: OrganizationId,
+  limit: number,
+) {
+  if (limit <= 0) return 0;
+  const r = await db.execute(sql`
+    update contacts set status = 'subscribed', engagement_score = null, updated_at = now()
+     where id in (
+       select c.id from contacts c
+        where c.organization_id = ${organizationId}::uuid and c.status = 'cleaned'
+          and not exists (select 1 from suppressions s where s.organization_id = c.organization_id and s.email = c.email)
+        order by c.created_at limit ${limit})`);
+  return r.rowCount ?? 0;
+}

@@ -7,7 +7,12 @@ import {
   type Permission,
 } from "@mailory/core";
 import {
+  checkEntitlement,
+  cleanDormantContacts,
+  countCleanupCandidates,
   countSentSince,
+  recordAudit,
+  restoreCleanedContacts,
   getOrgSendLimit,
   listCampaigns,
   listHealth,
@@ -181,5 +186,67 @@ export async function getDeliverabilityCenter(deps: DeliverabilityDeps, actor: A
     lists,
     limits: { daily: dailyLimit, sentToday },
     thresholds: RATE_LIMITS,
+  };
+}
+
+// ---- list cleanup ----------------------------------------------------------------------------------------------
+
+export async function getCleanupFor(deps: DeliverabilityDeps, actor: Actor) {
+  if (!need(actor, "analytics:read"))
+    return { ok: false as const, code: "forbidden" as const };
+  return {
+    ok: true as const,
+    ...(await countCleanupCandidates(deps.db, actor.organizationId)),
+  };
+}
+
+/** Retires contacts who ignored 3+ recent emails. Reversible; audited with the count. */
+export async function cleanupDormantFor(deps: DeliverabilityDeps, actor: Actor) {
+  if (!need(actor, "contacts:write"))
+    return { ok: false as const, code: "forbidden" as const };
+  const cleaned = await cleanDormantContacts(deps.db, actor.organizationId);
+  await recordAudit(deps.db, {
+    organizationId: actor.organizationId,
+    userId: actor.userId,
+    action: "contacts.cleaned",
+    entityType: "contact",
+    ip: actor.ip,
+    userAgent: actor.userAgent,
+    metadata: { count: cleaned },
+  });
+  return { ok: true as const, cleaned };
+}
+
+/** Brings cleaned contacts back as far as the plan's contact limit allows. */
+export async function restoreCleanedFor(deps: DeliverabilityDeps, actor: Actor) {
+  if (!need(actor, "contacts:write"))
+    return { ok: false as const, code: "forbidden" as const };
+  const now = (deps.now ?? (() => new Date()))();
+  const room = await checkEntitlement(
+    deps.db,
+    actor.organizationId,
+    "contacts",
+    0,
+    now,
+  );
+  const capacity = room.remaining === null ? 1_000_000 : room.remaining;
+  const restored = await restoreCleanedContacts(
+    deps.db,
+    actor.organizationId,
+    capacity,
+  );
+  await recordAudit(deps.db, {
+    organizationId: actor.organizationId,
+    userId: actor.userId,
+    action: "contacts.cleaned_restored",
+    entityType: "contact",
+    ip: actor.ip,
+    userAgent: actor.userAgent,
+    metadata: { count: restored },
+  });
+  return {
+    ok: true as const,
+    restored,
+    limited: room.remaining !== null && restored >= capacity,
   };
 }

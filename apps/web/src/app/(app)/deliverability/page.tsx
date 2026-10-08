@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { HEALTH_BAND_LABELS } from "@mailory/core";
+import { HEALTH_BAND_LABELS, can } from "@mailory/core";
 import { Badge, Table, TableContainer, TBody, TD, TH, THead } from "@mailory/ui";
 import { Kpi, KpiGrid, fmtNum, fmtPct } from "@/components/analytics/kpi";
 import { BAND_TONE } from "@/components/deliverability/health-panel";
+import { ListCleanup } from "@/components/deliverability/list-cleanup";
 import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/lib/db";
-import { getDeliverabilityCenter } from "@/lib/deliverability/service";
+import { getCleanupFor, getDeliverabilityCenter } from "@/lib/deliverability/service";
 import { getOrgContext } from "@/lib/org/context";
 
 export const metadata = { title: "Teslim edilebilirlik" };
@@ -21,7 +22,10 @@ const stateLabel = (s: string | null) =>
 
 export default async function DeliverabilityPage() {
   const actor = (await getOrgContext())!.actor!;
-  const r = await getDeliverabilityCenter({ db: getDb().db }, actor);
+  const [r, cleanup] = await Promise.all([
+    getDeliverabilityCenter({ db: getDb().db }, actor),
+    getCleanupFor({ db: getDb().db }, actor),
+  ]);
   if (!r.ok)
     return (
       <p className="text-sm text-muted-foreground">
@@ -72,6 +76,14 @@ export default async function DeliverabilityPage() {
           </ul>
         )}
       </section>
+
+      {cleanup.ok ? (
+        <ListCleanup
+          candidates={cleanup.candidates}
+          cleaned={cleanup.cleaned}
+          canWrite={can(actor.role, "contacts:write")}
+        />
+      ) : null}
 
       <section aria-labelledby="rep" className="flex flex-col gap-3">
         <h2 id="rep" className="text-lg font-semibold">
