@@ -550,3 +550,17 @@ export async function getOrgSendLimit(db: Database, organizationId: Organization
 }
 
 export type { Campaign };
+
+/** How many marketing emails this contact has been sent since `since` (any campaign or automation step). */
+export async function countContactSendsSince(
+  db: Database,
+  organizationId: OrganizationId,
+  contactId: string,
+  since: Date,
+) {
+  const r = await db.execute<{ n: number }>(sql`
+    select count(*)::int as n from campaign_recipients
+     where organization_id = ${organizationId}::uuid and contact_id = ${contactId}::uuid
+       and sent_at is not null and sent_at >= ${since}`);
+  return r.rows[0]?.n ?? 0;
+}

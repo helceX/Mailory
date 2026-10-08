@@ -8,6 +8,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import {
   ApprovalPolicy,
+  FrequencyCapPolicy,
   CampaignsTable,
   NewCampaignButton,
 } from "@/components/campaigns/campaigns-list";
@@ -58,7 +59,10 @@ export default async function CampaignsPage({
         actions={<NewCampaignButton canWrite={can(actor.role, "campaigns:write")} />}
       />
       {can(actor.role, "org:manage_settings") && policy.ok ? (
-        <ApprovalPolicy initial={policy.requireApproval} />
+        <>
+          <ApprovalPolicy initial={policy.requireApproval} />
+          <FrequencyCapPolicy initial={policy.weeklyCap} />
+        </>
       ) : null}
       {can(actor.role, "org:manage_settings") && ai.ok ? (
         <AiToggle initial={ai.enabled} available={ai.available} />

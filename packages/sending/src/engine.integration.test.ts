@@ -439,6 +439,100 @@ suite("send engine (real Postgres)", () => {
     expect(t.sent).toHaveLength(0);
   });
 
+  describe("fatigue shield (weekly per-contact cap)", () => {
+    const priorSends = async (
+      s: Awaited<ReturnType<typeof setup>>,
+      email: string,
+      n: number,
+      daysAgo: number,
+    ) => {
+      const [c] = await db
+        .select()
+        .from(contacts)
+        .where(and(eq(contacts.organizationId, s.org.id), eq(contacts.email, email)));
+      for (let i = 0; i < n; i++) {
+        const [other] = await db
+          .insert(campaigns)
+          .values({
+            organizationId: s.org.id,
+            name: `Eski ${i}`,
+            status: "completed",
+            subject: "x",
+            audience: { kind: "all" },
+            utm: { ...DEFAULT_UTM, campaign: "x" },
+          })
+          .returning();
+        await db.insert(campaignRecipients).values({
+          organizationId: s.org.id,
+          campaignId: other!.id,
+          contactId: c!.id,
+          email,
+          status: "sent",
+          sentAt: new Date(clock.getTime() - daysAgo * 86_400_000),
+        });
+      }
+    };
+    const setCap = (s: Awaited<ReturnType<typeof setup>>, cap: number | null) =>
+      db
+        .update(organizations)
+        .set({ contactWeeklyCap: cap })
+        .where(eq(organizations.id, s.org.id));
+
+    it("skips only contacts who already reached the cap this week; the rest are sent", async () => {
+      const s = await setup(3);
+      await setCap(s, 2);
+      await priorSends(s, s.emails[0]!, 2, 1); // at the cap → skipped
+      await priorSends(s, s.emails[1]!, 1, 1); // below the cap → sent
+      const t = new ScriptedTransport();
+      const d = deps(t);
+      await dispatchDue(d);
+      await drain(d, s.campaign);
+      expect(t.sent.map((m) => m.to).sort()).toEqual(
+        [s.emails[1]!, s.emails[2]!].sort(),
+      );
+      const recs = await recipients(s.campaign.id);
+      const skipped = recs.find((r) => r.email === s.emails[0]);
+      expect(skipped).toMatchObject({ status: "skipped", lastError: "frequency_cap" });
+      expect(await row(s.campaign.id)).toMatchObject({ status: "completed" });
+    });
+
+    it("the window is rolling: sends older than 7 days do not count", async () => {
+      const s = await setup(2);
+      await setCap(s, 2);
+      await priorSends(s, s.emails[0]!, 5, 8);
+      const t = new ScriptedTransport();
+      const d = deps(t);
+      await dispatchDue(d);
+      await drain(d, s.campaign);
+      expect(t.sent).toHaveLength(2);
+    });
+
+    it("no cap configured means no limit", async () => {
+      const s = await setup(2);
+      await priorSends(s, s.emails[0]!, 10, 1);
+      const t = new ScriptedTransport();
+      const d = deps(t);
+      await dispatchDue(d);
+      await drain(d, s.campaign);
+      expect(t.sent).toHaveLength(2);
+    });
+
+    it("automation steps are exempt from the cap (but their sends count toward it)", async () => {
+      const s = await setup(2);
+      await setCap(s, 1);
+      await priorSends(s, s.emails[0]!, 3, 1);
+      await db
+        .update(campaigns)
+        .set({ kind: "automation_step" })
+        .where(eq(campaigns.id, s.campaign.id));
+      const t = new ScriptedTransport();
+      const d = deps(t);
+      await dispatchDue(d);
+      await drain(d, s.campaign);
+      expect(t.sent.map((m) => m.to)).toContain(s.emails[0]);
+    });
+  });
+
   it("refuses to send when the sender's domain is no longer verified", async () => {
     const s = await setup(2);
     const t = new ScriptedTransport();

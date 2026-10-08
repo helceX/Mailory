@@ -63,4 +63,12 @@ export const testSendSchema = z.object({
   recipients: z.array(emailSchema).min(1, "En az bir alıcı seçin.").max(5),
 });
 
-export const campaignPolicySchema = z.object({ requireApproval: z.boolean() });
+export const campaignPolicySchema = z
+  .object({
+    requireApproval: z.boolean().optional(),
+    /** Max emails per contact per rolling 7 days across campaigns; null removes the cap. */
+    weeklyCap: z.number().int().min(1).max(50).nullable().optional(),
+  })
+  .refine((v) => v.requireApproval !== undefined || v.weeklyCap !== undefined, {
+    message: "Değiştirilecek bir ayar belirtin.",
+  });

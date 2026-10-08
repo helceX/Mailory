@@ -195,3 +195,59 @@ export function ApprovalPolicy({ initial }: { initial: boolean }) {
     </section>
   );
 }
+
+/** Fatigue shield: no contact gets more than N campaign emails per rolling week, however many campaigns are running. */
+export function FrequencyCapPolicy({ initial }: { initial: number | null }) {
+  const router = useRouter();
+  const [value, setValue] = useState(initial === null ? "" : String(initial));
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  async function save() {
+    setSaved(false);
+    const n = value.trim() === "" ? null : Number(value);
+    if (n !== null && !(Number.isInteger(n) && n >= 1 && n <= 50))
+      return setError("1 ile 50 arasında bir sayı girin ya da boş bırakın.");
+    const r = await apiCall("/api/campaign-policy", "PUT", { weeklyCap: n });
+    if (!r.ok) return setError(r.message);
+    setError(null);
+    setSaved(true);
+    router.refresh();
+  }
+  return (
+    <section
+      aria-labelledby="cap"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-surface p-4"
+    >
+      <div>
+        <h2 id="cap" className="text-sm font-semibold">
+          Yorgunluk kalkanı
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Bir kişiye 7 günde gönderilecek en fazla kampanya e-postası. Sınıra ulaşan
+          kişi bu kampanyada atlanır (raporda “sıklık sınırı” olarak görünür). Otomasyon
+          e-postaları atlanmaz ama sayıma dahildir. Boş = sınırsız.
+        </p>
+        <FormError message={error} />
+        {saved ? (
+          <p role="status" className="text-xs">
+            Kaydedildi.
+          </p>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <label htmlFor="cap-input">Haftalık en fazla</label>
+        <input
+          id="cap-input"
+          inputMode="numeric"
+          className="h-9 w-20 rounded border bg-surface px-2"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="∞"
+        />
+        <button type="button" className="h-9 rounded border px-3" onClick={save}>
+          Kaydet
+        </button>
+      </div>
+    </section>
+  );
+}

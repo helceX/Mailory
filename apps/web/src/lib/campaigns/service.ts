@@ -1,5 +1,7 @@
 import {
   applyMerge,
+  collectTexts,
+  reviewMergeFor,
   docHasUnsubscribe,
   domainOfEmail,
   findCoveringDomain,
@@ -38,6 +40,7 @@ import {
   recordAudit,
   resolveAudienceFilter,
   resumeCampaign,
+  sampleContactsForReview,
   setCampaignPolicy,
   transitionCampaign,
   updateCampaignDraft,
@@ -462,6 +465,88 @@ export async function previewCampaignFor(deps: CampaignDeps, actor: Actor, id: s
   };
 }
 
+export type SampleReview = {
+  contactId: string;
+  email: string;
+  name: string;
+  reasons: string[];
+  subject: string;
+  excerpt: string;
+  issues: { code: string; message: string }[];
+};
+
+/**
+ * Pre-send "pre-mortem": renders the campaign for a handful of REAL, awkward contacts from its audience (no first name,
+ * names in CAPS, very long values…) and reports what would go wrong for each. Read-only; nothing is sent.
+ */
+export async function reviewSamplesFor(deps: CampaignDeps, actor: Actor, id: string) {
+  if (!need(actor, "campaigns:read")) return denied;
+  const row = await getCampaign(deps.db, actor.organizationId, id);
+  if (!row) return fail("not_found");
+  const ctx = await loadContext(deps, actor, row);
+  if (!ctx.template?.doc) return fail("invalid", "Önce bir şablon seçin.");
+  if (!ctx.audienceFilter) return fail("invalid", "Önce bir hedef kitle seçin.");
+  const [brand, fields, samples] = await Promise.all([
+    loadBrandKit(deps, actor),
+    listContactFields(deps.db, actor.organizationId),
+    sampleContactsForReview(deps.db, actor.organizationId, ctx.audienceFilter),
+  ]);
+  const doc = ctx.template.doc;
+  const texts = [row.subject, row.preheader, ...collectTexts(doc)];
+  const out: SampleReview[] = [];
+  for (const { contact: c, reasons } of samples) {
+    const values = buildMergeValues(
+      {
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email,
+        company: c.company,
+        position: c.position,
+        city: c.city,
+        sector: c.sector,
+        custom: (c.custom ?? {}) as Record<string, string | number | boolean | null>,
+      },
+      {
+        unsubscribeUrl: `${deps.appUrl}/unsubscribe/preview`,
+        viewInBrowserUrl: `${deps.appUrl}/view/preview`,
+        orgName: SYSTEM_MERGE_FIELDS.find((f) => f.key === "org_name")!.sample,
+      },
+    );
+    const rendered = renderEmail(
+      {
+        ...doc,
+        settings: {
+          ...doc.settings,
+          preheader: row.preheader || doc.settings.preheader,
+        },
+      },
+      {
+        values,
+        appUrl: deps.appUrl,
+        brandLogoUrl: logoSrcFor(brand) || undefined,
+        subject: row.subject,
+      },
+    );
+    const subject = oneLine(applyMerge(row.subject, values, (v) => v)).trim();
+    const issues = reviewMergeFor(texts, values, { subject, text: rendered.text });
+    out.push({
+      contactId: c.id,
+      email: c.email,
+      name: [c.firstName, c.lastName].filter(Boolean).join(" "),
+      reasons,
+      subject,
+      excerpt: rendered.text.replace(/\s+/g, " ").trim().slice(0, 160),
+      issues: issues.map((i) => ({ code: i.code, message: i.message })),
+    });
+  }
+  void fields;
+  return {
+    ok: true as const,
+    samples: out,
+    problems: out.filter((s) => s.issues.length > 0).length,
+  };
+}
+
 export async function listTestRecipientsFor(deps: CampaignDeps, actor: Actor) {
   if (!need(actor, "campaigns:write")) return denied;
   const members = await listMembers(deps.db, actor.organizationId);
@@ -767,10 +852,13 @@ export async function getPolicyFor(deps: CampaignDeps, actor: Actor) {
 export async function setPolicyFor(
   deps: CampaignDeps,
   actor: Actor,
-  requireApproval: boolean,
+  patch: { requireApproval?: boolean; weeklyCap?: number | null },
 ) {
   if (!need(actor, "org:manage_settings")) return denied;
-  await setCampaignPolicy(deps.db, actor.organizationId, requireApproval);
-  await audit(deps, actor, "campaign.policy_changed", null, { requireApproval });
-  return { ok: true as const, requireApproval };
+  await setCampaignPolicy(deps.db, actor.organizationId, patch);
+  await audit(deps, actor, "campaign.policy_changed", null, patch);
+  return {
+    ok: true as const,
+    ...(await getCampaignPolicy(deps.db, actor.organizationId)),
+  };
 }

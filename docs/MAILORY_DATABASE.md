@@ -145,3 +145,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Faz 18+ notu (migration `0016_billing_profile.sql`)
 
 - `billing_profiles` (org başına tek satır; `tax_id_kind` vkn|tckn). Migration `0015_equal_customers.sql` elle yazıldı (snapshot yok); sonraki üretilen snapshot'lar 0016'dan devam eder.
+
+## Strateji paketi notu (migration `0017_contact_weekly_cap.sql`)
+
+- `organizations.contact_weekly_cap` (NULL veya 1–50, CHECK).

@@ -15,6 +15,7 @@ import {
   listDueCampaigns,
   listSendingCampaigns,
   listSenderDomains,
+  countContactSendsSince,
   markRecipientFailed,
   markRecipientRetry,
   markRecipientSent,
@@ -219,6 +220,10 @@ export async function sendBatch(
   };
   const organization = await getOrganization(deps.db, org);
   const orgName = organization?.name ?? "";
+  // Fatigue shield: campaigns respect the per-contact weekly cap; automation steps are exempt (an onboarding
+  // sequence must not be starved by newsletters) but still COUNT toward it.
+  const weeklyCap =
+    campaign.kind === "campaign" ? (organization?.contactWeeklyCap ?? null) : null;
 
   const rate = deps.ratePerSecond ?? 14;
   const concurrency = Math.max(1, Math.min(deps.concurrency ?? 4, rate));
@@ -251,6 +256,20 @@ export async function sendBatch(
       await markRecipientFailed(deps.db, org, r.id, "skipped", "no_longer_subscribed");
       out.skipped++;
       return;
+    }
+
+    if (weeklyCap !== null) {
+      const recent = await countContactSendsSince(
+        deps.db,
+        org,
+        r.contactId!,
+        new Date(clock(deps).getTime() - 7 * 86_400_000),
+      );
+      if (recent >= weeklyCap) {
+        await markRecipientFailed(deps.db, org, r.id, "skipped", "frequency_cap");
+        out.skipped++;
+        return;
+      }
     }
 
     const message = await renderMessage({

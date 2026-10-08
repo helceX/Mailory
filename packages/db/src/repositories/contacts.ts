@@ -486,3 +486,60 @@ export async function countNewEmails(
   }
   return fresh;
 }
+
+export type ReviewSample = { contact: typeof contacts.$inferSelect; reasons: string[] };
+
+/**
+ * A small, deliberately awkward sample of the audience for the pre-send review: contacts with no first name, the
+ * longest names/companies, names stored in CAPS or containing odd characters — plus a few random ones. These are the
+ * rows where personalization breaks, so they are the ones worth looking at before sending to everyone.
+ */
+export async function sampleContactsForReview(
+  db: Database,
+  organizationId: OrganizationId,
+  filter: ContactFilter,
+  limit = 12,
+): Promise<ReviewSample[]> {
+  const base = contactWhere(organizationId, { ...filter, status: "subscribed" });
+  const pick = (extra: SQL, order: SQL, n: number) =>
+    db.select().from(contacts).where(and(base, extra)).orderBy(order).limit(n);
+  const [empty, longName, longCompany, caps, odd, random] = await Promise.all([
+    pick(
+      sql`coalesce(btrim(${contacts.firstName}), '') = ''`,
+      sql`${contacts.createdAt} desc`,
+      3,
+    ),
+    pick(
+      sql`${contacts.firstName} is not null`,
+      sql`length(${contacts.firstName}) desc nulls last`,
+      2,
+    ),
+    pick(
+      sql`${contacts.company} is not null`,
+      sql`length(${contacts.company}) desc nulls last`,
+      2,
+    ),
+    pick(
+      sql`length(${contacts.firstName}) > 1 and ${contacts.firstName} = upper(${contacts.firstName}) and ${contacts.firstName} ~ '[[:alpha:]]'`,
+      sql`${contacts.createdAt} desc`,
+      2,
+    ),
+    pick(sql`${contacts.firstName} ~ '[0-9@_]'`, sql`${contacts.createdAt} desc`, 2),
+    pick(sql`true`, sql`random()`, 3),
+  ]);
+  const byId = new Map<string, ReviewSample>();
+  const add = (rows: (typeof contacts.$inferSelect)[], reason: string) => {
+    for (const c of rows) {
+      const hit = byId.get(c.id);
+      if (hit) hit.reasons.push(reason);
+      else if (byId.size < limit) byId.set(c.id, { contact: c, reasons: [reason] });
+    }
+  };
+  add(empty, "Adı boş");
+  add(odd, "Adı ad gibi görünmüyor");
+  add(caps, "Adı büyük harfle");
+  add(longName, "En uzun ad");
+  add(longCompany, "En uzun şirket adı");
+  add(random, "Rastgele");
+  return [...byId.values()];
+}

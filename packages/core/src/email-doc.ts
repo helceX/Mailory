@@ -290,9 +290,12 @@ export const SYSTEM_MERGE_FIELDS: MergeField[] = [
 ];
 export const SYSTEM_MERGE_KEYS = new Set(SYSTEM_MERGE_FIELDS.map((f) => f.key));
 
-/** `{{ key }}` or `{{key|fallback}}`; keys are lowercase identifiers, `custom.<key>` for custom fields. */
+/**
+ * `{{ key }}`, `{{key|fallback}}`, `{{key:filter}}` or `{{key:filter|fallback}}`; keys are lowercase identifiers,
+ * `custom.<key>` for custom fields; filters (title, upper, lower, e, i, in, de, den) are Turkish text helpers.
+ */
 export const MERGE_TOKEN =
-  /\{\{\s*([a-z][a-z0-9_.]{0,48})\s*(?:\|([^{}]{0,100}))?\}\}/gi;
+  /\{\{\s*([a-z][a-z0-9_.]{0,48})\s*(?::([a-z]{1,8}))?\s*(?:\|([^{}]{0,100}))?\}\}/gi;
 
 export function isKnownMergeKey(
   key: string,
@@ -379,6 +382,13 @@ export function blockTexts(block: Block): string[] {
     default:
       return [];
   }
+}
+
+export function collectTexts(doc: EmailDoc): string[] {
+  const out: string[] = [doc.settings.preheader];
+  if (doc.raw) out.push(doc.raw.html);
+  walkBlocks(doc, (block) => out.push(...blockTexts(block)));
+  return out;
 }
 
 export function collectMergeKeys(doc: EmailDoc): string[] {

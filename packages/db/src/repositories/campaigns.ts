@@ -180,20 +180,32 @@ export async function countSendable(
 
 export async function getCampaignPolicy(db: Database, organizationId: OrganizationId) {
   const [row] = await db
-    .select({ requireApproval: organizations.requireCampaignApproval })
+    .select({
+      requireApproval: organizations.requireCampaignApproval,
+      weeklyCap: organizations.contactWeeklyCap,
+    })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
-  return { requireApproval: row?.requireApproval ?? false };
+  return {
+    requireApproval: row?.requireApproval ?? false,
+    weeklyCap: row?.weeklyCap ?? null,
+  };
 }
 
 export async function setCampaignPolicy(
   db: Database,
   organizationId: OrganizationId,
-  requireApproval: boolean,
+  patch: { requireApproval?: boolean; weeklyCap?: number | null },
 ) {
   await db
     .update(organizations)
-    .set({ requireCampaignApproval: requireApproval, updatedAt: new Date() })
+    .set({
+      ...(patch.requireApproval !== undefined
+        ? { requireCampaignApproval: patch.requireApproval }
+        : {}),
+      ...(patch.weeklyCap !== undefined ? { contactWeeklyCap: patch.weeklyCap } : {}),
+      updatedAt: new Date(),
+    })
     .where(eq(organizations.id, organizationId));
 }

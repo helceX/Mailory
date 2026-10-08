@@ -42,6 +42,8 @@ export const organizations = pgTable(
     suspendedReason: text("suspended_reason"),
     aiEnabled: boolean("ai_enabled").notNull().default(false),
     dailySendLimit: integer("daily_send_limit").notNull().default(2000),
+    /** Max marketing emails one contact may receive per rolling 7 days (all campaigns + automations). NULL = no cap. */
+    contactWeeklyCap: integer("contact_weekly_cap"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

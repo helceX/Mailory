@@ -1,4 +1,5 @@
 import { MERGE_TOKEN, isSafeUrl } from "./email-doc";
+import { applyMergeFilter } from "./turkish";
 
 /**
  * Pure text helpers shared by the server renderer and the editor's canvas preview. Everything here
@@ -61,11 +62,14 @@ export function applyMerge(
   encode: (value: string) => string,
   unknown?: Set<string>,
 ): string {
-  return text.replace(MERGE_TOKEN, (_match, rawKey: string, fallback?: string) => {
-    const key = rawKey.toLowerCase();
-    if (!(key in values)) unknown?.add(key);
-    const value = values[key];
-    if (present(value)) return encode(String(value));
-    return fallback !== undefined ? fallback.trim() : "";
-  });
+  return text.replace(
+    MERGE_TOKEN,
+    (_match, rawKey: string, filter?: string, fallback?: string) => {
+      const key = rawKey.toLowerCase();
+      if (!(key in values)) unknown?.add(key);
+      const value = values[key];
+      if (present(value)) return encode(applyMergeFilter(String(value), filter));
+      return fallback !== undefined ? fallback.trim() : "";
+    },
+  );
 }

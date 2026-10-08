@@ -129,6 +129,65 @@ suite("campaign engine (real Postgres)", () => {
   const fetchRow = async (id: string) =>
     (await db.select().from(campaigns).where(eq(campaigns.id, id)))[0]!;
 
+  describe("pre-send review (ön otopsi)", () => {
+    it("surfaces awkward real contacts and what would go wrong for each; sends nothing", async () => {
+      const w = await workspace();
+      const id = await readyDraft(w);
+      await svc.updateCampaignFor(deps(), w.actor, id, {
+        subject: "Merhaba {{first_name}}",
+      });
+      const mk = async (firstName: string | null, company?: string) => {
+        const c = await createContact(db, w.oid, {
+          email: `r-${randomUUID().slice(0, 6)}@example.org`,
+          firstName,
+          company: company ?? null,
+        });
+        await addContactsToList(db, w.oid, w.listId, { ids: [c!.id] });
+        return c!.id;
+      };
+      const empty = await mk(null);
+      const caps = await mk("AYŞE");
+      const odd = await mk("12345");
+      const r = await svc.reviewSamplesFor(deps(), w.actor, id);
+      if (!r.ok) throw new Error("review");
+      const by = (cid: string) => r.samples.find((s) => s.contactId === cid)!;
+      expect(by(empty).issues.map((i) => i.code)).toEqual(
+        expect.arrayContaining(["empty_value"]),
+      );
+      expect(by(empty).reasons).toContain("Adı boş");
+      expect(by(caps).issues.map((i) => i.code)).toContain("all_caps");
+      expect(by(caps).subject).toBe("Merhaba AYŞE");
+      expect(by(odd).issues.map((i) => i.code)).toContain("odd_name");
+      expect(r.problems).toBeGreaterThanOrEqual(3);
+      expect(r.samples.length).toBeLessThanOrEqual(12);
+      expect(sent).toHaveLength(0);
+    });
+
+    it("a clean audience reports no problems, and a viewer can run it (read-only)", async () => {
+      const w = await workspace();
+      const id = await readyDraft(w);
+      const viewer = await memberOf(w.org.id, "viewer");
+      const r = await svc.reviewSamplesFor(deps(), viewer.actor, id);
+      expect(r).toMatchObject({ ok: true });
+    });
+
+    it("needs a template and an audience; foreign tenants get not_found", async () => {
+      const a = await workspace();
+      const b = await workspace();
+      const c = await svc.createCampaignFor(deps(), a.actor, { name: "Boş" });
+      if (!c.ok) throw new Error();
+      expect(await svc.reviewSamplesFor(deps(), a.actor, c.id)).toMatchObject({
+        ok: false,
+        code: "invalid",
+      });
+      const id = await readyDraft(a);
+      expect(await svc.reviewSamplesFor(deps(), b.actor, id)).toMatchObject({
+        ok: false,
+        code: "not_found",
+      });
+    });
+  });
+
   describe("drafts", () => {
     it("creates a draft with the default sender and a slugged UTM campaign", async () => {
       const w = await workspace();
@@ -203,7 +262,9 @@ suite("campaign engine (real Postgres)", () => {
       expect(await svc.scheduleCampaignFor(deps(), viewer, id)).toMatchObject({
         code: "forbidden",
       });
-      expect(await svc.setPolicyFor(deps(), editor, true)).toMatchObject({
+      expect(
+        await svc.setPolicyFor(deps(), editor, { requireApproval: true }),
+      ).toMatchObject({
         code: "forbidden",
       });
       expect((await svc.createCampaignFor(deps(), editor, { name: "e" })).ok).toBe(
@@ -519,7 +580,9 @@ suite("campaign engine (real Postgres)", () => {
       const w = await workspace();
       const editor = await memberOf(w.org.id, "editor");
       const admin = await memberOf(w.org.id, "admin");
-      expect((await svc.setPolicyFor(deps(), w.actor, true)).ok).toBe(true);
+      expect(
+        (await svc.setPolicyFor(deps(), w.actor, { requireApproval: true })).ok,
+      ).toBe(true);
       const id = await readyDraft(w);
       return { w, editor, admin, id };
     }
@@ -626,7 +689,7 @@ suite("campaign engine (real Postgres)", () => {
       expect(await svc.getPolicyFor(deps(), w.actor)).toMatchObject({
         requireApproval: false,
       });
-      await svc.setPolicyFor(deps(), w.actor, true);
+      await svc.setPolicyFor(deps(), w.actor, { requireApproval: true });
       expect(await svc.getPolicyFor(deps(), w.actor)).toMatchObject({
         requireApproval: true,
       });

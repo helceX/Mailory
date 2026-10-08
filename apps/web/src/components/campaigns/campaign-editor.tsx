@@ -426,6 +426,7 @@ export function CampaignEditor(props: EditorProps) {
             if (preheader) set("preheader", preheader);
           }}
         />
+        <SamplesReview campaignId={campaign.id} disabled={dirty || !form.templateId} />
         <Button onClick={save} disabled={!dirty || busy !== null}>
           {busy === "save" ? "Kaydediliyor…" : "Kaydet"}
         </Button>
@@ -503,6 +504,92 @@ export function CampaignEditor(props: EditorProps) {
           </p>
         )}
       </aside>
+    </div>
+  );
+}
+
+type Sample = {
+  contactId: string;
+  email: string;
+  name: string;
+  reasons: string[];
+  subject: string;
+  excerpt: string;
+  issues: { code: string; message: string }[];
+};
+
+/** Pre-send review: the campaign as it will look for real, awkward contacts from the audience. */
+function SamplesReview({
+  campaignId,
+  disabled,
+}: {
+  campaignId: string;
+  disabled: boolean;
+}) {
+  const [samples, setSamples] = useState<Sample[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function load() {
+    setBusy(true);
+    setError(null);
+    const r = await apiCall(`/api/campaigns/${campaignId}/samples`, "GET");
+    setBusy(false);
+    if (!r.ok) return setError(r.message);
+    setSamples((r.data as { samples: Sample[] }).samples);
+  }
+  const bad = samples?.filter((s) => s.issues.length > 0).length ?? 0;
+  return (
+    <div className="flex flex-col gap-2 border-t pt-3">
+      <h3 className="text-sm font-semibold">Gerçek kişilerle ön otopsi</h3>
+      <p className="text-xs text-muted-foreground">
+        Hedef kitlenizden zorlayıcı örnekleri (adı boş, büyük harfli, çok uzun…) seçip
+        e-postanın onlarda nasıl görüneceğini kontrol eder. Hiçbir şey gönderilmez.
+      </p>
+      <Button variant="secondary" onClick={load} disabled={disabled || busy}>
+        {busy ? "İnceleniyor…" : samples ? "Yeniden incele" : "Örnekleri incele"}
+      </Button>
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {samples ? (
+        <>
+          <p
+            role="status"
+            className={`text-sm font-medium ${bad ? "text-warning-text" : "text-success"}`}
+          >
+            {samples.length === 0
+              ? "İncelenecek abone bulunamadı."
+              : bad
+                ? `${samples.length} örnekten ${bad} tanesinde sorun var.`
+                : `${samples.length} örnekte sorun bulunmadı.`}
+          </p>
+          <ul className="flex flex-col gap-2">
+            {samples.map((s) => (
+              <li key={s.contactId} className="rounded border p-2 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <span className="font-medium">{s.name || s.email}</span>
+                  <span className="text-muted-foreground">{s.reasons.join(" · ")}</span>
+                </div>
+                <div className="mt-1">
+                  <span className="text-muted-foreground">Konu: </span>
+                  {s.subject || "—"}
+                </div>
+                <div className="truncate text-muted-foreground">{s.excerpt}</div>
+                {s.issues.map((i) => (
+                  <div
+                    key={i.code + i.message}
+                    className="mt-1 flex gap-1 text-warning-text"
+                  >
+                    <AlertTriangle
+                      className="mt-0.5 size-3 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {i.message}
+                  </div>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </div>
   );
 }
