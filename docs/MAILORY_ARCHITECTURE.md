@@ -192,3 +192,7 @@ EmailDoc (JSON bloklar) ──► doğrulama (zod, allow-list) ──► kaydet 
 ## 24. HTML şablon içe aktarma (D-102)
 
 - `@mailory/core` `RawEmail`/`EmailDoc.raw`; `@mailory/email`: `raw-css.ts` (CSS süzgeci), `raw-html.ts` (`sanitizeRawEmailHtml`, `renderRawEmail`), `import-html.ts` (gövde/CSS çıkarma, etiket eşleme, yerel görsel bulma, abonelik ekleme). Web: `lib/templates/import.ts` (ZIP/HTML → varlık yükleme → şablon), `POST /api/templates/import`, arayüz `ImportTemplateButton` + `RawHtmlPanel`. `renderEmail` raw belgeyi otomatik ayırır; hazırlık/teslim edilebilirlik denetimleri raw'ı alıcının gördüğüne göre değerlendirir.
+
+## 25. Dashboard
+
+- `/dashboard` birleştirir (hepsi mevcut servislerden, ek sorgu/tablo yok): kurulum listesi, "Dikkat gerektirenler" (teslim edilebilirlik merkezinin kritik/uyarı maddeleri), son 30 gün KPI'ları, son kampanyalar ve plan kullanımı (kişi, aylık e-posta; %80'de amber, dolunca kırmızı). Hızlı eylemler yalnızca `campaigns:write` yetkisi olanlara görünür. Bileşenler `components/dashboard/dashboard-sections.tsx`.
