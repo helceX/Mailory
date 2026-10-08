@@ -11,6 +11,10 @@ import {
   type Finding,
   type HealthBand,
   type ReadinessIssue,
+  dayNotes,
+  isPoorSendDay,
+  isWeekend,
+  nextGoodSendDay,
 } from "@mailory/core/shared";
 import {
   Badge,
@@ -471,6 +475,9 @@ export function CampaignEditor(props: EditorProps) {
                 onChange={(e) => setSendAt(e.target.value)}
               />
             ) : null}
+            {sendMode === "later" && sendAt ? (
+              <SendTimingHint value={sendAt} onChange={setSendAt} />
+            ) : null}
             {props.requireApproval ? (
               <Button onClick={() => act("submit")} disabled={!ready || busy !== null}>
                 {busy === "submit" ? "Gönderiliyor…" : "Onaya gönder"}
@@ -589,6 +596,52 @@ function SamplesReview({
             ))}
           </ul>
         </>
+      ) : null}
+    </div>
+  );
+}
+
+/** Warns when the chosen day is a holiday/bayram/weekend and offers the next good day at the same time. */
+function SendTimingHint({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const day = value.slice(0, 10);
+  const notes = dayNotes(day);
+  const weekend = isWeekend(day);
+  const better = nextGoodSendDay(day);
+  if (!day || (notes.length === 0 && !weekend)) return null;
+  const time = value.slice(11, 16) || "10:00";
+  const labels = [...notes.map((n) => n.name), ...(weekend ? ["hafta sonu"] : [])].join(
+    ", ",
+  );
+  const poor = isPoorSendDay(day);
+  return (
+    <div
+      role="note"
+      className={`rounded border p-2 text-xs ${poor ? "border-warning/40 bg-warning/10 text-warning-text" : "bg-surface-muted text-muted-foreground"}`}
+    >
+      <div>
+        {poor
+          ? `Seçtiğiniz gün: ${labels}. Kitleniz tatilde olabilir, açılma ve tıklama düşebilir.`
+          : `Bu gün: ${labels}.`}
+      </div>
+      {better ? (
+        <button
+          type="button"
+          className="mt-1 font-medium underline"
+          onClick={() => onChange(`${better}T${time}`)}
+        >
+          {new Date(`${better}T12:00:00`).toLocaleDateString("tr-TR", {
+            day: "numeric",
+            month: "long",
+            weekday: "long",
+          })}{" "}
+          {time} için değiştir
+        </button>
       ) : null}
     </div>
   );

@@ -62,3 +62,5 @@ Her madde: ne yaptım (öneri), neden, kullanıcının yapması/onaylaması gere
 ## D. Altyapı notları
 
 - GitHub push'u 2026-10-07 15:10 UTC'de geçici `500 Internal Server Error` verdi (Faz 10 commit'i yerelde); sonraki push'larda yeniden denendi (bkz. git log / son durum).
+
+> **Yıllık bakım (D-108):** `packages/core/src/calendar.ts` içindeki dinî bayram tablosu 2026–2027'yi kapsar; her yıl Diyanet takvimine göre genişletilmelidir (tablo dışında uyarı gösterilmez, tahmin yapılmaz).

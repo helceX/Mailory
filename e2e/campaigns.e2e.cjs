@@ -134,6 +134,22 @@ async function registerVerified(email) {
   // ---- schedule for later (policy off): confirm dialog
   await page.getByLabel("İleri bir tarihte").check();
   await page.getByLabel("Gönderim tarihi ve saati").fill("2030-01-01T09:00");
+  // The scheduler knows Turkish holidays: a bayram date gets a warning and a better day is offered.
+  await page.getByLabel("Gönderim tarihi ve saati").fill("2026-05-27T10:00");
+  const hint = page.getByRole("note");
+  await hint.waitFor();
+  step(
+    "a bayram date is flagged with a suggestion",
+    /Kurban Bayramı/.test(await hint.innerText()) &&
+      /Pazartesi/.test(await hint.innerText()),
+  );
+  await hint.getByRole("button").click();
+  step(
+    "accepting the suggestion moves the send to the next working day, same time",
+    (await page.getByLabel("Gönderim tarihi ve saati").inputValue()) ===
+      "2026-06-01T10:00",
+  );
+  await page.getByLabel("Gönderim tarihi ve saati").fill("2030-01-01T09:00");
   const tooFar = page.getByRole("button", { name: "Zamanla" });
   await tooFar.click();
   await page.getByRole("button", { name: "Zamanla" }).last().click();
