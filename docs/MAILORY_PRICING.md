@@ -56,6 +56,8 @@ Pazarda benzer ölçekli kişi sayısı için tipik aylık fiyatlar: giriş plan
 4. API kullanım dağılımı (1.000/10.000/100.000 eşikleri doğru mu).
 5. Ücretsiz → ücretli plana dönüşüm oranı.
 
-## 6. Ödeme entegrasyonu — kapsam dışı (insan kararı)
+## 6. Ödeme entegrasyonu (Mediaory ile ortak karar, D-101)
 
-Plan ataması bugün platform yöneticisi tarafından yapılır (`subscriptions.source`: `manual`). Stripe/iyzico/PayTR entegrasyonu için: sözleşme, webhook ile abonelik durumu → `subscriptions` eşlemesi (şema hazır: `source` içinde `stripe` değeri ve `status`; sağlayıcı kimliği alanı eklenecek), fatura bilgileri, vergi. Önerilen sıra: (1) fiyat kararı, (2) sağlayıcı seçimi, (3) checkout + webhook + `past_due` → askıya alma politikası.
+Sağlayıcı: **iyzico** (TL, kart + taksit) ve kurumsal müşteriler için **havale/EFT**; yasal fatura **lisanslı e-Fatura/e-Arşiv entegratöründen** (örn. Paraşüt) kesilir — Mediaory (`helceX/CiM` → `docs/product/BILLING_DECISION.md`) ile aynı. Stripe, Türkiye'de kayıtlı şirketi doğrudan kabul etmediği için varsayılan değildir (başvuru anında doğrulanmalı). KDV/e-Fatura-e-Arşiv ayrıntıları için mali müşavire danışılmalıdır.
+
+Sıra: (1) **fatura bilgileri — yapıldı** (`/settings/billing`), (2) `PaymentProvider` arayüzü + iyzico (checkout, webhook, iptal), (3) `invoices` tablosu + liste/PDF bağlantısı, (4) plan uygulaması: ödeme başarılı → `subscriptions` (`source: stripe` değeri `provider` olarak yeniden adlandırılacak), başarısız/iptal → serbest plana düşüş (veri silinmez). 2–4, iyzico mağaza hesabı ve fatura entegratörü hazır olunca başlar.

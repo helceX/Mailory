@@ -20,3 +20,4 @@ export * from "./deliverability";
 export * from "./automation";
 export * from "./entitlements";
 export * from "./webhook";
+export * from "./tax-id";

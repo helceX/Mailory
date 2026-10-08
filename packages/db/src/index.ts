@@ -52,3 +52,4 @@ export * from "./repositories/entitlements";
 export * from "./repositories/platform";
 export * from "./repositories/privacy";
 export * from "./repositories/api";
+export * from "./repositories/billing-profile";

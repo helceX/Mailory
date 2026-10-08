@@ -6,3 +6,4 @@ export * from "./template";
 export * from "./senders";
 export * from "./campaign";
 export * from "./automation";
+export * from "./billing-profile";

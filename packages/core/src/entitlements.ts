@@ -23,13 +23,7 @@ export const ENTITLEMENT_LABELS: Record<
   api_requests: { label: "API isteği", unit: "istek", period: "month" },
 };
 
-export const PLAN_KEYS = [
-  "free",
-  "starter",
-  "growth",
-  "pro",
-  "enterprise",
-] as const;
+export const PLAN_KEYS = ["free", "starter", "growth", "pro", "enterprise"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 export const PLAN_LABELS: Record<PlanKey, string> = {
   free: "Ücretsiz",

@@ -141,3 +141,7 @@ Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygu
 ## Faz 18 notları (migration `0014_public_api.sql`)
 
 - `api_keys` (prefix UNIQUE, secret_hash, scope read|write, revoked_at), `api_usage` (PK org+gün, sayaç), `webhook_endpoints` (secret, events text[], consecutive_failures), `webhook_deliveries` (outbox; status pending|delivered|failed, attempts, next_attempt_at, locked_until). `webhook_deliveries` → `webhook_endpoints` bileşik FK (aynı org zorunlu, elle yazıldı). Saklama: teslimatlar 30 gün, `api_usage` 400 gün (`runRetention`).
+
+## Faz 18+ notu (migration `0016_billing_profile.sql`)
+
+- `billing_profiles` (org başına tek satır; `tax_id_kind` vkn|tckn). Migration `0015_equal_customers.sql` elle yazıldı (snapshot yok); sonraki üretilen snapshot'lar 0016'dan devam eder.
