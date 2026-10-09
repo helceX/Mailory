@@ -4,7 +4,7 @@ import { parseJson, serviceFailure } from "@/lib/api";
 import { apiJson, withApiKey } from "@/lib/api-v1";
 import { contactDto } from "@/lib/api-v1-dto";
 import { audienceDeps } from "@/lib/audience/deps";
-import { getContactDetail, updateContactFor } from "@/lib/audience/service";
+import { bulkAction, getContactDetail, updateContactFor } from "@/lib/audience/service";
 
 export const dynamic = "force-dynamic";
 
@@ -35,5 +35,24 @@ export function PATCH(
     if (!updated.ok) return serviceFailure(updated);
     const r = await getContactDetail(audienceDeps(), actor, id);
     return r.ok ? apiJson(contactDto(r.contact as never)) : serviceFailure(r);
+  });
+}
+
+/**
+ * Erases the contact (right to erasure). The address is not suppressed: if it must never be mailed again, add it to
+ * `POST /suppressions` first.
+ */
+export function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return withApiKey(request, "write", async ({ actor }) => {
+    const { id } = await params;
+    if (!z.uuid().safeParse(id).success) return serviceFailure({ code: "not_found" });
+    const r = await bulkAction(audienceDeps(), actor, { action: "delete", ids: [id] });
+    if (!r.ok) return serviceFailure(r);
+    return r.affected === 0
+      ? serviceFailure({ code: "not_found" })
+      : apiJson({ deleted: r.affected });
   });
 }

@@ -220,6 +220,61 @@ const { step, finish } = makeSteps();
     "remove it again",
     removed.status === 200 && (await removed.json()).removed === 1,
   );
+
+  // ---- tags and erasure
+  const tagMade = await api(writeKey, "/tags", {
+    method: "POST",
+    body: JSON.stringify({ name: "api-etiket" }),
+  });
+  const tagId = (await tagMade.json()).id;
+  step("create a tag", tagMade.status === 201 && Boolean(tagId));
+  step(
+    "a duplicate tag is a 409",
+    (
+      await api(writeKey, "/tags", {
+        method: "POST",
+        body: JSON.stringify({ name: "api-etiket" }),
+      })
+    ).status === 409,
+  );
+  step(
+    "a read key cannot create tags",
+    (
+      await api(readKey, "/tags", {
+        method: "POST",
+        body: JSON.stringify({ name: "x" }),
+      })
+    ).status === 403,
+  );
+  const tagged = await api(writeKey, `/contacts/${contact.id}/tags/${tagId}`, {
+    method: "PUT",
+  });
+  step("tag a contact", tagged.status === 200 && (await tagged.json()).affected === 1);
+  const tagsNow = await (await api(readKey, "/tags")).json();
+  step(
+    "tag list shows the count",
+    tagsNow.data.find((t) => t.id === tagId)?.contactCount === 1,
+  );
+  const untagged = await api(writeKey, `/contacts/${contact.id}/tags/${tagId}`, {
+    method: "DELETE",
+  });
+  step("untag", untagged.status === 200);
+  const tmp = await (
+    await api(writeKey, "/contacts", {
+      method: "POST",
+      body: JSON.stringify({ email: `silinecek-${Date.now()}@example.org` }),
+    })
+  ).json();
+  const erased = await api(writeKey, `/contacts/${tmp.id}`, { method: "DELETE" });
+  step("erase a contact", erased.status === 200 && (await erased.json()).deleted === 1);
+  step(
+    "…which is then gone (404)",
+    (await api(readKey, `/contacts/${tmp.id}`)).status === 404,
+  );
+  step(
+    "erasing again is a 404",
+    (await api(writeKey, `/contacts/${tmp.id}`, { method: "DELETE" })).status === 404,
+  );
   const supList = await (await api(readKey2, "/suppressions?limit=10")).json();
   step(
     "suppressions are listed",

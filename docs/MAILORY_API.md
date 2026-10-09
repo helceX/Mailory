@@ -63,6 +63,18 @@ Gövde: `email` (zorunlu), `firstName`, `lastName`, `company`, `position`, `webs
 
 Kısmi güncelleme (aynı alanlar, hepsi isteğe bağlı; `custom` verilen anahtarları günceller). Bastırma listesindeki bir adrese taşınamaz/yeniden abone yapılamaz (`409 suppressed`). `consentStatus: "granted"` verilir ve `consentSource` yoksa `api` yazılır. Güncel `Contact` döner.
 
+### `DELETE /contacts/{id}` _(write)_ — silme (KVKK)
+
+Kişiyi kalıcı siler → `{ "deleted": 1 }`; yoksa `404`. Adres bastırma listesine **eklenmez**; bir daha asla posta almaması gerekiyorsa önce `POST /suppressions` çağırın.
+
+### `GET /tags` → `{ "data": [{ id, name, contactCount }] }`
+
+### `POST /tags` _(write)_ — gövde `{ "name": "…" }` (≤50 karakter) → `201 { id, name }`; aynı ad `409 duplicate`.
+
+### `PUT /contacts/{id}/tags/{tagId}` · `DELETE /contacts/{id}/tags/{tagId}` _(write)_
+
+Etiketi kişiye ekler (idempotent) / kaldırır → `{ "affected": n }`.
+
 ### `GET /lists` → `{ "data": [{ id, name, description, contactCount, createdAt }] }`
 
 ### `POST /suppressions` _(write)_
