@@ -1,0 +1,72 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn, Wordmark } from "@mailory/ui";
+import { LogoutButton } from "./logout-button";
+import { OrgSwitcher } from "./org-switcher";
+import { EXTRA_ICONS, NAV_ITEMS, type ExtraNav } from "./nav-config";
+
+export function AppSidebar({
+  userName,
+  organizations,
+  activeOrganizationId,
+  extra = [],
+}: {
+  userName: string;
+  organizations: { id: string; name: string }[];
+  activeOrganizationId: string;
+  extra?: ExtraNav[];
+}) {
+  const pathname = usePathname();
+  return (
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r bg-surface md:flex md:flex-col">
+      <div className="flex h-16 items-center px-5">
+        <Link href="/dashboard" aria-label="Mailory dashboard" className="text-lg">
+          <Wordmark />
+        </Link>
+      </div>
+      <div className="pb-3">
+        <OrgSwitcher organizations={organizations} activeId={activeOrganizationId} />
+      </div>
+      <nav
+        className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4"
+        aria-label="Primary"
+      >
+        {[
+          ...NAV_ITEMS.map((i) => ({ ...i })),
+          ...extra.map((e) => ({
+            href: e.href,
+            label: e.label,
+            icon: EXTRA_ICONS[e.key],
+          })),
+        ].map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-3 rounded px-3 py-2 text-sm font-medium transition-colors duration-150",
+                active
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="flex flex-col gap-1 border-t p-3">
+        <p className="truncate px-3 text-xs text-muted-foreground" title={userName}>
+          {userName}
+        </p>
+        <LogoutButton />
+      </div>
+    </aside>
+  );
+}

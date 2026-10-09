@@ -1,0 +1,15 @@
+{
+  "ad": "Rüzgâr Sağlık Müşteri Notları",
+  "kategori": "customer",
+  "aciklama": "Sağlık temalı, müşteri̇ haberleri̇ içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "medical-newsletter-template-2023-11-27-04-55-43-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "sağlık",
+    "customer",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}

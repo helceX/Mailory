@@ -1,0 +1,15 @@
+{
+  "ad": "Yelken Spor salonu Duyurusu",
+  "kategori": "announcement",
+  "aciklama": "Spor salonu temalı, duyuru içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "gym-email-newsletter-2025-04-24-02-25-01-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "spor salonu",
+    "announcement",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}

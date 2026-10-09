@@ -1,0 +1,101 @@
+/*
+ * Mailory design tokens (docs/MAILORY_DECISIONS.md D-004). Components read
+ * every colour/space/radius from these properties — nothing hardcodes a value.
+ * Same token vocabulary as the CiM design system, Mailory's own palette.
+ */
+:root {
+  --background: oklch(99% 0.002 270);
+  --foreground: oklch(21% 0.02 270);
+  --surface: oklch(100% 0 0);
+  --surface-muted: oklch(96.5% 0.005 270);
+  --border: oklch(91% 0.006 270);
+  --border-strong: oklch(81% 0.01 270);
+
+  --primary: oklch(46% 0.19 275);
+  --primary-foreground: oklch(98% 0.005 275);
+  --secondary: oklch(94.5% 0.007 270);
+  --secondary-foreground: oklch(26% 0.02 270);
+  --accent: oklch(72% 0.15 55);
+  --muted-foreground: oklch(48% 0.015 270);
+
+  --success: oklch(44% 0.13 150);
+  --success-foreground: oklch(98% 0.01 150);
+  --warning: oklch(65% 0.15 80);
+  --warning-foreground: oklch(20% 0.02 80);
+  --warning-text: oklch(44% 0.11 80);
+  --danger: oklch(52% 0.19 25);
+  --danger-foreground: oklch(98% 0.01 25);
+  --info: oklch(47% 0.11 240);
+  --info-foreground: oklch(98% 0.01 240);
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 10px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --font-sans:
+    "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --background: oklch(16% 0.012 270);
+    --foreground: oklch(94% 0.006 270);
+    --surface: oklch(19% 0.012 270);
+    --surface-muted: oklch(22.5% 0.012 270);
+    --border: oklch(29% 0.012 270);
+    --border-strong: oklch(38% 0.014 270);
+    --primary: oklch(72% 0.14 275);
+    --primary-foreground: oklch(15% 0.03 275);
+    --secondary: oklch(26% 0.012 270);
+    --secondary-foreground: oklch(92% 0.006 270);
+    --muted-foreground: oklch(66% 0.014 270);
+    --success: oklch(70% 0.14 150);
+    --success-foreground: oklch(15% 0.02 150);
+    --warning: oklch(75% 0.15 80);
+    --warning-foreground: oklch(18% 0.02 80);
+    --warning-text: oklch(75% 0.15 80);
+    --danger: oklch(68% 0.18 25);
+    --danger-foreground: oklch(15% 0.02 25);
+    --info: oklch(72% 0.11 240);
+    --info-foreground: oklch(15% 0.02 240);
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: oklch(16% 0.012 270);
+  --foreground: oklch(94% 0.006 270);
+  --surface: oklch(19% 0.012 270);
+  --surface-muted: oklch(22.5% 0.012 270);
+  --border: oklch(29% 0.012 270);
+  --border-strong: oklch(38% 0.014 270);
+  --primary: oklch(72% 0.14 275);
+  --primary-foreground: oklch(15% 0.03 275);
+  --secondary: oklch(26% 0.012 270);
+  --secondary-foreground: oklch(92% 0.006 270);
+  --muted-foreground: oklch(66% 0.014 270);
+  --success: oklch(70% 0.14 150);
+  --success-foreground: oklch(15% 0.02 150);
+  --warning: oklch(75% 0.15 80);
+  --warning-foreground: oklch(18% 0.02 80);
+  --warning-text: oklch(75% 0.15 80);
+  --danger: oklch(68% 0.18 25);
+  --danger-foreground: oklch(15% 0.02 25);
+  --info: oklch(72% 0.11 240);
+  --info-foreground: oklch(15% 0.02 240);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

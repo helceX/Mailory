@@ -1,0 +1,5 @@
+# Automatic HTTPS (Let's Encrypt). APP_DOMAIN comes from .env (e.g. mailory.io). DNS A record must point at this host.
+{$APP_DOMAIN} {
+	encode gzip
+	reverse_proxy web:3000
+}
