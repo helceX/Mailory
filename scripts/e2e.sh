@@ -10,7 +10,7 @@ PORT="${E2E_PORT:-3100}"
 BASE="http://localhost:${PORT}"
 TMP="$(mktemp -d)"
 SUITES=("$@")
-[ ${#SUITES[@]} -eq 0 ] && SUITES=(audience templates senders campaigns sending automation ai api import dashboard cleanup domaincheck)
+[ ${#SUITES[@]} -eq 0 ] && SUITES=(audience templates senders campaigns sending automation ai api import dashboard cleanup domaincheck mobile)
 
 if [ -z "${CHROMIUM_PATH:-}" ]; then
   CHROMIUM_PATH="$(node -e "try{console.log(require('playwright-core').chromium.executablePath())}catch{}")"

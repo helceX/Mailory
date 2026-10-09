@@ -52,7 +52,7 @@ export function MembersTable({
         Ekip ({members.length})
       </h2>
       <FormError message={error} />
-      <div className="overflow-x-auto rounded-lg border bg-surface">
+      <div className="relative overflow-x-auto rounded-lg border bg-surface">
         <table className="w-full min-w-[560px] text-sm">
           <thead className="border-b bg-surface-muted text-left text-xs text-muted-foreground">
             <tr>

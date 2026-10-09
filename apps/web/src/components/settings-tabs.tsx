@@ -18,7 +18,7 @@ const TABS = [
 export function SettingsTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Ayarlar" className="flex gap-1 border-b">
+    <nav aria-label="Ayarlar" className="flex gap-1 overflow-x-auto border-b">
       {TABS.map((tab) => {
         const active = pathname.startsWith(tab.href);
         return (
@@ -27,7 +27,7 @@ export function SettingsTabs() {
             href={tab.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
+              "-mb-px shrink-0 border-b-2 px-3 py-2 text-sm font-medium",
               active
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground",

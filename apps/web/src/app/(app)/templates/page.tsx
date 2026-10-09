@@ -61,20 +61,20 @@ export default async function TemplatesPage({
         title="Şablonlar"
         description="E-postalarınızı hızla hazırlayın; her şablon markanızla uyumlu başlar."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <AiDraftButton ai={ai} canWrite={canWrite} />
             <ImportTemplateButton canWrite={canWrite} />
             <NewBlankButton canWrite={canWrite} />
           </div>
         }
       />
-      <nav aria-label="Şablon görünümleri" className="flex gap-1 border-b">
+      <nav aria-label="Şablon görünümleri" className="flex gap-1 overflow-x-auto border-b">
         {tabs.map((t) => (
           <Link
             key={t.key}
             href={`/templates?tab=${t.key}`}
             aria-current={tab === t.key ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${tab === t.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`-mb-px shrink-0 border-b-2 px-3 py-2 text-sm font-medium ${tab === t.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
             {t.label}
           </Link>
