@@ -1,0 +1,15 @@
+{
+  "ad": "Jeton Emlak Haberleri",
+  "kategori": "corporate",
+  "aciklama": "Emlak temalı, kurumsal haberler içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "tconnection-newsletter-template-2023-11-27-05-31-57-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "emlak",
+    "corporate",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}
