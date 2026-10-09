@@ -55,8 +55,7 @@ Mediaory'yi aynı makineye ayrı bir compose projesi olarak eklemek mümkün (RA
 8. **SES + SNS:** `docs/MAILORY_RUNBOOK.md` bölüm 4 aynen geçerli (sandbox'tan çıkış talebi, Configuration Set, SNS HTTPS aboneliği → `https://<alan-adı>/api/webhooks/ses`). Sandbox çıkışı günler sürebilir; erken başlatın.
 9. **İlk yönetici:** `docker compose exec worker apps/worker/node_modules/.bin/tsx packages/db/src/platform-admin.ts <e-posta>` (önce o e-postayla kayıt olunmuş olmalı).
 10. **Yedek:** `crontab -e` → `17 3 * * * cd /opt/mailory/deploy/aws && BACKUP_BUCKET=<kova> ./backup.sh >> /var/log/mailory-backup.log 2>&1`. S3 kovasına 30–90 günlük yaşam döngüsü kuralı ekleyin. Geri yükleme provasını üç ayda bir yapın (runbook bölüm 5).
-11. **Şablonları yükleme** (131 paket): makinede, `.env` içindeki `DATABASE_URL` ile
-    `docker compose run --rm -v /opt/mailory:/repo -w /repo worker apps/worker/node_modules/.bin/tsx scripts/import-template-packs.ts --org <uuid> --dry-run` (önce deneme, sonra `--dry-run`suz). Betik kökte `tsx` ve çalışma kopyası ister; makinede `pnpm install` yapıp doğrudan `pnpm templates:import --org <uuid>` çalıştırmak daha basittir.
+11. **Şablonları yükleme** (131 paket): makinede Node 22 + pnpm kurup (`corepack enable && pnpm install`), `.env` içindeki `DATABASE_URL` değerini ortam değişkeni olarak verin ve `pnpm templates:import --org <uuid> --dry-run`, ardından `--dry-run`suz çalıştırın. Sonda `131 imported, 0 failed` görmelisiniz.
 
 ## 4. Günlük işletim
 
