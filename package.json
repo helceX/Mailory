@@ -18,7 +18,8 @@
     "test": "vitest run",
     "db:generate": "pnpm --filter @mailory/db generate",
     "db:migrate": "pnpm --filter @mailory/db migrate",
-    "test:e2e": "bash scripts/e2e.sh"
+    "test:e2e": "bash scripts/e2e.sh",
+    "templates:import": "tsx scripts/import-template-packs.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -32,6 +33,7 @@
     "eslint": "10.11.0",
     "playwright-core": "1.56.0",
     "prettier": "3.6.2",
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.0",
     "vitest": "5.0.1"
