@@ -22,5 +22,5 @@ pnpm templates:import --org <organizasyon-uuid>                                 
 
 - Mevcut `importHtmlTemplateFor` hattını kullanır; şablonlar organizasyonun **sahibi** (owner) adına oluşur ve `template.imported` olarak denetim kaydına düşer.
 - **Idempotent**: aynı adlı canlı şablon atlanır; yeniden çalıştırmak güvenlidir.
-- **Görsel kapasitesi**: bir organizasyon en fazla 200 görsel (`MAX_ASSETS_PER_ORG`) tutabilir; paketlerin toplamı 383 görseldir. Betik, sığmayan paketi **eksik görselle yüklemez**; atlayıp "image capacity" olarak raporlar ve çıkış kodu 1 verir. Tümünü tek organizasyona yüklemek için sınırın yükseltilmesi gerekir (bkz. `docs/MAILORY_OPEN_ITEMS.md` B15).
+- **Görsel kapasitesi**: org başına görsel sınırı 1000 (D-111); 131 paketin 383 görseli tek organizasyona sığar. Yine de sığmayan paket eksik görselle yüklenmez; atlanır, raporlanır ve çıkış kodu 1 olur.
 - `aciklama` alanı bilgilendiricidir; şablon tablosunda açıklama sütunu olmadığından saklanmaz.

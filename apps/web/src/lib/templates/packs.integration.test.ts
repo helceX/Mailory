@@ -143,6 +143,31 @@ suite("template pack import (real Postgres)", () => {
     ).toHaveLength(3);
   });
 
+  it("imports ALL packs into one organization with every image and no warnings", async () => {
+    const o = await newOrg();
+    const r = await importPacks({
+      deps: deps(),
+      organizationId: o.id,
+      packsDir: PACKS,
+    });
+    expect(r.filter((x) => x.status !== "imported")).toEqual([]);
+    expect(r).toHaveLength(131);
+    for (const x of r)
+      expect(x.warnings.filter((w) => !EXPECTED_WARNING.test(w))).toEqual([]);
+    expect(
+      await db.select().from(templates).where(eq(templates.organizationId, o.id)),
+    ).toHaveLength(131);
+    expect(
+      await db.select().from(assets).where(eq(assets.organizationId, o.id)),
+    ).toHaveLength(383);
+    const again = await importPacks({
+      deps: deps(),
+      organizationId: o.id,
+      packsDir: PACKS,
+    });
+    expect(new Set(again.map((x) => x.status))).toEqual(new Set(["skipped_exists"]));
+  });
+
   it("requires an organization with an owner", async () => {
     await expect(
       importPacks({

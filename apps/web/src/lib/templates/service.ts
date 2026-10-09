@@ -56,7 +56,8 @@ const denied: Failure = { ok: false, code: "forbidden" };
 const need = (actor: Actor, permission: Permission) => authorize(actor, permission);
 
 export const MAX_ASSET_BYTES = 1_048_576;
-export const MAX_ASSETS_PER_ORG = 200;
+// Count cap is only an abuse guard; bytes (below) and the plan's storage_mb are the real limits. 1000 fits the 131 ready packs (383 images).
+export const MAX_ASSETS_PER_ORG = 1000;
 export const MAX_ASSET_TOTAL_BYTES = 100 * 1024 * 1024;
 
 function audit(
