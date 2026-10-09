@@ -1,0 +1,91 @@
+# Mailory on a single AWS EC2 host (Docker Compose). Build context is the repo root (../..).
+#   cp .env.example .env   # fill in, then:   ./deploy.sh
+# Postgres: use Amazon RDS (recommended: managed backups) and put its address in DATABASE_URL.
+# Budget start without RDS: `docker compose --profile with-db up -d` runs a local Postgres on the host's EBS volume
+# (then you own backups: see backup.sh).
+name: mailory
+
+x-app-env: &app-env
+  NODE_ENV: production
+  APP_URL: ${APP_URL}
+  SESSION_SECRET: ${SESSION_SECRET}
+  DATABASE_URL: ${DATABASE_URL}
+  REDIS_URL: redis://redis:6379
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-ses}
+  EMAIL_FROM: ${EMAIL_FROM:-}
+  AWS_REGION: ${AWS_REGION:-}
+  SES_CONFIGURATION_SET: ${SES_CONFIGURATION_SET:-}
+  SES_SNS_TOPIC_ARN: ${SES_SNS_TOPIC_ARN:-}
+  # No AWS keys here: the EC2 instance role supplies SES credentials (default SDK credential chain).
+  AI_PROVIDER: ${AI_PROVIDER:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+services:
+  migrate:
+    build: { context: ../.., dockerfile: apps/worker/Dockerfile }
+    image: mailory-worker
+    command: ["apps/worker/node_modules/.bin/tsx", "packages/db/src/migrate.ts"]
+    environment: *app-env
+    restart: "no"
+
+  web:
+    build: { context: ../.., dockerfile: apps/web/Dockerfile }
+    image: mailory-web
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    image: mailory-worker
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: [redis-data:/data]
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports: ["80:80", "443:443"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on: [web]
+    restart: unless-stopped
+
+  # Optional budget Postgres (profile "with-db"). Set DATABASE_URL=postgres://mailory:<pw>@db:5432/mailory
+  db:
+    profiles: ["with-db"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mailory
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-}
+      POSTGRES_DB: mailory
+    volumes: [pg-data:/var/lib/postgresql/data]
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  caddy-data:
+  pg-data:
