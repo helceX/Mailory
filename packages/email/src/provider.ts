@@ -1,4 +1,11 @@
 import { randomBytes } from "node:crypto";
+import {
+  CreateEmailIdentityCommand,
+  DeleteEmailIdentityCommand,
+  GetEmailIdentityCommand,
+  SESv2Client,
+  type DkimAttributes,
+} from "@aws-sdk/client-sesv2";
 import type { DnsResolver } from "./dns";
 import { DKIM_TARGET_SUFFIX } from "./dns";
 
@@ -49,16 +56,76 @@ export class MockDomainProvider implements DomainProvider {
   async deleteIdentity() {}
 }
 
-/** Placeholder until the SES transport lands (Phase 8): refuses to pretend to create an identity. */
-export class UnconfiguredSesProvider implements DomainProvider {
+/** Uses the same region and default credential chain as the sending transport. */
+export class SesDomainProvider implements DomainProvider {
   readonly name = "ses";
-  async createIdentity(): Promise<never> {
-    throw new Error(
-      "Amazon SES is not configured yet (DOMAIN_PROVIDER=ses requires the Phase 8 SES integration).",
-    );
+  private readonly client: Pick<SESv2Client, "send">;
+  constructor(region: string, client?: Pick<SESv2Client, "send">) {
+    this.client = client ?? new SESv2Client({ region });
   }
-  async getIdentityStatus(): Promise<never> {
-    throw new Error("Amazon SES is not configured yet.");
+  async createIdentity(domain: string) {
+    let attributes: DkimAttributes | undefined;
+    try {
+      const identity = await this.client.send(
+        new CreateEmailIdentityCommand({ EmailIdentity: domain }),
+      );
+      attributes = identity.DkimAttributes;
+    } catch (error) {
+      // A domain may already be used by another workspace. Keep its existing keys.
+      if ((error as { name?: string })?.name !== "AlreadyExistsException") throw error;
+      attributes = (
+        await this.client.send(new GetEmailIdentityCommand({ EmailIdentity: domain }))
+      ).DkimAttributes;
+    }
+    const tokens = attributes?.Tokens;
+    // The DNS flow requires three Easy DKIM keys; BYODKIM identities cannot use it.
+    if (
+      !tokens ||
+      tokens.length !== 3 ||
+      new Set(tokens).size !== 3 ||
+      tokens.some((token) => !/^[a-z2-7]{32}$/.test(token))
+    ) {
+      throw new Error("Amazon SES identity requires three valid Easy DKIM tokens.");
+    }
+    return { dkimTokens: tokens };
   }
-  async deleteIdentity(): Promise<void> {}
+  async getIdentityStatus(domain: string): Promise<{ dkim: ProviderDkimStatus }> {
+    try {
+      const identity = await this.client.send(
+        new GetEmailIdentityCommand({ EmailIdentity: domain }),
+      );
+      const attributes = identity.DkimAttributes;
+      switch (attributes?.Status) {
+        case "SUCCESS":
+          // DNS alone is insufficient: SES must sign and permit sending too.
+          return {
+            dkim:
+              attributes.SigningEnabled && identity.VerifiedForSendingStatus
+                ? "success"
+                : "pending",
+          };
+        case "FAILED":
+          return { dkim: "failed" };
+        case "TEMPORARY_FAILURE":
+          throw new Error("Amazon SES DKIM verification is temporarily unavailable.");
+        case "PENDING":
+          return { dkim: "pending" };
+        case "NOT_STARTED":
+          return { dkim: "not_started" };
+        default:
+          throw new Error("Amazon SES returned an unknown DKIM status.");
+      }
+    } catch (error) {
+      if ((error as { name?: string })?.name === "NotFoundException")
+        return { dkim: "not_started" };
+      throw error;
+    }
+  }
+  async deleteIdentity(domain: string): Promise<void> {
+    try {
+      await this.client.send(new DeleteEmailIdentityCommand({ EmailIdentity: domain }));
+    } catch (error) {
+      if ((error as { name?: string })?.name !== "NotFoundException") throw error;
+    }
+  }
 }

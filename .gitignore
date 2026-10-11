@@ -9,3 +9,5 @@ coverage
 playwright-report
 test-results
 dump.rdb
+.tool-cache/
+.pnpm-store/

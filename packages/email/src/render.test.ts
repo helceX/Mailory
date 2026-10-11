@@ -245,6 +245,37 @@ describe("renderEmail — security", () => {
 });
 
 describe("renderEmail — output quality", () => {
+  it("keeps brand colors inline while providing readable dark-mode text, links and both button variants", () => {
+    const d = doc(
+      para("Hello [site](https://example.com)"),
+      mk("heading", { text: "Heading" }),
+      mk("quote", { text: "Quote", author: "Author" }),
+      mk("footer", { text: "Footer" }),
+      mk("divider", {}),
+      mk("button", { variant: "solid", href: "https://example.com" }),
+      mk("button", { variant: "outline", href: "https://example.com" }),
+    );
+    d.settings.backgroundColor = "#fafafa";
+    const { html, text } = render(d);
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain("@media (prefers-color-scheme:dark)");
+    expect(html).toContain("background:#fafafa;");
+    for (const name of [
+      "mailory-heading",
+      "mailory-text",
+      "mailory-muted",
+      "mailory-quote",
+      "mailory-divider",
+      "mailory-button-cell",
+      "mailory-outline-cell",
+    ])
+      expect(html).toContain(`class="${name}"`);
+    expect(html).toContain(
+      ".mailory-outline,.mailory-outline a{color:#93c5fd!important}",
+    );
+    expect(text).toContain("Hello site (https://example.com)");
+    expect(text).not.toContain("mailory-");
+  });
   it("produces a table-based, inline-styled, responsive document with no external CSS or JS", () => {
     const { html } = render(doc(para("x")));
     expect(html.startsWith("<!doctype html>")).toBe(true);

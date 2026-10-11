@@ -75,10 +75,10 @@ export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult
 
   const heading = (b: Extract<LeafBlock, { type: "heading" }>) => {
     const size = { 1: 28, 2: 22, 3: 18 }[b.level];
-    return `<h${b.level} style="margin:0;font-family:${font};font-size:${size}px;line-height:1.25;font-weight:700;color:${settings.headingColor};text-align:${b.align};">${body(b.text)}</h${b.level}>`;
+    return `<h${b.level} style="margin:0;font-family:${font};font-size:${size}px;line-height:1.25;font-weight:700;color:${settings.headingColor};text-align:${b.align};" class="mailory-heading">${body(b.text)}</h${b.level}>`;
   };
   const paragraph = (b: Extract<LeafBlock, { type: "paragraph" }>) =>
-    `<p style="margin:0;font-family:${font};font-size:16px;line-height:1.6;color:${settings.textColor};text-align:${b.align};">${body(b.text)}</p>`;
+    `<p style="margin:0;font-family:${font};font-size:16px;line-height:1.6;color:${settings.textColor};text-align:${b.align};" class="mailory-text">${body(b.text)}</p>`;
 
   const image = (b: Extract<LeafBlock, { type: "image" }>) => {
     const url = src(b.src);
@@ -102,19 +102,19 @@ export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult
     const align =
       b.align === "center" ? "center" : b.align === "right" ? "right" : "left";
     // Table-cell button: renders reliably in Outlook, where padding on <a> is unreliable.
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${align}" style="margin:${align === "center" ? "0 auto" : "0"};${align === "right" ? "margin-left:auto;" : ""}"><tr><td align="center" bgcolor="${outline ? settings.contentBackground : settings.buttonColor}" style="border-radius:${settings.radius}px;background:${bg};border:${border};"><a href="${href(b.href)}" style="display:inline-block;padding:12px 28px;font-family:${font};font-size:16px;font-weight:700;line-height:1.2;color:${color};text-decoration:none;border-radius:${settings.radius}px;">${body(b.label)}</a></td></tr></table>`;
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="${align}" style="margin:${align === "center" ? "0 auto" : "0"};${align === "right" ? "margin-left:auto;" : ""}"><tr><td class="${outline ? "mailory-outline-cell" : "mailory-button-cell"}" align="center" bgcolor="${outline ? settings.contentBackground : settings.buttonColor}" style="border-radius:${settings.radius}px;background:${bg};border:${border};"><a class="${outline ? "mailory-outline" : "mailory-button"}" href="${href(b.href)}" style="display:inline-block;padding:12px 28px;font-family:${font};font-size:16px;font-weight:700;line-height:1.2;color:${color};text-decoration:none;border-radius:${settings.radius}px;">${body(b.label)}</a></td></tr></table>`;
   };
 
   const social = (b: Extract<LeafBlock, { type: "social" }>) =>
     `<p style="margin:0;font-family:${font};font-size:14px;line-height:1.6;text-align:${b.align};">${b.links
       .map(
         (l) =>
-          `<a href="${href(l.url)}" style="color:${settings.linkColor};text-decoration:underline;">${escapeHtml(SOCIAL_LABELS[l.network])}</a>`,
+          `<a class="mailory-link" href="${href(l.url)}" style="color:${settings.linkColor};text-decoration:underline;">${escapeHtml(SOCIAL_LABELS[l.network])}</a>`,
       )
       .join(" &nbsp;·&nbsp; ")}</p>`;
 
   const quote = (b: Extract<LeafBlock, { type: "quote" }>) =>
-    `<blockquote style="margin:0;padding:8px 0 8px 16px;border-left:4px solid ${settings.linkColor};font-family:${font};font-size:18px;line-height:1.5;font-style:italic;color:${settings.textColor};">${body(b.text)}${b.author ? `<br><span style="display:inline-block;margin-top:8px;font-size:14px;font-style:normal;color:#6b7280;">— ${body(b.author)}</span>` : ""}</blockquote>`;
+    `<blockquote class="mailory-quote" style="margin:0;padding:8px 0 8px 16px;border-left:4px solid ${settings.linkColor};font-family:${font};font-size:18px;line-height:1.5;font-style:italic;color:${settings.textColor};">${body(b.text)}${b.author ? `<br><span class="mailory-muted" style="display:inline-block;margin-top:8px;font-size:14px;font-style:normal;color:#6b7280;">— ${body(b.author)}</span>` : ""}</blockquote>`;
 
   const logo = (b: Extract<LeafBlock, { type: "logo" }>) => {
     const url = b.src
@@ -134,14 +134,14 @@ export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult
     const thumb = url
       ? `<a href="${href(b.href)}" style="text-decoration:none;"><img src="${url}" alt="${attr(b.alt)}" width="${settings.width - 48}" style="display:block;border:0;width:100%;max-width:100%;height:auto;"></a>`
       : "";
-    return `${thumb}<p style="margin:8px 0 0;font-family:${font};font-size:14px;text-align:center;"><a href="${href(b.href)}" style="color:${settings.linkColor};text-decoration:underline;">${body(b.alt || "Videoyu izle")}</a></p>`;
+    return `${thumb}<p style="margin:8px 0 0;font-family:${font};font-size:14px;text-align:center;"><a class="mailory-link" href="${href(b.href)}" style="color:${settings.linkColor};text-decoration:underline;">${body(b.alt || "Videoyu izle")}</a></p>`;
   };
 
   const footer = (b: Extract<LeafBlock, { type: "footer" }>) => {
     const unsubscribe = b.showUnsubscribe
-      ? `<br><a href="${href("{{unsubscribe_url}}")}" style="color:#6b7280;text-decoration:underline;">Abonelikten çık</a>`
+      ? `<br><a class="mailory-muted" href="${href("{{unsubscribe_url}}")}" style="color:#6b7280;text-decoration:underline;">Abonelikten çık</a>`
       : "";
-    return `<p style="margin:0;font-family:${font};font-size:12px;line-height:1.6;color:#6b7280;text-align:center;">${body(b.text)}${unsubscribe}</p>`;
+    return `<p class="mailory-muted" style="margin:0;font-family:${font};font-size:12px;line-height:1.6;color:#6b7280;text-align:center;">${body(b.text)}${unsubscribe}</p>`;
   };
 
   const leaf = (b: LeafBlock): string => {
@@ -155,7 +155,7 @@ export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult
       case "button":
         return button(b);
       case "divider":
-        return `<hr style="margin:0;border:0;border-top:1px solid #e5e7eb;">`;
+        return `<hr class="mailory-divider" style="margin:0;border:0;border-top:1px solid #e5e7eb;">`;
       case "spacer":
         return `<div style="height:${b.height}px;line-height:${b.height}px;font-size:1px;">&nbsp;</div>`;
       case "social":
@@ -210,8 +210,25 @@ export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="format-detection" content="telephone=no,address=no,email=no,date=no">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <title>${escapeHtml(options.subject ? applyMerge(options.subject, options.values, (v) => v) : "")}</title>
 <style>
+:root{color-scheme:light dark;supported-color-schemes:light dark}
+@media (prefers-color-scheme:dark){
+  .mailory-background{background:#111827!important}
+  .container{background:#1f2937!important}
+  .mailory-heading{color:#f9fafb!important}
+  .mailory-text{color:#e5e7eb!important}
+  .mailory-muted{color:#cbd5e1!important}
+  .mailory-link,.mailory-text a,.mailory-heading a,.mailory-quote a,.mailory-muted a{color:#93c5fd!important}
+  .mailory-quote{color:#e5e7eb!important;border-color:#93c5fd!important}
+  .mailory-divider{border-color:#475569!important}
+  .mailory-button-cell{background:#2563eb!important;border-color:#2563eb!important}
+  .mailory-button,.mailory-button a{color:#ffffff!important}
+  .mailory-outline-cell{background:#1f2937!important;border-color:#93c5fd!important}
+  .mailory-outline,.mailory-outline a{color:#93c5fd!important}
+}
 @media only screen and (max-width:620px){
   .container{width:100%!important}
   .px{padding-left:16px!important;padding-right:16px!important}
@@ -220,9 +237,9 @@ export function renderEmail(doc: EmailDoc, options: RenderOptions): RenderResult
 }
 </style>
 </head>
-<body style="margin:0;padding:0;background:${settings.backgroundColor};-webkit-text-size-adjust:100%;">
+<body class="mailory-background" style="margin:0;padding:0;background:${settings.backgroundColor};-webkit-text-size-adjust:100%;">
 ${preheader}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${settings.backgroundColor}" style="background:${settings.backgroundColor};">
+<table role="presentation" class="mailory-background" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${settings.backgroundColor}" style="background:${settings.backgroundColor};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" class="container" width="${settings.width}" cellpadding="0" cellspacing="0" border="0" bgcolor="${settings.contentBackground}" style="width:100%;max-width:${settings.width}px;background:${settings.contentBackground};border-radius:${settings.radius}px;">
 ${rows}

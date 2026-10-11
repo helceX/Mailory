@@ -27,10 +27,28 @@ const envSchema = z
     // How domain DNS records are looked up. "mock" reads MOCK_DNS_FILE and exists only for tests/dev.
     DNS_RESOLVER: z.enum(["system", "mock"]).default("system"),
     MOCK_DNS_FILE: z.string().optional(),
-    // "mock" = verification derived from real DNS only (no SES identity); "ses" arrives with the Phase 8 SES integration.
+    // "mock" = DNS-only development provider; "ses" = real SES Easy DKIM identity.
     DOMAIN_PROVIDER: z.enum(["mock", "ses"]).default("mock"),
   })
   .check((ctx) => {
+    if (ctx.value.DOMAIN_PROVIDER === "ses" && !ctx.value.AWS_REGION)
+      ctx.issues.push({
+        code: "custom",
+        message: 'AWS_REGION is required when DOMAIN_PROVIDER is "ses"',
+        input: ctx.value,
+        path: ["AWS_REGION"],
+      });
+    if (
+      ctx.value.NODE_ENV === "production" &&
+      ctx.value.EMAIL_PROVIDER === "ses" &&
+      ctx.value.DOMAIN_PROVIDER !== "ses"
+    )
+      ctx.issues.push({
+        code: "custom",
+        message: 'DOMAIN_PROVIDER="ses" is required for production SES sending',
+        input: ctx.value,
+        path: ["DOMAIN_PROVIDER"],
+      });
     if (ctx.value.NODE_ENV === "production" && ctx.value.DNS_RESOLVER === "mock") {
       ctx.issues.push({
         code: "custom",

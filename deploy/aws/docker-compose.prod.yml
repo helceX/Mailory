@@ -12,12 +12,13 @@ x-app-env: &app-env
   DATABASE_URL: ${DATABASE_URL}
   REDIS_URL: redis://redis:6379
   EMAIL_PROVIDER: ${EMAIL_PROVIDER:-ses}
+  DOMAIN_PROVIDER: ${DOMAIN_PROVIDER:-ses}
   EMAIL_FROM: ${EMAIL_FROM:-}
   AWS_REGION: ${AWS_REGION:-}
   SES_CONFIGURATION_SET: ${SES_CONFIGURATION_SET:-}
   SES_SNS_TOPIC_ARN: ${SES_SNS_TOPIC_ARN:-}
   # No AWS keys here: the EC2 instance role supplies SES credentials (default SDK credential chain).
-  AI_PROVIDER: ${AI_PROVIDER:-}
+  AI_PROVIDER: ${AI_PROVIDER:-none}
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
   SENTRY_DSN: ${SENTRY_DSN:-}
 

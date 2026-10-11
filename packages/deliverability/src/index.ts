@@ -10,7 +10,7 @@ import {
   MockDnsResolver,
   MockDomainProvider,
   SystemDnsResolver,
-  UnconfiguredSesProvider,
+  SesDomainProvider,
   nextDomainState,
   verifyDomain,
   type DnsResolver,
@@ -22,6 +22,7 @@ export type DeliverabilityConfig = {
   DNS_RESOLVER: "system" | "mock";
   MOCK_DNS_FILE?: string;
   DOMAIN_PROVIDER: "mock" | "ses";
+  AWS_REGION?: string;
 };
 export const DEFAULT_MOCK_DNS_FILE = "/tmp/mailory-mock-dns.json";
 
@@ -37,12 +38,15 @@ export function createDnsResolver(
 }
 
 export function createDomainProvider(
-  config: Pick<DeliverabilityConfig, "DOMAIN_PROVIDER">,
+  config: Pick<DeliverabilityConfig, "DOMAIN_PROVIDER" | "AWS_REGION">,
   resolver: DnsResolver,
 ): DomainProvider {
-  return config.DOMAIN_PROVIDER === "ses"
-    ? new UnconfiguredSesProvider()
-    : new MockDomainProvider(resolver);
+  if (config.DOMAIN_PROVIDER === "ses") {
+    if (!config.AWS_REGION)
+      throw new Error("AWS_REGION is required for SES domain verification.");
+    return new SesDomainProvider(config.AWS_REGION);
+  }
+  return new MockDomainProvider(resolver);
 }
 
 export type CheckDeps = {

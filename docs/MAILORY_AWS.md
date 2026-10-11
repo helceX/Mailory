@@ -41,7 +41,7 @@ Mediaory'yi aynı makineye ayrı bir compose projesi olarak eklemek mümkün (RA
 2. **Bütçe uyarısı:** Billing → Budgets → aylık $50 gibi bir eşik, e-posta bildirimi.
 3. **Alan adı:** Route 53 ya da başka bir kayıt kuruluşu. `A` kaydı → Elastic IP.
 4. **EC2:** Ubuntu 24.04 ARM, `t4g.medium`, 30 GB gp3. Güvenlik grubu: 22 (yalnızca kendi IP'niz), 80, 443. **Elastic IP** bağla.
-5. **IAM rolü (instance profile)** — erişim anahtarı **kullanmayın**, role verin: SES için `ses:SendEmail`, `ses:SendRawEmail`, `ses:CreateEmailIdentity`, `ses:GetEmailIdentity`; yedek için `s3:PutObject` (yedek kovası). Uygulama AWS SDK varsayılan kimlik zincirini kullanır, bu yüzden `.env`'de anahtar gerekmez.
+5. **IAM rolü (instance profile)** — erişim anahtarı **kullanmayın**, role verin: SES için `ses:SendEmail`, `ses:SendRawEmail`, `ses:CreateEmailIdentity`, `ses:GetEmailIdentity`, `ses:DeleteEmailIdentity`; yedek için `s3:PutObject` (yedek kovası). Uygulama AWS SDK varsayılan kimlik zincirini kullanır, bu yüzden `.env`'de anahtar gerekmez.
 6. **RDS (önerilen):** PostgreSQL 16, tek AZ, otomatik yedek 7 gün, "Public access: No"; güvenlik grubunda yalnızca EC2'nin güvenlik grubuna 5432 izni. `DATABASE_URL` sonuna `?sslmode=require`.
 7. **Makinede:**
    ```bash
@@ -53,14 +53,14 @@ Mediaory'yi aynı makineye ayrı bir compose projesi olarak eklemek mümkün (RA
    ./deploy.sh
    ```
 8. **SES + SNS:** `docs/MAILORY_RUNBOOK.md` bölüm 4 aynen geçerli (sandbox'tan çıkış talebi, Configuration Set, SNS HTTPS aboneliği → `https://<alan-adı>/api/webhooks/ses`). Sandbox çıkışı günler sürebilir; erken başlatın.
-9. **İlk yönetici:** `docker compose exec worker apps/worker/node_modules/.bin/tsx packages/db/src/platform-admin.ts <e-posta>` (önce o e-postayla kayıt olunmuş olmalı).
+9. **İlk yönetici:** `docker compose -f docker-compose.prod.yml exec worker apps/worker/node_modules/.bin/tsx packages/db/src/platform-admin.ts <e-posta>` (önce o e-postayla kayıt olunmuş olmalı).
 10. **Yedek:** `crontab -e` → `17 3 * * * cd /opt/mailory/deploy/aws && BACKUP_BUCKET=<kova> ./backup.sh >> /var/log/mailory-backup.log 2>&1`. S3 kovasına 30–90 günlük yaşam döngüsü kuralı ekleyin. Geri yükleme provasını üç ayda bir yapın (runbook bölüm 5).
 11. **Şablonları yükleme** (131 paket): makinede Node 22 + pnpm kurup (`corepack enable && pnpm install`), `.env` içindeki `DATABASE_URL` değerini ortam değişkeni olarak verin ve `pnpm templates:import --org <uuid> --dry-run`, ardından `--dry-run`suz çalıştırın. Sonda `131 imported, 0 failed` görmelisiniz.
 
 ## 4. Günlük işletim
 
 - Deploy: `cd /opt/mailory/deploy/aws && ./deploy.sh` (çekme → derleme → migration → yeniden başlatma → sağlık kontrolü).
-- Günlükler: `docker compose logs -f web worker`. Sağlık: `https://<alan>/api/health/ready`.
+- Günlükler: `docker compose -f docker-compose.prod.yml logs -f web worker`. Sağlık: `https://<alan>/api/health/ready`.
 - Geri alma: `git checkout <önceki-commit>` + `./deploy.sh` (migration'lar yalnızca ekleme olduğundan eski kod yeni şemayla çalışır).
 - Güvenlik güncellemeleri: `sudo unattended-upgrades` açık tutun; Docker imajlarını deploy'da yeniden derleyin.
 - İzleme (ucuz): CloudWatch makine alarmı (CPU, disk), dış sağlık denetimi (UptimeRobot vb.), `/platform/system` işçi sinyali.
@@ -68,3 +68,11 @@ Mediaory'yi aynı makineye ayrı bir compose projesi olarak eklemek mümkün (RA
 ## 5. Daha sonra (büyüyünce)
 
 ECS Fargate (web + worker ayrı görevler), ElastiCache (Redis), ALB + ACM sertifikası, GitHub Actions ile ECR'ye imaj ve otomatik deploy. İmajlar zaten Dockerfile'larla hazır; yalnızca altyapı tanımı eklenir.
+
+## 6. Kod incelemesinde tamamlananlar (2026-10-11)
+
+- SES alan adı sağlayıcısı artık gerçek `CreateEmailIdentity` / `GetEmailIdentity` / `DeleteEmailIdentity` kullanır. `DOMAIN_PROVIDER=ses` ve gönderimle aynı `AWS_REGION` gerekir. DNS sahiplik kaydı kontrolü korunur; SES imzalama ve gönderim onayı olmadan alan adı doğrulanmaz.
+- Daha önce mock sağlayıcıyla oluşturulan kayıtların yerel DKIM anahtarları gerçek SES anahtarları değildir. Canlı geçişte alan adını uygulamada yeniden ekleyip yeni DKIM/ownership kayıtlarını yayınlayın; önce mevcut kampanyaları kontrol edin.
+- Compose dosyası `docker-compose.prod.yml`: `.env.example` ve deploy betiği doğru dosyayı seçer. Eski `.env` kullanıyorsanız `COMPOSE_FILE=docker-compose.prod.yml`, `DOMAIN_PROVIDER=ses`, `AI_PROVIDER=none` ekleyin.
+- Tamamlanmış migration konteyneri her deploy öncesinde yeniden oluşturulur. Web ve worker başarılı tamamlanmasını bekler.
+- Kod sözleşme testleri gerçek AWS kurulumu veya e-posta gönderimi yerine geçmez. SES sandbox çıkışı, DNS yayını, SNS aboneliği, yedek geri yükleme provası ve gerçek istemci görünüm testi hâlâ gereklidir.

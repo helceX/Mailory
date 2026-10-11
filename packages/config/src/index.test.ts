@@ -45,6 +45,19 @@ describe("parseEnv", () => {
     const env = parseEnv(base);
     expect([env.DNS_RESOLVER, env.DOMAIN_PROVIDER]).toEqual(["system", "mock"]);
   });
+  it("requires a region for SES identities and real identities for production SES sending", () => {
+    expect(() => parseEnv({ ...base, DOMAIN_PROVIDER: "ses" })).toThrow(/AWS_REGION/);
+    const ses = {
+      ...base,
+      NODE_ENV: "production",
+      EMAIL_PROVIDER: "ses",
+      AWS_REGION: "eu-central-1",
+      SES_CONFIGURATION_SET: "mailory",
+      SES_SNS_TOPIC_ARN: "arn:aws:sns:eu-central-1:1:mailory",
+    };
+    expect(() => parseEnv(ses)).toThrow(/DOMAIN_PROVIDER/);
+    expect(parseEnv({ ...ses, DOMAIN_PROVIDER: "ses" }).DOMAIN_PROVIDER).toBe("ses");
+  });
   it("refuses the mock DNS resolver in production (it would let anyone 'publish' DNS)", () => {
     expect(() =>
       parseEnv({ ...base, NODE_ENV: "production", DNS_RESOLVER: "mock" }),
