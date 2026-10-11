@@ -254,7 +254,17 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
     baseHealth && row.audience?.excludeDormant
       ? economicalAudienceHealth(baseHealth)
       : baseHealth;
-  const audienceCount = audienceHealth?.size ?? 0;
+  const eligibleCount = audienceHealth?.size ?? 0;
+  const impactPlan = row.audience?.impact
+    ? {
+        eligible: eligibleCount,
+        control: Math.floor((eligibleCount * row.audience.impact.controlPercent) / 100),
+        treatment:
+          eligibleCount -
+          Math.floor((eligibleCount * row.audience.impact.controlPercent) / 100),
+      }
+    : null;
+  const audienceCount = impactPlan?.treatment ?? eligibleCount;
   let unknown: string[] = [];
   let contentEfficiency: ContentEfficiency | null = null;
   if (ctx.template?.doc) {
@@ -282,6 +292,13 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
     unknownMergeKeys: unknown,
     blockCount: ctx.template?.doc ? contentUnits(ctx.template.doc) : 0,
   });
+  if (impactPlan && impactPlan.control < 1)
+    issues.push({
+      code: "impact_sample_small",
+      severity: "blocker",
+      message:
+        "Etki Motoru için kontrol grubunda en az bir kişi olmalı; kitlenizi büyütün veya kontrol oranını artırın.",
+    });
   if (ctx.template && !ctx.template.doc)
     issues.push({
       code: "empty_content",
@@ -312,6 +329,7 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
     health,
     audiencePlan,
     contentEfficiency,
+    impactPlan,
   };
 }
 
@@ -349,6 +367,7 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
     audienceCount: r.audienceCount,
     audiencePlan: r.audiencePlan,
     contentEfficiency: r.contentEfficiency,
+    impactPlan: r.impactPlan,
     requireApproval: policy.requireApproval,
     sender: r.ctx.identity
       ? {

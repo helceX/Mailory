@@ -64,6 +64,23 @@ export default async function CampaignPage({
     return (
       <div className="mx-auto flex max-w-4xl flex-col gap-6">
         {header}
+        {c.audience?.impact ? (
+          <section
+            className="rounded-lg border bg-surface p-4"
+            aria-label="Etki Motoru ayarları"
+          >
+            <h2 className="font-semibold">Etki Motoru</h2>
+            <p className="mt-2 text-sm">
+              Hedef: {c.audience.impact.goal} · Kontrol: %
+              {c.audience.impact.controlPercent} · Süre: {c.audience.impact.windowDays}{" "}
+              gün
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Kontrol grubuna bu kampanya gönderilmez. Gruplar gönderim başladığında
+              sabitlenir; sonuçlar kampanya raporunda gösterilir.
+            </p>
+          </section>
+        ) : null}
         <CampaignStatusPanel
           userId={actor.userId}
           canWrite={can(actor.role, "campaigns:write")}
@@ -95,6 +112,7 @@ export default async function CampaignPage({
         {report?.ok ? (
           <CampaignReport
             outcomes={report.outcomes}
+            impact={report.impact}
             stats={report.stats}
             rates={report.rates}
             links={report.links}
@@ -138,6 +156,7 @@ export default async function CampaignPage({
         audienceCount={result.audienceCount}
         audiencePlan={result.audiencePlan}
         contentEfficiency={result.contentEfficiency}
+        impactPlan={result.impactPlan}
         requireApproval={result.requireApproval}
         canSend={canSend}
         identities={

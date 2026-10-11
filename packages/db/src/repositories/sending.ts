@@ -134,7 +134,7 @@ export async function resumeCampaign(
 
 /** CAS: two dispatchers racing for the same campaign — exactly one gets the row. */
 export async function startCampaignSending(
-  db: Database,
+  db: Pick<Database, "update">,
   organizationId: OrganizationId,
   id: string,
   now: Date,
@@ -158,12 +158,49 @@ export async function startCampaignSending(
  * UNIQUE(campaign_id, contact_id) so a restarted dispatcher never duplicates recipients.
  */
 export async function materializeRecipients(
-  db: Database,
+  db: Pick<Database, "select" | "execute" | "transaction">,
   organizationId: OrganizationId,
   campaignId: string,
   filter: ContactFilter,
   now: Date,
 ) {
+  const campaign = await db
+    .select({ audience: campaigns.audience, kind: campaigns.kind })
+    .from(campaigns)
+    .where(
+      and(eq(campaigns.organizationId, organizationId), eq(campaigns.id, campaignId)),
+    )
+    .then((rows) => rows[0]);
+  if (!campaign) return 0;
+  if (campaign.kind === "campaign" && campaign.audience?.impact) {
+    return db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select id from campaigns where organization_id = ${organizationId}::uuid and id = ${campaignId}::uuid for update`,
+      );
+      const existing = await tx.execute(
+        sql`select 1 from campaign_impact_members where organization_id = ${organizationId}::uuid and campaign_id = ${campaignId}::uuid limit 1`,
+      );
+      if (existing.rows.length) return 0;
+      const percent = campaign.audience!.impact!.controlPercent;
+      await tx.execute(sql`
+        insert into campaign_impact_members (organization_id, campaign_id, contact_id, email, arm, assigned_at)
+        select ${organizationId}::uuid, ${campaignId}::uuid, id, email,
+          case when rank <= floor(total * ${percent} / 100.0) then 'control' else 'treatment' end, ${now}
+        from (
+          select contacts.id, contacts.email,
+            row_number() over (order by md5(${campaignId} || ':' || contacts.id::text)) as rank,
+            count(*) over () as total
+          from contacts where ${contactWhere(organizationId, { ...filter, status: "subscribed" })}
+          and not exists (select 1 from suppressions s where s.organization_id = ${organizationId}::uuid and s.email = contacts.email)
+        ) eligible`);
+      const result = await tx.execute(sql`
+        insert into campaign_recipients (organization_id, campaign_id, contact_id, email, next_attempt_at)
+        select organization_id, campaign_id, contact_id, email, ${now} from campaign_impact_members
+        where organization_id = ${organizationId}::uuid and campaign_id = ${campaignId}::uuid and arm = 'treatment'
+        on conflict do nothing`);
+      return result.rowCount ?? 0;
+    });
+  }
   const result = await db.execute(sql`
     insert into campaign_recipients (organization_id, campaign_id, contact_id, email, next_attempt_at)
     select contacts.organization_id, ${campaignId}::uuid, contacts.id, contacts.email, ${now}

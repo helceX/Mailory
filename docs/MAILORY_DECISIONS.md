@@ -125,3 +125,7 @@ Biçim: ID · Karar · Gerekçe · Alternatif · Durum. Belirsiz alanlarda brief
 ## D-112 — Kampanya verimliliği ücretli AI gerektirmez
 
 Audience JSONB alanındaki isteğe bağlı `excludeDormant` mevcut 90 günlük engagement skoru sıfır kişileri sadece bu kampanyadan çıkarır; null ve pozitif skorlar kalır. Önizleme, örneklem ve işçi ortak filtreyi kullanır. Varsayılan kapalıdır; izleme eksikliği skoru etkileyebileceğinden kullanıcının seçimi gerekir. Veri silme veya bastırma değildir. Mevcut toplama karşılaştırma ve seçilen sayıyı birlikte üretir; yeni tablo/geçiş yok. İçerik verimi render edilmiş HTML'in UTF-8 boyutu ve düz metinden okunma tahminidir; nihai MIME/istemci sonucu değildir. Ayrıntı ve pilot: `MAILORY_DIFFERENTIATION.md`.
+
+## D-113 — Etki Motoru kampanya akışına entegredir
+
+Kontrol oranı/hedef/süre audience JSONB'de isteğe bağlıdır; sabit gruplar `campaign_impact_members` tablosunda tutulur (0019). Status geçişi, atama ve treatment alıcıları tek transaction'dır; controls gönderim kuyruğuna girmez. Atıftan bağımsız hedef olaylarıyla intention-to-treat raporu, Wilson sınır farkı ve yeterlilik/çakışma kontrolleri kullanılır; otomatik kazanan seçimi veya gönderim değişikliği yok. Yeni ücretli sağlayıcı/LLM gerektirmez. Ayrıntı: `MAILORY_IMPACT_ENGINE.md`.

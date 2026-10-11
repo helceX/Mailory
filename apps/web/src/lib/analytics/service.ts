@@ -2,6 +2,7 @@ import { CSV_BOM, reviewRates, toCsvLine, type Permission } from "@mailory/core"
 import {
   campaignStats,
   conversionStats,
+  campaignImpactReport,
   compareCampaigns,
   engagementTimeline,
   getCampaign,
@@ -42,11 +43,12 @@ export async function getCampaignReport(deps: AnalyticsDeps, actor: Actor, id: s
   const org = actor.organizationId;
   const campaign = await getCampaign(deps.db, org, id);
   if (!campaign) return { ok: false, code: "not_found" } as Failure;
-  const [stats, links, timeline, outcomes] = await Promise.all([
+  const [stats, links, timeline, outcomes, impact] = await Promise.all([
     campaignStats(deps.db, org, id),
     topLinks(deps.db, org, id),
     engagementTimeline(deps.db, org, id),
     conversionStats(deps.db, org, id),
+    campaignImpactReport(deps.db, org, id, (deps.now ?? (() => new Date()))()),
   ]);
   return {
     ok: true as const,
@@ -56,6 +58,7 @@ export async function getCampaignReport(deps: AnalyticsDeps, actor: Actor, id: s
     timeline,
     findings: reviewRates(stats),
     outcomes,
+    impact,
   };
 }
 

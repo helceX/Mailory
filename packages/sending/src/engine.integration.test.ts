@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import {
   asOrganizationId,
   campaignRecipients,
+  campaignImpactMembers,
   campaigns,
   claimRecipients,
   contacts,
@@ -154,6 +155,35 @@ suite("send engine (real Postgres)", () => {
       if (r.claimed === 0 || r.halted) return;
     }
   }
+
+  it("dispatches an integrated impact campaign without ever queueing or sending to controls", async () => {
+    const s = await setup(10);
+    await db
+      .update(campaigns)
+      .set({
+        audience: {
+          kind: "all",
+          impact: { goal: "purchase", controlPercent: 20, windowDays: 7 },
+        },
+      })
+      .where(eq(campaigns.id, s.campaign.id));
+    const transport = new ScriptedTransport();
+    await dispatchDue(deps(transport));
+    const groups = await db
+      .select()
+      .from(campaignImpactMembers)
+      .where(eq(campaignImpactMembers.campaignId, s.campaign.id));
+    expect(groups).toHaveLength(10);
+    const control = groups.filter((g) => g.arm === "control");
+    expect(control).toHaveLength(2);
+    expect(await recipients(s.campaign.id)).toHaveLength(8);
+    await drain(deps(transport), s.campaign);
+    expect(transport.sent).toHaveLength(8);
+    expect(transport.sent.some((m) => control.some((c) => c.email === m.to))).toBe(
+      false,
+    );
+    expect((await row(s.campaign.id)).status).toBe("completed");
+  });
 
   it("sends to every eligible contact exactly once and completes", async () => {
     const s = await setup(3);

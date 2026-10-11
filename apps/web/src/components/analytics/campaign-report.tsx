@@ -1,5 +1,6 @@
 import type { Finding } from "@mailory/core/shared";
 import type { CampaignStats, ConversionStats } from "@mailory/db";
+import type { campaignImpactReport } from "@mailory/db";
 import { HealthPanel } from "../deliverability/health-panel";
 import { Table, TableContainer, TBody, TD, TH, THead } from "@mailory/ui";
 import { Kpi, KpiGrid, fmtNum, fmtPct } from "./kpi";
@@ -22,6 +23,7 @@ export function CampaignReport({
   timeline,
   findings = [],
   outcomes,
+  impact,
 }: {
   stats: CampaignStats;
   rates: Rates;
@@ -29,12 +31,82 @@ export function CampaignReport({
   timeline: { bucket: Date; opens: number; clicks: number }[];
   findings?: Finding[];
   outcomes?: ConversionStats;
+  impact?: Awaited<ReturnType<typeof campaignImpactReport>>;
 }) {
   return (
     <section aria-labelledby="report" className="flex flex-col gap-4">
       <h2 id="report" className="text-lg font-semibold">
         Performans
       </h2>
+      {impact ? (
+        <section
+          aria-labelledby="impact-report"
+          className="rounded-lg border bg-surface p-4"
+        >
+          <h3 id="impact-report" className="font-semibold">
+            Etki Motoru — {impact.goal}
+          </h3>
+          <p className="mt-2 text-sm">
+            {
+              {
+                collecting: "Ölçüm sürüyor",
+                compromised:
+                  "Çakışma, silinen veri veya tamamlanmamış kampanya nedeniyle güvenilir sonuç çıkarılamıyor",
+                insufficient: "Sonuç için yeterli veri yok",
+                positive: "Pozitif ek etki sinyali",
+                negative: "Negatif ek etki sinyali",
+                inconclusive: "Etki yönü belirsiz",
+              }[impact.status]
+            }
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Kpi
+              label="Gönderim grubu"
+              value={`${impact.treatment.converted} / ${impact.treatment.assigned}`}
+              sub={`${fmtPct(impact.rateT)} dönüşüm · ${impact.treatment.sent} gönderilen`}
+            />
+            <Kpi
+              label="Kontrol grubu"
+              value={`${impact.control.converted} / ${impact.control.assigned}`}
+              sub={`${fmtPct(impact.rateC)} dönüşüm · kampanya gönderilmedi`}
+            />
+          </div>
+          <p className="mt-3 text-sm">
+            Tahmini fark:{" "}
+            {(impact.difference * 100).toLocaleString("tr-TR", {
+              maximumFractionDigits: 2,
+            })}{" "}
+            yüzde puanı. Belirsizlik aralığı: {(impact.lower * 100).toFixed(2)} ile{" "}
+            {(impact.upper * 100).toFixed(2)} yüzde puanı.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Ölçüm bitişi:{" "}
+            {new Date(impact.endsAt).toLocaleString("tr-TR", {
+              timeZone: "Europe/Istanbul",
+            })}{" "}
+            (İstanbul). Hesap tüm atanmış kişileri içerir; başarısız ve atlanan
+            gönderimler gruptan çıkarılmaz. Her kişi hedef olayı için bir kez sayılır.
+            Fark, gelir veya kesin nedensellik garantisi değildir.
+          </p>
+          <details className="mt-2 text-xs text-muted-foreground">
+            <summary>Belirsizlik nasıl hesaplanıyor?</summary>
+            <p className="mt-1">
+              Her grubun oranı için Wilson sınırları hesaplanır, sınır farkları geniş
+              bir karşılaştırma aralığı oluşturur. Bu, kesin bir %95 fark güven aralığı
+              olarak yorumlanmamalıdır. En az 50 kişi/grup ve toplam 20 dönüşüm olmadan
+              yön sinyali gösterilmez; bu eşikler güç analizi yerine geçmez. Ölçüm
+              süresi bitmeden kazanan ilan edilmez.
+            </p>
+          </details>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Diğer kampanya/otomasyonlardan gönderim alan:{" "}
+            {impact.treatment.contaminated + impact.control.contaminated}. Kimliği
+            silinen: {impact.treatment.erased + impact.control.erased}. Mailory
+            dışındaki gönderimler algılanamaz. Olay kaynağı iki grubu da kapsamadığında
+            ölçüm güvenilir değildir.
+          </p>
+        </section>
+      ) : null}
       <KpiGrid>
         <Kpi
           label="Gönderilen"

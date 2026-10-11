@@ -10,6 +10,8 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 
 ## Temel işler
 
+- **MAIL-201 (done):** Entegre Etki Motoru V1 — kampanya ayarları, sabit kontrol/treatment grupları, atomik gönderim hazırlığı, atıftan bağımsız dönüşüm ölçümü, belirsizlik/çakışma raporu, public stats API ve veri silme/dışa aktarım. Dağıtım öncesi 0019 migration gerekir. [Kullanım ve sınırlar](MAILORY_IMPACT_ENGINE.md).
+
 | ID       | Title                                         | Pri | Phase | Deps    | Description                                                                                                                                                                    | Acceptance Criteria                             | Status  |
 | -------- | --------------------------------------------- | --- | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------- |
 | MAIL-001 | Project audit                                 | P0  | 0     | —       | Repo, CiM, tasarım ve Railway çıkarım audit'i                                                                                                                                  | `MAILORY_DISCOVERY.md` mevcut                   | done    |

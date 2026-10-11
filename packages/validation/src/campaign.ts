@@ -1,8 +1,18 @@
 import { z } from "zod";
 import { emailSchema } from "./audience";
+import { conversionSchema } from "./conversion";
 
 const uuid = z.string().uuid();
-const economy = { excludeDormant: z.boolean().optional() };
+const economy = {
+  excludeDormant: z.boolean().optional(),
+  impact: z
+    .object({
+      goal: conversionSchema.shape.name,
+      controlPercent: z.union([z.literal(10), z.literal(20), z.literal(50)]),
+      windowDays: z.union([z.literal(7), z.literal(14), z.literal(30)]),
+    })
+    .optional(),
+};
 const utmValue = z
   .string()
   .trim()

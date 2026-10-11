@@ -356,6 +356,7 @@ export const conversions = pgTable(
   },
   (t) => [
     index("conversions_campaign_idx").on(t.organizationId, t.campaignId, t.occurredAt),
+    index("conversions_impact_idx").on(t.organizationId, t.name, t.occurredAt),
     uniqueIndex("conversions_external_uidx")
       .on(t.organizationId, t.externalId)
       .where(sql`${t.externalId} is not null`),

@@ -55,6 +55,7 @@ export type EditorProps = {
   audienceCount: number;
   audiencePlan: AudiencePlan | null;
   contentEfficiency: ContentEfficiency | null;
+  impactPlan: { eligible: number; control: number; treatment: number } | null;
   requireApproval: boolean;
   canSend: boolean;
   identities: (Option & { fromEmail: string; usable: boolean })[];
@@ -79,6 +80,10 @@ export function CampaignEditor(props: EditorProps) {
     audienceId:
       campaign.audience && "id" in campaign.audience ? campaign.audience.id : "",
     excludeDormant: campaign.audience?.excludeDormant ?? false,
+    impactEnabled: Boolean(campaign.audience?.impact),
+    impactGoal: campaign.audience?.impact?.goal ?? "purchase",
+    impactControl: campaign.audience?.impact?.controlPercent ?? 20,
+    impactDays: campaign.audience?.impact?.windowDays ?? 7,
     utm: campaign.utm,
     trackOpens: campaign.trackOpens,
     trackClicks: campaign.trackClicks,
@@ -98,14 +103,22 @@ export function CampaignEditor(props: EditorProps) {
   const setUtm = (patch: Partial<CampaignUtm>) => set("utm", { ...form.utm, ...patch });
 
   function audiencePayload(): CampaignAudience | null {
+    const impact = form.impactEnabled
+      ? {
+          goal: form.impactGoal,
+          controlPercent: form.impactControl,
+          windowDays: form.impactDays,
+        }
+      : undefined;
     if (!form.audienceKind) return null;
     if (form.audienceKind === "all")
-      return { kind: "all", excludeDormant: form.excludeDormant };
+      return { kind: "all", excludeDormant: form.excludeDormant, impact };
     return form.audienceId
       ? ({
           kind: form.audienceKind,
           id: form.audienceId,
           excludeDormant: form.excludeDormant,
+          impact,
         } as CampaignAudience)
       : null;
   }
@@ -379,6 +392,73 @@ export function CampaignEditor(props: EditorProps) {
               </p>
             )}
           </div>
+        </Section>
+
+        <Section title="Etki Motoru">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={form.impactEnabled}
+              disabled={!form.audienceKind || busy !== null}
+              onChange={(e) => set("impactEnabled", e.target.checked)}
+            />
+            Gerçek ek etkiyi ölç
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Kitlenin rastgele seçilen bir bölümüne bu kampanya gönderilmez. İki grubun
+            hedef dönüşümleri karşılaştırılır; işlem e-postaları değişmez.
+          </p>
+          {form.impactEnabled ? (
+            <>
+              <Field
+                id="impact-goal"
+                label="Hedef olay adı"
+                hint="Dönüşüm API’sindeki name alanıyla tam eşleşmeli; örneğin purchase veya demo_request."
+              >
+                <Input
+                  maxLength={60}
+                  value={form.impactGoal}
+                  onChange={(e) => set("impactGoal", e.target.value)}
+                />
+              </Field>
+              <Field id="impact-control" label="Kontrol grubunun payı">
+                <NativeSelect
+                  value={form.impactControl}
+                  onChange={(e) =>
+                    set("impactControl", Number(e.target.value) as 10 | 20 | 50)
+                  }
+                >
+                  <option value={10}>%10</option>
+                  <option value={20}>%20</option>
+                  <option value={50}>%50 — daha dengeli karşılaştırma</option>
+                </NativeSelect>
+              </Field>
+              <Field id="impact-days" label="Ölçüm süresi">
+                <NativeSelect
+                  value={form.impactDays}
+                  onChange={(e) =>
+                    set("impactDays", Number(e.target.value) as 7 | 14 | 30)
+                  }
+                >
+                  <option value={7}>7 gün</option>
+                  <option value={14}>14 gün</option>
+                  <option value={30}>30 gün</option>
+                </NativeSelect>
+              </Field>
+              {!dirty && props.impactPlan ? (
+                <p className="text-sm" aria-live="polite">
+                  Uygun kitle: {props.impactPlan.eligible} · Gönderim:{" "}
+                  {props.impactPlan.treatment} · Kontrol: {props.impactPlan.control}
+                </p>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Dönüşüm kaynağınız yalnızca e-postaya tıklayanları değil, iki grubun tüm
+                hedef olaylarını göndermeli. Az veriyle sonuç belirsiz kalabilir. Diğer
+                kampanyaların ölçüm süresinde bu kişilere gönderimleri raporda çakışma
+                olarak gösterilir. Gönderim başlangıcında gruplar sabitlenir.
+              </p>
+            </>
+          ) : null}
         </Section>
 
         <Section title="5. İzleme ve UTM">

@@ -4,6 +4,8 @@ Karar tarihi: 11 Ekim 2026. Önerilen konum: **küçük girişimler için daha a
 
 ## Genel yapı
 
+Entegre **Etki Motoru V1** artık kampanya ayarları, gönderim ve raporlama içindedir: [MAILORY_IMPACT_ENGINE.md](MAILORY_IMPACT_ENGINE.md). Bu, kontrol grubuyla ölçüm altyapısıdır; kişi bazlı uplift modeli veya otomatik karar verme henüz uygulanmamıştır.
+
 Next.js web + PostgreSQL + Redis/BullMQ işçi + SES düzenini koruyalım. Çok kiracılı yetkilendirme, kuyruk, bastırma ve abonelik kontrolleri, alan adı doğrulaması, haftalık kişi sınırı ve dönüşüm API'si mevcut. Yeni mikroservis, vektör veritabanı ve sürekli LLM gerekmez. Asıl fırsat bu parçaları girişimin ilk kampanyasında anlaşılır karar akışına dönüştürmek.
 
 Mailchimp'te segmentasyon, otomasyon, gelir raporlaması ve AI; MailerLite'ta otomasyon, AI ve Smart Sending zaten var. “AI ile mail yazıyoruz” farklılaşma değildir. Resend'in geliştirici odaklı işlem e-postası planı tam pazarlama ürünümüzle aynı kapsamda değildir.

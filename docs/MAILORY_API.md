@@ -91,6 +91,8 @@ En yeniden eskiye: `{ "data": [{ email, reason, createdAt }], "total": n }` (`li
 
 ### `POST /conversions` _(write)_ — sonuç bildirme
 
+**Etki Motoru:** Hedef adı kampanyanın `audience.impact.goal` alanıyla eşleşir. Kontrol grubu dahil tüm hedef olaylarını gönderin; tıklamaya veya campaignId'ye göre filtrelemeyin. Etki raporu attribution'dan bağımsız, sabit gruplar ve zaman penceresi üzerinden hesaplanır. Ayrıntı: [MAILORY_IMPACT_ENGINE.md](MAILORY_IMPACT_ENGINE.md).
+
 Satış, kayıt gibi **gerçek sonuçları** bildirin; Mailory bunu kampanyalara atfeder ve kampanya raporunda “Sonuçlar” olarak gösterir.
 
 ```json
@@ -113,6 +115,8 @@ Satış, kayıt gibi **gerçek sonuçları** bildirin; Mailory bunu kampanyalara
 ### `GET /campaigns/{id}/stats` → `{ "stats": {recipients, sent, delivered, bounced, complained, …}, "rates": {…} }`
 
 Yalnızca toplamlar; kişi bazlı veri dönmez.
+
+Stats yanıtı ek olarak `impact` içerir (kapalı/başlamamışsa null): `goal`, `endsAt`, `treatment`, `control`, `rateT`, `rateC`, `difference`, `lower`, `upper`, `estimatedAdditional`, `status`. Grup alanları `assigned`, `converted`, `sent`, `contaminated`, `erased`; oran/farklar 0–1 ölçeğindedir. Status: `collecting`, `compromised`, `insufficient`, `positive`, `negative`, `inconclusive`. Tahmini ek dönüşüm yönü negatif de olabilir; garanti değildir.
 
 **Contact:** `{ id, email, firstName, lastName, company, position, website, phone, sector, city, status, source, consentStatus, custom, tags?, createdAt, updatedAt }`. Bu şekil sürümlüdür (`/v1`); alan eklemek uyumludur, çıkarmak/yeniden adlandırmak yeni sürüm gerektirir.
 

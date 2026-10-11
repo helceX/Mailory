@@ -12,6 +12,8 @@ export function GET(request: Request, { params }: { params: Promise<{ id: string
     const { id } = await params;
     if (!z.uuid().safeParse(id).success) return serviceFailure({ code: "not_found" });
     const r = await getCampaignReport({ db: getDb().db }, actor, id);
-    return r.ok ? apiJson({ stats: r.stats, rates: r.rates }) : serviceFailure(r);
+    return r.ok
+      ? apiJson({ stats: r.stats, rates: r.rates, impact: r.impact })
+      : serviceFailure(r);
   });
 }

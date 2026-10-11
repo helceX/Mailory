@@ -54,3 +54,4 @@ export * from "./repositories/privacy";
 export * from "./repositories/api";
 export * from "./repositories/billing-profile";
 export * from "./repositories/conversions";
+export * from "./repositories/impact";

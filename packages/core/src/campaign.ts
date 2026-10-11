@@ -56,6 +56,7 @@ export type CampaignAudience = (
 ) & {
   /** Opt-in: exclude score=0 contacts for this campaign only; unknown/new contacts remain eligible. */
   excludeDormant?: boolean;
+  impact?: { goal: string; controlPercent: 10 | 20 | 50; windowDays: 7 | 14 | 30 };
 };
 
 export type CampaignUtm = {
@@ -99,6 +100,7 @@ export type ReadinessIssue = {
     | "no_audience"
     | "audience_missing"
     | "audience_empty"
+    | "impact_sample_small"
     | "no_unsubscribe"
     | "unknown_merge_fields"
     | "empty_content"

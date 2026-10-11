@@ -171,6 +171,59 @@ suite("campaign engine (real Postgres)", () => {
     expect(sent).toHaveLength(0);
   });
 
+  it("persists impact settings, freezes the treatment count and rejects an empty control group", async () => {
+    const w = await workspace();
+    const id = await readyDraft(w);
+    const impact = {
+      goal: "purchase",
+      controlPercent: 20 as const,
+      windowDays: 7 as const,
+    };
+    expect(
+      await svc.updateCampaignFor(deps(), w.actor, id, {
+        audience: { kind: "list", id: w.listId, impact },
+      }),
+    ).toMatchObject({ ok: true });
+    const small = await svc.getCampaignFor(deps(), w.actor, id);
+    expect(small).toMatchObject({
+      ok: true,
+      impactPlan: { eligible: 3, control: 0, treatment: 3 },
+    });
+    if (!small.ok) throw new Error("read");
+    expect(small.issues).toContainEqual(
+      expect.objectContaining({ code: "impact_sample_small", severity: "blocker" }),
+    );
+    expect(await svc.scheduleCampaignFor(deps(), w.actor, id)).toMatchObject({
+      ok: false,
+    });
+    expect(
+      await svc.updateCampaignFor(deps(), w.actor, id, {
+        audience: {
+          kind: "list",
+          id: w.listId,
+          impact: { ...impact, controlPercent: 50 },
+        },
+      }),
+    ).toMatchObject({ ok: true });
+    expect(await svc.getCampaignFor(deps(), w.actor, id)).toMatchObject({
+      impactPlan: { eligible: 3, control: 1, treatment: 2 },
+      audienceCount: 2,
+    });
+    expect(await svc.scheduleCampaignFor(deps(), w.actor, id)).toMatchObject({
+      ok: true,
+    });
+    expect((await fetchRow(id)).snapshot?.audienceCount).toBe(2);
+    expect(
+      await svc.updateCampaignFor(deps(), w.actor, id, { audience: { kind: "all" } }),
+    ).toMatchObject({ ok: false, code: "conflict" });
+    const d = await svc.duplicateCampaignFor(deps(), w.actor, id);
+    if (!d.ok) throw new Error("duplicate");
+    expect((await fetchRow(d.id)).audience?.impact).toEqual({
+      ...impact,
+      controlPercent: 50,
+    });
+  });
+
   describe("pre-send review (ön otopsi)", () => {
     it("surfaces awkward real contacts and what would go wrong for each; sends nothing", async () => {
       const w = await workspace();

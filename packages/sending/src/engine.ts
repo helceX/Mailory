@@ -86,16 +86,25 @@ export async function dispatchDue(deps: EngineDeps) {
     let claimed = 0;
     for (const c of due) {
       const org = asOrganizationId(c.organizationId);
-      const row = await startCampaignSending(deps.db, org, c.id, now);
-      if (!row) continue; // another dispatcher won
+      const audience = await resolveAudienceFilter(deps.db, org, c.audience);
+      // Status and frozen groups commit together; a crashed assignment must remain retryable.
+      const prepared = await deps.db.transaction(async (tx) => {
+        const row = await startCampaignSending(tx, org, c.id, now);
+        if (!row) return null;
+        const n =
+          audience.filter && audience.exists
+            ? await materializeRecipients(tx, org, row.id, audience.filter, now)
+            : null;
+        return { row, n };
+      });
+      if (!prepared) continue; // another dispatcher won
+      const { row, n } = prepared;
       claimed++;
       started++;
-      const audience = await resolveAudienceFilter(deps.db, org, row.audience);
-      if (!audience.filter || !audience.exists) {
+      if (n === null) {
         await haltCampaign(deps.db, org, row.id, "failed", "audience_missing", now);
         continue;
       }
-      const n = await materializeRecipients(deps.db, org, row.id, audience.filter, now);
       deps.log?.("campaign started", { campaignId: row.id, recipients: n });
       if (n === 0) await completeIfDone(deps.db, org, row.id, now);
     }

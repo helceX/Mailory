@@ -134,6 +134,13 @@
       "when": 1791488388306,
       "tag": "0018_conversions",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791733119130,
+      "tag": "0019_campaign_impact",
+      "breakpoints": true
     }
   ]
 }

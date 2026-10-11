@@ -17,6 +17,7 @@ export * from "./email-markup";
 export * from "./domain";
 export * from "./campaign";
 export * from "./campaign-efficiency";
+export * from "./impact";
 export * from "./deliverability";
 export * from "./automation";
 export * from "./entitlements";
