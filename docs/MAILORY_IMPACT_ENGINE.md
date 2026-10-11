@@ -36,13 +36,11 @@ Grup kayıtları veri dışa aktarımına dahildir. Kişisel veri silme akışı
 
 `0019_campaign_impact.sql` ve şema snapshot'ı repodadır. **Yeni web/worker başlamadan migration uygulanmalıdır**; mevcut AWS deploy akışı migration tamamlanmasını bekler. Eski kampanyaların audience JSONB alanına zorunlu yeni alan eklenmez. Yeni dış servis, API anahtarı veya üretim bağımlılığı yok; cohort satırları, indeks ve toplu raporlama mevcut DB kaynaklarını tüketir.
 
-## İstatistik kaynakları
-
 ## Doğrulama
 
 371 test geçti: gerçek yerel PostgreSQL üzerinde iki grubun tam sayısı, concurrent/idempotent atama, hata sonrası transaction rollback, gönderim işçisinin kontrol grubuna hiç göndermemesi, atıfsız kontrol dönüşümleri, kişi tekilleştirme, hedef/zaman/kiracı filtreleri, başka kampanya çakışması ve veri silme/dışa aktarım. Tüm workspace tür kontrolü ve değişen kodların lint kontrolü geçti. Chrome ile gerçek yerel Next.js uygulamasında ayar kaydet/yenile ve sonuç raporu, masaüstü/390 px mobil görünüm ve taşma kontrolü doğrulandı. Canlı AWS dağıtımı veya gerçek müşteri e-postası gönderimi yapılmadı.
 
-### Kaynaklar
+## İstatistik kaynakları
 
 - [NIST: binomial oranlar için Wilson sınırları](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)
 - [Microsoft Research: deney metriklerinin yorumlama hataları](https://www.microsoft.com/en-us/research/publication/a-dirty-dozen-twelve-common-metric-interpretation-pitfalls-in-online-controlled-experiments/)
