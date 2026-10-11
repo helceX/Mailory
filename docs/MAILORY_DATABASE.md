@@ -1,0 +1,155 @@
+# Mailory — Database Architecture
+
+PostgreSQL 16+, Drizzle. Kurallar: `uuid` PK (`defaultRandom`), `timestamptz`, tenant tablolarında `organization_id NOT NULL` + `ON DELETE CASCADE` (soft-delete edilen org hariç, bkz. §9), durum alanları `text` + CHECK (enum değişimi migration gerektirmesin), e-posta `lower(email)` üzerinde unique.
+
+## 1. Identity
+
+- `users` (id, email unique-lower, password_hash, first_name, last_name, email_verified_at, is_platform_admin, disabled_at)
+- `sessions` (id, user_id, token_hash unique, active_organization_id, ip, user_agent, expires_at, revoked_at)
+- `organizations` (id, name, slug, type `standard|partner`, **parent_organization_id** → organizations, default_timezone, deleted_at)
+- `memberships` (organization_id, user_id, role `owner|admin|editor|viewer`, status `active|revoked`, invited_by) — unique(org,user); role/status CHECK kısıtlı
+- `invitations` (organization_id, email, role `admin|editor|viewer`, token_hash unique, invited_by, expires_at, accepted_at, revoked_at) — aynı e-postaya yeni davet eskisini iptal eder
+- `user_tokens` (user_id, purpose `verify_email|reset_password`, token_hash unique, expires_at, consumed_at) — D-026
+- `email_outbox` (sistem e-postaları: to, subject, body, kind, sent_at, delivered_via, last_error)
+
+## 2. Billing / entitlements
+
+- `plans` (key `free|starter|growth|pro|enterprise|btm_sponsored`, name, is_public)
+- `plan_entitlements` (plan_key, entitlement_key, limit_value bigint NULL=sınırsız) — anahtarlar: `contacts`, `emails_per_month`, `members`, `automations`, `storage_mb`, `ai_credits`, `api_requests`
+- `subscriptions` (organization_id, plan_key, status `active|trialing|paused|canceled`, source `manual|sponsored|stripe`, sponsor_organization_id NULL, current_period_start/end, billing_provider, billing_customer_id, billing_subscription_id)
+- `entitlement_overrides` (organization_id, entitlement_key, limit_value, reason, set_by) — sponsorlu limitler burada
+- `usage_counters` (organization_id, key, period_start, value) — unique(org,key,period_start); `emails_per_month` worker'da artırılır
+- `invoices` (organization_id, provider_invoice_id, amount, currency, status, issued_at) — V2 dolar
+
+Etkin limit = override ?? plan_entitlement. Tek giriş: `checkEntitlement(orgId, key, delta)`.
+
+## 3. Audience
+
+- `contacts` (organization_id, email, first_name, last_name, company, position, website, phone, sector, city, status `subscribed|unsubscribed|bounced|complained|cleaned`, consent_status `granted|unknown|withdrawn`, consent_source, consent_at, unsubscribed_at, source, custom jsonb, engagement_score smallint, last_activity_at, created_at) — unique(org, lower(email)); indeksler: (org, status), (org, engagement_score), GIN(custom jsonb_path_ops) gerekirse
+- `contact_fields` (organization_id, key, label, type `text|number|date|boolean|select`, options jsonb) — kullanıcı tanımlı alanlar; değerler `contacts.custom`'da
+- `lists` (organization_id, name, description; ad org içinde case-insensitive tekil) · `list_contacts` (list_id, contact_id, organization_id, added_at) PK(list_id, contact_id)
+- `tags` (organization_id, name) · `contact_tags` (contact_id, tag_id, organization_id)
+- `segments` (organization_id, name, definition jsonb AST, last_count, last_counted_at)
+- `suppressions` (organization_id, email_lower, reason `unsubscribe|hard_bounce|complaint|manual|import`, source_campaign_id, created_at) — unique(org, email_lower). Gönderim öncesi kontrolün tek kaynağı.
+- `import_jobs` (organization_id, user_id, status, file_key, mapping jsonb, total, inserted, updated, skipped, errors jsonb, consent_attested bool, consent_attested_at)
+
+## 4. Email
+
+- `sender_domains` (organization_id, domain unique-lower **global** (aynı domain iki org'da olamaz), status `pending|verified|failed`, dkim_tokens jsonb, spf_ok, dkim_ok, dmarc_policy, last_checked_at, verified_at)
+- `sender_identities` (organization_id, sender_domain_id NULL, from_name, from_email, reply_to, is_default, verified_at)
+- `brand_kits` (organization_id unique, logo_key, colors jsonb, fonts jsonb, button_style jsonb, footer_html, social_links jsonb)
+- `templates` (organization_id, name, category, scope `org|library|partner_shared`, source_template_id, archived_at, current_version_id) · `template_versions` (template_id, organization_id, version, doc jsonb, note, created_by) — değişmez; HTML/metin saklanmaz, render'da üretilir
+- `campaigns` (organization_id, name, status, sender_identity_id, reply_to, subject, preheader, template_version_id, content_snapshot jsonb, audience jsonb `{list_ids, segment_id, exclude…}`, tracking jsonb `{opens, clicks}`, utm jsonb, scheduled_at, started_at, completed_at, created_by, submitted_by, approved_by, approved_at, ab_test jsonb NULL)
+- `campaign_recipients` (campaign_id, organization_id, contact_id, email, status, ses_message_id, attempts, last_error, queued_at, sent_at, delivered_at, bounced_at, complained_at) — unique(campaign_id, contact_id); indeks (campaign_id, status)
+- `links` (campaign_id, organization_id, url, position) · `link_clicks` (link_id, recipient_id, organization_id, clicked_at, device, ip_hash, country, is_bot)
+- `email_events` (organization_id NULL-able bilinmeyen, provider_event_id unique, type `send|delivery|bounce|complaint|reject|open|click|unsubscribe`, recipient_id, payload jsonb, occurred_at) — aylık partisyon adayı
+- `campaign_stats` (campaign_id, organization_id, sent, delivered, opens_unique, clicks_unique, bounced, complained, unsubscribed, updated_at) — artımlı toplama
+- `email_outbox` (sistem e-postaları, console transport için)
+
+## 5. Automation (V2)
+
+`automations` (org, name, status, trigger jsonb) · `automation_nodes` (automation_id, org, type `condition|delay|email|branch`, config jsonb, next jsonb) · `automation_runs` (automation_id, contact_id, org, status, current_node_id, resume_at) · `automation_actions` (run_id, node_id, org, result, executed_at)
+
+## 6. Forms (V2)
+
+`forms`, `form_fields`, `form_submissions` (hepsi organization_id ile)
+
+## 7. Platform
+
+`audit_logs` (organization_id NULL, user_id, action, entity_type, entity_id, ip, user_agent, metadata jsonb, created_at — append-only; org silinse de korunur: FK **yok**, `organization_id` düz uuid) · `notifications` · `api_keys` (organization_id, name, prefix, key_hash, scopes text[], last_used_at, revoked_at) · `webhooks` (org, url, secret_enc, events text[]) · `integrations` · `sponsorships` (partner_organization_id, organization_id, plan_key, contact_limit, email_limit, status, created_by) · `ai_usage` (org, kind, tokens, credits, created_at)
+
+## 8. İndeks ve ölçek notları
+
+Tüm sayfalama keyset (`(created_at,id)`). `contacts` 1M için: (org, lower(email)) unique, (org, status, id), (org, engagement_score, id). `campaign_recipients` ve `email_events` büyüyen tablolar → partisyon ve arşiv politikası Faz 15.
+
+## 9. Silme ve KVKK
+
+Org silme = soft delete (`deleted_at`) + zamanlanmış kalıcı silme job'ı. Contact silme = hard delete + e-posta `suppressions`'ta _hash olarak_ korunur (yeniden eklenmesin diye, yalnızca org istiyorsa). Dışa aktarma: contact başına JSON/CSV (olaylarla). `audit_logs` kişisel veri içermez (e-posta yerine contact_id).
+
+## 10. RLS planı (Faz 15)
+
+Tenant tablolarına `ENABLE ROW LEVEL SECURITY` + `app.org_id` politikası; uygulama rolü `BYPASSRLS` değil; platform/partner görünümleri `SECURITY DEFINER` görünümleri üzerinden.
+
+## Faz 4 notları
+
+- `list_contacts`/`contact_tags` satırları `organization_id` taşır; ekleme `INSERT … SELECT` ile yapılır ve liste/etiket aynı org'a ait olmak zorundadır — yabancı id sessizce 0 satır etkiler.
+- Drizzle'da tablo `listContactLinks` olarak dışa aktarılır (SQL adı `list_contacts`); `listContacts` repository fonksiyonudur.
+- `import_jobs` içe aktarma özetini, ilk 50 hatayı ve izin beyanının kanıtını (`consent_attested_at`, kullanıcı) tutar.
+- `suppressions.reason`: unsubscribe | hard_bounce | complaint | manual | import.
+
+## Faz 5 notları
+
+- `assets` (organization_id, content_type, size, sha256, filename, data bytea, created_by): yalnızca doğrulanmış raster görseller; herkese açık okuma `getAssetPublic(id)` (uuid kimlik bilgisidir), yazma/sayım tenant-scoped.
+- `brand_kits` (organization_id **unique**, logo_asset_id → assets, renkler, font, button_radius, footer_text, social_links jsonb). Başka org'a ait logo kimliği bağlanmaz (yoksayılır).
+- `templates`: `unique(organization_id, lower(name)) WHERE archived_at IS NULL` (kısmi); `current_version_id` düz uuid (döngüsel FK yok).
+- Kütüphane şablonları DB'de değil, kodda (`packages/email/src/library.ts`).
+
+## Faz 6 notları
+
+- `sender_domains`: org'a ait; `domain`, `status` (pending/verified/failed), `dkim_tokens[]`, `ownership_token`, `ownership_ok/dkim_ok`, `spf_state/dmarc_state`, `snapshot` (son DNS sonucu), `failing_since`, `last_checked_at`, `verified_at`. (organization_id, domain) tekil; **doğrulanmış** satırlar için domain üzerinde kısmi unique index (tek sahip).
+- `sender_identities`: org'a ait gönderici (ad, e-posta, yanıt adresi, varsayılan). Varsayılan kimlik org başına tek (`FOR UPDATE` ile değiştirilir); silinen varsayılanın yerine en eski kalan terfi eder. Kullanılabilirlik veri değil, doğrulanmış kapsayan alan adından hesaplanır.
+- Migration: `0004_nostalgic_jazinda.sql`.
+
+## Faz 7 notları
+
+- `campaigns` (migration `0005_rapid_sumo.sql`): durum CHECK kısıtlı; `audience` jsonb `{kind: all|list|segment|tag, id?}`, `utm` jsonb, `snapshot` jsonb (gönderime alınınca dondurulan doc/marka/gönderici/sayı), `template_version_id`, onay alanları (`submitted_*`, `approved_*`, `rejection_reason`). İndeksler: `(organization_id, status, created_at)` ve kısmi `campaigns_due_idx (scheduled_at) WHERE status='scheduled'` (Faz 8 zamanlayıcısı tenantlar arası tarar).
+- `organizations.require_campaign_approval boolean default false`.
+- `sender_identity_id`/`template_id` FK'leri `ON DELETE SET NULL`; tenant tutarlılığı servis katmanında (yabancı id'ler "invalid") doğrulanır. Faz 15 RLS planında bileşik FK değerlendirilecek.
+- Tüm migration'lar ekleme yönlüdür (mevcut üretim verisine dokunmaz).
+
+## Faz 8 notları (migration `0006_big_mockingbird.sql`)
+
+- `campaign_recipients`: UNIQUE(campaign_id, contact_id); indeksler `(campaign_id, status, next_attempt_at)` (iş kuyruğu), kısmi UNIQUE `provider_message_id` (webhook araması), kısmi `(organization_id, sent_at)` (günlük sayaç). `contact_id` silinen kişide NULL olur (satır ve e-posta denetim için kalır). Durumlar CHECK'li: queued/sending/sent/delivered/bounced/complained/failed/skipped.
+- `email_events`: UNIQUE `provider_event_id` (SNS MessageId) → tekrar teslim zararsız; ham yük jsonb.
+- `campaigns.halt_reason` (motorun duraklatma/başarısızlık nedeni), `organizations.daily_send_limit` (varsayılan 2000).
+- Ekleme yönlü migration; mevcut tablolara yalnızca NULL'lanabilir/varsayılanlı sütun.
+
+## Faz 9 notları (migration `0007_quick_turbo.sql`)
+
+- `campaign_links` (UNIQUE(campaign_id, url)): izlenen hedefler; tıklama olayları buraya bağlanır.
+- `tracking_events` (type open|click, `is_bot`, `device`, `ip_hash`): ham IP/UA yok. İndeksler `(campaign_id, type, occurred_at)` ve `(link_id)`.
+- `campaign_recipients.opened_at / clicked_at`: ilk gerçek etkileşim; benzersiz sayılar `IS NOT NULL` sayımı.
+- Ekleme yönlü migration.
+
+## Faz 10 notları
+
+- Yeni tablo yok. `contacts.engagement_score` / `last_activity_at` (var olan sütunlar) gece işiyle dolar; bant skordan türetilir (saklanmaz).
+
+## Faz 11 notları (migration `0008_complete_mastermind.sql`)
+
+- `automations` (trigger/steps jsonb, durum draft|active|paused|archived), `automation_enrollments` (UNIQUE(automation_id, contact_id); kısmi indeks `(next_run_at) WHERE status='active'`; `last_recipient_id` koşullar için).
+- `campaigns.kind` (`campaign`|`automation_step`), `automation_id`, `automation_step_id` (+ kısmi indeks).
+- `contact_tags.added_at` (etiket tetikleyicisi için; mevcut satırlar migration anına damgalanır, yani tetikleyiciyi geriye dönük etkilemez).
+
+## Faz 12 notları (migration `0009_dry_gertrude_yorkes.sql`)
+
+- `organizations.ai_enabled` (varsayılan false), `ai_requests` (org, user, feature, ok, token sayıları; içerik yok).
+
+## Faz 14 notları (migration `0010_…` + `0011_…`)
+
+- `plans`, `plan_entitlements` (tohum veri migration içinde: free/starter/growth/pro/enterprise/btm_sponsored × 7 anahtar), `subscriptions` (org UNIQUE), `entitlement_overrides` (UNIQUE(org, key)). `organizations.suspended_at/suspended_reason`. `invitations.role` artık `owner`'ı da kabul eder (yalnızca partner akışı; normal davet servisi owner'ı hâlâ reddeder).
+
+## Faz 13 notları (migration `0012_…`)
+
+- `shared_templates` (partner_organization_id, name, category, description, doc jsonb, archived_at). `organizations.type/parent_organization_id` (Faz 3'te vardı) artık kullanılıyor.
+
+## Faz 15 notları (migration `0013_composite_tenant_fks.sql`, elle yazıldı)
+
+- Ebeveyn tablolara `UNIQUE(organization_id, id)`; çocuk tablolarda tek kolonlu FK'ler `(organization_id, parent_id)` bileşik FK'lerle değiştirildi (kampanya→şablon/gönderici/versiyon, alıcı→kampanya/kişi, link/olay→kampanya/alıcı/link, liste/etiket üyelikleri, otomasyon kayıtları, marka kiti→görsel). Başka org'un satırına referans DB'de 23503 verir.
+- KVKK: `organizations.deleted_at` (30 gün sonra `purgeDeletedOrganizations`), `contact_tags.added_at`. Saklama: `runRetention` (bkz. D-093).
+
+## Faz 18 notları (migration `0014_public_api.sql`)
+
+- `api_keys` (prefix UNIQUE, secret_hash, scope read|write, revoked_at), `api_usage` (PK org+gün, sayaç), `webhook_endpoints` (secret, events text[], consecutive_failures), `webhook_deliveries` (outbox; status pending|delivered|failed, attempts, next_attempt_at, locked_until). `webhook_deliveries` → `webhook_endpoints` bileşik FK (aynı org zorunlu, elle yazıldı). Saklama: teslimatlar 30 gün, `api_usage` 400 gün (`runRetention`).
+
+## Faz 18+ notu (migration `0016_billing_profile.sql`)
+
+- `billing_profiles` (org başına tek satır; `tax_id_kind` vkn|tckn). Migration `0015_equal_customers.sql` elle yazıldı (snapshot yok); sonraki üretilen snapshot'lar 0016'dan devam eder.
+
+## Strateji paketi notu (migration `0017_contact_weekly_cap.sql`)
+
+- `organizations.contact_weekly_cap` (NULL veya 1–50, CHECK).
+
+## Sonuç ölçümü (migration `0018_conversions.sql`)
+
+- `conversions` (org, name, email, contact_id, campaign_id, recipient_id, attribution click|send|NULL, value numeric(14,2), currency, external_id [org içinde tekil], occurred_at). Silme: kişi/kampanya silinirse FK `set null`; KVKK silmede e-posta anonimleşir.

@@ -1,0 +1,15 @@
+{
+  "ad": "Rota Sigorta Raporu",
+  "kategori": "investor",
+  "aciklama": "Sigorta temalı, dönem raporu içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "corporate-email-newsletter-template-2026-09-02-18-04-06-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "sigorta",
+    "investor",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}

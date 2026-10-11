@@ -1,0 +1,15 @@
+{
+  "ad": "Şafak Yardım derneği Duyurusu",
+  "kategori": "announcement",
+  "aciklama": "Yardım derneği temalı, duyuru içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "bussiness-issue-newsletter-2023-11-27-05-05-00-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "yardım derneği",
+    "announcement",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}

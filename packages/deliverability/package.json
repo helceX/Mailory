@@ -1,0 +1,20 @@
+{
+  "name": "@mailory/deliverability",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mailory/core": "workspace:*",
+    "@mailory/db": "workspace:*",
+    "@mailory/email": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.0",
+    "typescript": "6.0.3"
+  }
+}

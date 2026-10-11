@@ -1,0 +1,15 @@
+{
+  "ad": "Selvi Aksesuar Duyurusu",
+  "kategori": "announcement",
+  "aciklama": "Aksesuar temalı, duyuru içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "business-email-newsletter-2026-09-01-14-30-18-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "aksesuar",
+    "announcement",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}

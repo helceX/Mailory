@@ -1,0 +1,1014 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  slugifyUtm,
+  type CampaignAudience,
+  type CampaignUtm,
+  type Finding,
+  type HealthBand,
+  type ReadinessIssue,
+  type AudiencePlan,
+  type ContentEfficiency,
+  dayNotes,
+  isPoorSendDay,
+  isWeekend,
+  nextGoodSendDay,
+} from "@mailory/core/shared";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  Dialog,
+  DialogContent,
+  Field,
+  Input,
+  NativeSelect,
+} from "@mailory/ui";
+import { SubjectAssistant, type AiStatus } from "../ai/ai-panels";
+import { HealthPanel } from "../deliverability/health-panel";
+import { FormError } from "../auth/auth-card";
+import { apiCall } from "../audience/labels";
+
+type Option = { id: string; name: string };
+export type EditorProps = {
+  campaign: {
+    id: string;
+    name: string;
+    subject: string;
+    preheader: string;
+    senderIdentityId: string | null;
+    replyTo: string | null;
+    templateId: string | null;
+    audience: CampaignAudience | null;
+    utm: CampaignUtm;
+    trackOpens: boolean;
+    trackClicks: boolean;
+    rejectionReason: string | null;
+  };
+  issues: ReadinessIssue[];
+  ai: AiStatus;
+  health: { score: number; band: HealthBand; findings: Finding[] };
+  audienceCount: number;
+  audiencePlan: AudiencePlan | null;
+  contentEfficiency: ContentEfficiency | null;
+  impactPlan: { eligible: number; control: number; treatment: number } | null;
+  outcomeSignals: {
+    name: string;
+    received: number;
+    people: number;
+    lastReceived: string;
+  }[];
+  requireApproval: boolean;
+  canSend: boolean;
+  identities: (Option & { fromEmail: string; usable: boolean })[];
+  templates: Option[];
+  lists: Option[];
+  segments: Option[];
+  tags: Option[];
+  testRecipients: { email: string; name: string; self: boolean }[];
+};
+
+export function CampaignEditor(props: EditorProps) {
+  const { campaign } = props;
+  const router = useRouter();
+  const [form, setForm] = useState({
+    name: campaign.name,
+    subject: campaign.subject,
+    preheader: campaign.preheader,
+    senderIdentityId: campaign.senderIdentityId ?? "",
+    replyTo: campaign.replyTo ?? "",
+    templateId: campaign.templateId ?? "",
+    audienceKind: campaign.audience?.kind ?? "",
+    audienceId:
+      campaign.audience && "id" in campaign.audience ? campaign.audience.id : "",
+    excludeDormant: campaign.audience?.excludeDormant ?? false,
+    impactEnabled: Boolean(campaign.audience?.impact),
+    impactGoal:
+      campaign.audience?.impact?.goal ?? campaign.audience?.outcomeGoal ?? "purchase",
+    impactControl: campaign.audience?.impact?.controlPercent ?? 20,
+    impactDays: campaign.audience?.impact?.windowDays ?? 7,
+    utm: campaign.utm,
+    trackOpens: campaign.trackOpens,
+    trackClicks: campaign.trackClicks,
+  });
+  const [dirty, setDirty] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [sendMode, setSendMode] = useState<"now" | "later">("now");
+  const [sendAt, setSendAt] = useState("");
+
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setDirty(true);
+    setNotice(null);
+  };
+  const setUtm = (patch: Partial<CampaignUtm>) => set("utm", { ...form.utm, ...patch });
+
+  function audiencePayload(): CampaignAudience | null {
+    const impact = form.impactEnabled
+      ? {
+          goal: form.impactGoal,
+          controlPercent: form.impactControl,
+          windowDays: form.impactDays,
+        }
+      : undefined;
+    if (!form.audienceKind) return null;
+    if (form.audienceKind === "all")
+      return {
+        kind: "all",
+        excludeDormant: form.excludeDormant,
+        impact,
+        outcomeGoal: form.impactGoal,
+      };
+    return form.audienceId
+      ? ({
+          kind: form.audienceKind,
+          id: form.audienceId,
+          excludeDormant: form.excludeDormant,
+          impact,
+          outcomeGoal: form.impactGoal,
+        } as CampaignAudience)
+      : null;
+  }
+
+  async function save(): Promise<boolean> {
+    setBusy("save");
+    setError(null);
+    const r = await apiCall(`/api/campaigns/${campaign.id}`, "PATCH", {
+      name: form.name,
+      subject: form.subject,
+      preheader: form.preheader,
+      senderIdentityId: form.senderIdentityId || null,
+      replyTo: form.replyTo,
+      templateId: form.templateId || null,
+      audience: audiencePayload(),
+      utm: {
+        ...form.utm,
+        content: form.utm.content ?? "",
+        term: form.utm.term ?? "",
+      },
+      trackOpens: form.trackOpens,
+      trackClicks: form.trackClicks,
+    });
+    setBusy(null);
+    if (!r.ok) {
+      setError(r.message);
+      return false;
+    }
+    setDirty(false);
+    setNotice("Kaydedildi.");
+    router.refresh();
+    return true;
+  }
+
+  async function act(kind: "schedule" | "submit") {
+    setError(null);
+    if (sendMode === "later" && !sendAt) return setError("Gönderim zamanını seçin.");
+    if (dirty && !(await save())) return;
+    setBusy(kind);
+    const r = await apiCall(`/api/campaigns/${campaign.id}/${kind}`, "POST", {
+      sendAt: sendMode === "later" ? new Date(sendAt).toISOString() : null,
+    });
+    setBusy(null);
+    if (!r.ok) return setError(r.message);
+    router.refresh();
+  }
+
+  const blockers = props.issues.filter((i) => i.severity === "blocker");
+  const warnings = props.issues.filter((i) => i.severity === "warning");
+  const ready = blockers.length === 0 && !dirty;
+  const audienceOptions =
+    form.audienceKind === "list"
+      ? props.lists
+      : form.audienceKind === "segment"
+        ? props.segments
+        : form.audienceKind === "tag"
+          ? props.tags
+          : [];
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="flex flex-col gap-6">
+        {campaign.rejectionReason ? (
+          <div
+            role="alert"
+            className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm"
+          >
+            <strong>Onay reddedildi:</strong> {campaign.rejectionReason}
+          </div>
+        ) : null}
+        <FormError message={error} />
+
+        <Section title="1. Temel bilgiler">
+          <Field
+            id="c-name"
+            label="Kampanya adı"
+            hint="Yalnızca sizin göreceğiniz iç ad."
+          >
+            <Input
+              value={form.name}
+              maxLength={120}
+              onChange={(e) => set("name", e.target.value)}
+            />
+          </Field>
+          <Field
+            id="c-subject"
+            label="Konu satırı"
+            hint="{{first_name|dost}} gibi kişiselleştirme kullanabilirsiniz."
+          >
+            <Input
+              value={form.subject}
+              maxLength={200}
+              onChange={(e) => set("subject", e.target.value)}
+            />
+          </Field>
+          <Field
+            id="c-pre"
+            label="Ön izleme metni (isteğe bağlı)"
+            hint="Gelen kutusunda konunun yanında görünen kısa özet."
+          >
+            <Input
+              value={form.preheader}
+              maxLength={200}
+              onChange={(e) => set("preheader", e.target.value)}
+            />
+          </Field>
+        </Section>
+
+        <Section title="2. Gönderici">
+          <Field id="c-sender" label="Kimden">
+            <NativeSelect
+              value={form.senderIdentityId}
+              onChange={(e) => set("senderIdentityId", e.target.value)}
+            >
+              <option value="">Seçin…</option>
+              {props.identities.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.name} &lt;{i.fromEmail}&gt;{i.usable ? "" : " — doğrulanmamış"}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          {props.identities.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Henüz gönderici yok.{" "}
+              <Link href="/settings/senders" className="text-primary hover:underline">
+                Gönderici ekleyin
+              </Link>
+              .
+            </p>
+          ) : null}
+          <Field
+            id="c-reply"
+            label="Yanıt adresi (isteğe bağlı)"
+            hint="Boşsa göndericinin yanıt adresi kullanılır."
+          >
+            <Input
+              type="email"
+              value={form.replyTo}
+              onChange={(e) => set("replyTo", e.target.value)}
+            />
+          </Field>
+        </Section>
+
+        <Section title="3. İçerik">
+          <Field
+            id="c-template"
+            label="Şablon"
+            hint="Gönderime alındığında şablonun o anki sürümü dondurulur."
+          >
+            <NativeSelect
+              value={form.templateId}
+              onChange={(e) => set("templateId", e.target.value)}
+            >
+              <option value="">Seçin…</option>
+              {props.templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          {form.templateId ? (
+            <Link
+              href={`/templates/${form.templateId}`}
+              className="text-sm text-primary hover:underline"
+            >
+              Şablonu düzenle
+            </Link>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Şablon yok mu?{" "}
+              <Link href="/templates" className="text-primary hover:underline">
+                Şablonlar
+              </Link>{" "}
+              sayfasından oluşturun.
+            </p>
+          )}
+        </Section>
+
+        <Section title="4. Kitle">
+          <div className="flex flex-wrap gap-3">
+            <Field id="c-aud" label="Kime" className="min-w-[200px]">
+              <NativeSelect
+                value={form.audienceKind}
+                onChange={(e) => {
+                  set("audienceKind", e.target.value as typeof form.audienceKind);
+                  set("audienceId", "");
+                }}
+              >
+                <option value="">Seçin…</option>
+                <option value="all">Tüm aboneler</option>
+                <option value="list">Bir liste</option>
+                <option value="segment">Bir segment</option>
+                <option value="tag">Bir etiket</option>
+              </NativeSelect>
+            </Field>
+            {form.audienceKind && form.audienceKind !== "all" ? (
+              <Field id="c-aud-id" label="Seçim" className="min-w-[220px] flex-1">
+                <NativeSelect
+                  value={form.audienceId}
+                  onChange={(e) => set("audienceId", e.target.value)}
+                >
+                  <option value="">Seçin…</option>
+                  {audienceOptions.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            ) : null}
+          </div>
+          <p className="text-sm" aria-live="polite">
+            {dirty ? (
+              <span className="text-muted-foreground">Alıcı sayısı için kaydedin.</span>
+            ) : (
+              <>
+                Gönderilebilir alıcı:{" "}
+                <strong>{props.audienceCount.toLocaleString("tr-TR")}</strong>
+                <span className="text-muted-foreground">
+                  {" "}
+                  (abone olmayan ve bastırılmış adresler hariç)
+                </span>
+              </>
+            )}
+          </p>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={form.excludeDormant}
+                disabled={!form.audienceKind || busy !== null}
+                onChange={(e) => set("excludeDormant", e.target.checked)}
+              />
+              Kitle Tasarruf Modu
+            </label>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Son 90 günlük gönderim geçmişinde etkileşim skoru sıfır olan kişileri
+              yalnızca bu kampanyadan çıkarır. Yeni ve yeterli geçmişi olmayan kişiler
+              korunur; kimse silinmez veya abonelikten çıkarılmaz. İzleme kapalıysa veya
+              alıcı istemcisi ölçümü engelliyorsa skor gerçek ilgiyi yansıtmayabilir;
+              hedef kitlenizi kontrol edin.
+            </p>
+            {!dirty && props.audiencePlan ? (
+              <div className="mt-3" aria-live="polite">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Metric
+                    label="Standart kitle"
+                    value={props.audiencePlan.standard.toLocaleString("tr-TR")}
+                  />
+                  <Metric
+                    label="Tasarruf modunda"
+                    value={props.audiencePlan.economical.toLocaleString("tr-TR")}
+                  />
+                  <Metric
+                    label="Daha az gönderim"
+                    value={`${props.audiencePlan.avoided.toLocaleString("tr-TR")} (%${props.audiencePlan.reductionPercent})`}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Gönderim adedi karşılaştırmasıdır; aynı sonucu veya aynı oranda fatura
+                  tasarrufunu garanti etmez. Abonelik ve bastırma kontrolleri her iki
+                  kitlede de uygulanır. Yeniden etkinleştirme kampanyası için modu
+                  kapatın.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Karşılaştırmayı görmek için hedef kitlenizi seçip kaydedin.
+              </p>
+            )}
+          </div>
+        </Section>
+
+        <Section title="Etki Motoru">
+          <Field
+            id="impact-goal"
+            label="Hedef olay adı"
+            hint="Satın alma, demo veya geri dönüş olayınızın adı. Dönüşüm kaynağındaki adla tam eşleşmeli."
+          >
+            <Input
+              maxLength={60}
+              list="received-goals"
+              value={form.impactGoal}
+              onChange={(e) => set("impactGoal", e.target.value)}
+            />
+          </Field>
+          <datalist id="received-goals">
+            {props.outcomeSignals.map((s) => (
+              <option key={s.name} value={s.name} />
+            ))}
+          </datalist>
+          <div className="rounded-lg border p-3 text-sm" aria-live="polite">
+            {dirty ? (
+              <p className="text-muted-foreground">
+                Hedefi kaydettikten sonra alınan olaylarla karşılaştırın.
+              </p>
+            ) : props.outcomeSignals.some((s) => s.name === form.impactGoal) ? (
+              <>
+                <p>
+                  Bu hedef için son 14 günde{" "}
+                  {
+                    props.outcomeSignals.find((s) => s.name === form.impactGoal)!
+                      .received
+                  }{" "}
+                  olay alındı.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Son kayıt:{" "}
+                  {new Date(
+                    props.outcomeSignals.find(
+                      (s) => s.name === form.impactGoal,
+                    )!.lastReceived,
+                  ).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}{" "}
+                  (İstanbul). Olay alınması iki grubun bütün sonuçlarının kapsandığını
+                  doğrulamaz.
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                Bu hedef son alınan olaylar arasında görünmüyor. Olay adını ve dönüşüm
+                kaynağını doğrulayın; bu durum tek başına sıfır dönüşüm anlamına gelmez.
+              </p>
+            )}
+            <Link
+              href="/settings/developers"
+              className="mt-2 inline-block text-xs text-primary hover:underline"
+            >
+              Dönüşüm kaynağını bağlama
+            </Link>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={form.impactEnabled}
+              disabled={!form.audienceKind || busy !== null}
+              onChange={(e) => set("impactEnabled", e.target.checked)}
+            />
+            Gerçek ek etkiyi ölç
+          </label>
+          <p className="text-sm text-muted-foreground">
+            Kitlenin rastgele seçilen bir bölümüne bu kampanya gönderilmez. İki grubun
+            hedef dönüşümleri karşılaştırılır; işlem e-postaları değişmez.
+          </p>
+          {form.impactEnabled ? (
+            <>
+              <Field id="impact-control" label="Kontrol grubunun payı">
+                <NativeSelect
+                  value={form.impactControl}
+                  onChange={(e) =>
+                    set("impactControl", Number(e.target.value) as 10 | 20 | 50)
+                  }
+                >
+                  <option value={10}>%10</option>
+                  <option value={20}>%20</option>
+                  <option value={50}>%50 — daha dengeli karşılaştırma</option>
+                </NativeSelect>
+              </Field>
+              <Field id="impact-days" label="Ölçüm süresi">
+                <NativeSelect
+                  value={form.impactDays}
+                  onChange={(e) =>
+                    set("impactDays", Number(e.target.value) as 7 | 14 | 30)
+                  }
+                >
+                  <option value={7}>7 gün</option>
+                  <option value={14}>14 gün</option>
+                  <option value={30}>30 gün</option>
+                </NativeSelect>
+              </Field>
+              {!dirty && props.impactPlan ? (
+                <p className="text-sm" aria-live="polite">
+                  Uygun kitle: {props.impactPlan.eligible} · Gönderim:{" "}
+                  {props.impactPlan.treatment} · Kontrol: {props.impactPlan.control}
+                </p>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Dönüşüm kaynağınız yalnızca e-postaya tıklayanları değil, iki grubun tüm
+                hedef olaylarını göndermeli. Az veriyle sonuç belirsiz kalabilir. Diğer
+                kampanyaların ölçüm süresinde bu kişilere gönderimleri raporda çakışma
+                olarak gösterilir. Gönderim başlangıcında gruplar sabitlenir.
+              </p>
+            </>
+          ) : null}
+        </Section>
+
+        <Section title="5. İzleme ve UTM">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.trackOpens}
+              onChange={(e) => set("trackOpens", e.target.checked)}
+            />
+            Açılmaları izle
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.trackClicks}
+              onChange={(e) => set("trackClicks", e.target.checked)}
+            />
+            Tıklamaları izle
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.utm.enabled}
+              onChange={(e) => setUtm({ enabled: e.target.checked })}
+            />
+            Bağlantılara UTM parametreleri ekle
+          </label>
+          {form.utm.enabled ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field id="u-source" label="utm_source">
+                <Input
+                  value={form.utm.source}
+                  onChange={(e) => setUtm({ source: slugifyUtm(e.target.value) })}
+                />
+              </Field>
+              <Field id="u-medium" label="utm_medium">
+                <Input
+                  value={form.utm.medium}
+                  onChange={(e) => setUtm({ medium: slugifyUtm(e.target.value) })}
+                />
+              </Field>
+              <Field id="u-campaign" label="utm_campaign">
+                <Input
+                  value={form.utm.campaign}
+                  onChange={(e) => setUtm({ campaign: slugifyUtm(e.target.value) })}
+                />
+              </Field>
+            </div>
+          ) : null}
+        </Section>
+      </div>
+
+      <aside
+        aria-label="Gönderim hazırlığı"
+        className="flex h-fit flex-col gap-4 rounded-lg border bg-surface p-4 lg:sticky lg:top-4"
+      >
+        <h2 className="text-sm font-semibold">Gönderim hazırlığı</h2>
+        {props.issues.length === 0 && !dirty ? (
+          <p className="flex items-center gap-2 text-sm text-success">
+            <CheckCircle2 className="size-4" aria-hidden="true" /> Her şey hazır.
+          </p>
+        ) : null}
+        <ul className="flex flex-col gap-2 text-sm">
+          {blockers.map((i) => (
+            <li key={i.code} className="flex gap-2">
+              <AlertTriangle
+                className="mt-0.5 size-4 shrink-0 text-danger"
+                aria-hidden="true"
+              />
+              <span>{i.message}</span>
+            </li>
+          ))}
+          {warnings.map((i) => (
+            <li key={i.code} className="flex gap-2 text-muted-foreground">
+              <AlertTriangle
+                className="mt-0.5 size-4 shrink-0 text-warning"
+                aria-hidden="true"
+              />
+              <span>{i.message}</span>
+            </li>
+          ))}
+        </ul>
+        {dirty ? (
+          <p className="text-xs text-muted-foreground">
+            Kaydedilmemiş değişiklikler var; hazırlık durumu kayıttan sonra güncellenir.
+          </p>
+        ) : null}
+        {notice ? (
+          <p role="status" className="text-xs text-success">
+            {notice}
+          </p>
+        ) : null}
+
+        {!dirty && props.contentEfficiency ? (
+          <section
+            className="rounded-lg border p-3"
+            aria-labelledby="content-efficiency-title"
+          >
+            <h3 id="content-efficiency-title" className="text-sm font-semibold">
+              İçerik verimi
+            </h3>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Metric
+                label="Tahmini okuma"
+                value={`${props.contentEfficiency.readingSeconds} sn`}
+              />
+              <Metric
+                label="E-posta boyutu"
+                value={`${(props.contentEfficiency.htmlBytes / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} KB`}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Önizleme ölçümüdür; kişiselleştirme ve izleme boyutu artırabilir. Okuma
+              süresi 200 kelime/dakika varsayımıyla hesaplanır.
+            </p>
+          </section>
+        ) : null}
+        <HealthPanel
+          score={props.health.score}
+          band={props.health.band}
+          findings={props.health.findings}
+        />
+        <SubjectAssistant
+          campaignId={campaign.id}
+          ai={props.ai}
+          disabled={dirty || !form.templateId}
+          onPick={(subject, preheader) => {
+            set("subject", subject);
+            if (preheader) set("preheader", preheader);
+          }}
+        />
+        <SamplesReview campaignId={campaign.id} disabled={dirty || !form.templateId} />
+        <Button onClick={save} disabled={!dirty || busy !== null}>
+          {busy === "save" ? "Kaydediliyor…" : "Kaydet"}
+        </Button>
+        <div className="flex gap-2">
+          <PreviewButton
+            campaignId={campaign.id}
+            disabled={dirty || !form.templateId}
+          />
+          <TestSendButton
+            campaignId={campaign.id}
+            recipients={props.testRecipients}
+            disabled={dirty || !form.templateId}
+          />
+        </div>
+
+        {props.canSend ? (
+          <fieldset className="flex flex-col gap-2 border-t pt-4">
+            <legend className="text-sm font-semibold">Gönderim zamanı</legend>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="when"
+                checked={sendMode === "now"}
+                onChange={() => setSendMode("now")}
+              />
+              Hemen
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="when"
+                checked={sendMode === "later"}
+                onChange={() => setSendMode("later")}
+              />
+              İleri bir tarihte
+            </label>
+            {sendMode === "later" ? (
+              <Input
+                type="datetime-local"
+                aria-label="Gönderim tarihi ve saati"
+                value={sendAt}
+                onChange={(e) => setSendAt(e.target.value)}
+              />
+            ) : null}
+            {sendMode === "later" && sendAt ? (
+              <SendTimingHint value={sendAt} onChange={setSendAt} />
+            ) : null}
+            {props.requireApproval ? (
+              <Button onClick={() => act("submit")} disabled={!ready || busy !== null}>
+                {busy === "submit" ? "Gönderiliyor…" : "Onaya gönder"}
+              </Button>
+            ) : (
+              <ConfirmDialog
+                trigger={
+                  <Button disabled={!ready || busy !== null}>
+                    {sendMode === "now" ? "Gönder" : "Zamanla"}
+                  </Button>
+                }
+                title={
+                  sendMode === "now"
+                    ? "Kampanya gönderilsin mi?"
+                    : "Kampanya zamanlansın mı?"
+                }
+                description={`${props.audienceCount.toLocaleString("tr-TR")} alıcıya gönderilecek. Gönderime alındıktan sonra içerik değiştirilemez; zamanlanmış bir kampanyayı taslağa geri çekebilirsiniz.`}
+                confirmLabel={sendMode === "now" ? "Gönder" : "Zamanla"}
+                onConfirm={() => act("schedule")}
+              />
+            )}
+            {props.requireApproval ? (
+              <p className="text-xs text-muted-foreground">
+                Bu çalışma alanında kampanyalar bir yönetici tarafından onaylanmalıdır.
+              </p>
+            ) : null}
+          </fieldset>
+        ) : (
+          <p className="border-t pt-4 text-xs text-muted-foreground">
+            Gönderme yetkiniz yok; kampanyayı hazırlayıp yetkili biriyle paylaşın.
+          </p>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+type Sample = {
+  contactId: string;
+  email: string;
+  name: string;
+  reasons: string[];
+  subject: string;
+  excerpt: string;
+  issues: { code: string; message: string }[];
+};
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
+/** Pre-send review: the campaign as it will look for real, awkward contacts from the audience. */
+function SamplesReview({
+  campaignId,
+  disabled,
+}: {
+  campaignId: string;
+  disabled: boolean;
+}) {
+  const [samples, setSamples] = useState<Sample[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function load() {
+    setBusy(true);
+    setError(null);
+    const r = await apiCall(`/api/campaigns/${campaignId}/samples`, "GET");
+    setBusy(false);
+    if (!r.ok) return setError(r.message);
+    setSamples((r.data as { samples: Sample[] }).samples);
+  }
+  const bad = samples?.filter((s) => s.issues.length > 0).length ?? 0;
+  return (
+    <div className="flex flex-col gap-2 border-t pt-3">
+      <h3 className="text-sm font-semibold">Gerçek kişilerle ön otopsi</h3>
+      <p className="text-xs text-muted-foreground">
+        Hedef kitlenizden zorlayıcı örnekleri (adı boş, büyük harfli, çok uzun…) seçip
+        e-postanın onlarda nasıl görüneceğini kontrol eder. Hiçbir şey gönderilmez.
+      </p>
+      <Button variant="secondary" onClick={load} disabled={disabled || busy}>
+        {busy ? "İnceleniyor…" : samples ? "Yeniden incele" : "Örnekleri incele"}
+      </Button>
+      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {samples ? (
+        <>
+          <p
+            role="status"
+            className={`text-sm font-medium ${bad ? "text-warning-text" : "text-success"}`}
+          >
+            {samples.length === 0
+              ? "İncelenecek abone bulunamadı."
+              : bad
+                ? `${samples.length} örnekten ${bad} tanesinde sorun var.`
+                : `${samples.length} örnekte sorun bulunmadı.`}
+          </p>
+          <ul className="flex flex-col gap-2">
+            {samples.map((s) => (
+              <li key={s.contactId} className="rounded border p-2 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-1">
+                  <span className="font-medium">{s.name || s.email}</span>
+                  <span className="text-muted-foreground">{s.reasons.join(" · ")}</span>
+                </div>
+                <div className="mt-1">
+                  <span className="text-muted-foreground">Konu: </span>
+                  {s.subject || "—"}
+                </div>
+                <div className="truncate text-muted-foreground">{s.excerpt}</div>
+                {s.issues.map((i) => (
+                  <div
+                    key={i.code + i.message}
+                    className="mt-1 flex gap-1 text-warning-text"
+                  >
+                    <AlertTriangle
+                      className="mt-0.5 size-3 shrink-0"
+                      aria-hidden="true"
+                    />
+                    {i.message}
+                  </div>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/** Warns when the chosen day is a holiday/bayram/weekend and offers the next good day at the same time. */
+function SendTimingHint({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const day = value.slice(0, 10);
+  const notes = dayNotes(day);
+  const weekend = isWeekend(day);
+  const better = nextGoodSendDay(day);
+  if (!day || (notes.length === 0 && !weekend)) return null;
+  const time = value.slice(11, 16) || "10:00";
+  const labels = [...notes.map((n) => n.name), ...(weekend ? ["hafta sonu"] : [])].join(
+    ", ",
+  );
+  const poor = isPoorSendDay(day);
+  return (
+    <div
+      role="note"
+      className={`rounded border p-2 text-xs ${poor ? "border-warning/40 bg-warning/10 text-warning-text" : "bg-surface-muted text-muted-foreground"}`}
+    >
+      <div>
+        {poor
+          ? `Seçtiğiniz gün: ${labels}. Kitleniz tatilde olabilir, açılma ve tıklama düşebilir.`
+          : `Bu gün: ${labels}.`}
+      </div>
+      {better ? (
+        <button
+          type="button"
+          className="mt-1 font-medium underline"
+          onClick={() => onChange(`${better}T${time}`)}
+        >
+          {new Date(`${better}T12:00:00`).toLocaleDateString("tr-TR", {
+            day: "numeric",
+            month: "long",
+            weekday: "long",
+          })}{" "}
+          {time} için değiştir
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-4 rounded-lg border bg-surface p-5">
+      <h2 className="text-base font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function PreviewButton({
+  campaignId,
+  disabled,
+}: {
+  campaignId: string;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [html, setHtml] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button
+        variant="secondary"
+        disabled={disabled}
+        onClick={async () => {
+          setOpen(true);
+          setHtml(null);
+          setError(null);
+          const r = await apiCall(`/api/campaigns/${campaignId}/preview`, "GET");
+          if (r.ok) setHtml((r.data as { html: string }).html);
+          else setError(r.message);
+        }}
+      >
+        Önizle
+      </Button>
+      <DialogContent
+        title="Önizleme"
+        description="Gönderilecek e-postanın örnek bir kişiyle üretilmiş hali."
+        className="max-w-3xl"
+      >
+        <FormError message={error} />
+        {html ? (
+          <iframe
+            title="E-posta önizlemesi"
+            sandbox=""
+            srcDoc={html}
+            className="mt-4 h-[65vh] w-full rounded border bg-white"
+          />
+        ) : error ? null : (
+          <p className="mt-4 text-sm text-muted-foreground">Yükleniyor…</p>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TestSendButton({
+  campaignId,
+  recipients,
+  disabled,
+}: {
+  campaignId: string;
+  recipients: EditorProps["testRecipients"];
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [picked, setPicked] = useState<string[]>(
+    recipients.filter((r) => r.self).map((r) => r.email),
+  );
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setMessage(null);
+      }}
+    >
+      <Button variant="secondary" disabled={disabled} onClick={() => setOpen(true)}>
+        Test gönder
+      </Button>
+      <DialogContent
+        title="Test e-postası"
+        description="Yalnızca çalışma alanı üyelerine gönderilir. Konu satırına [TEST] eklenir."
+      >
+        <div className="mt-4 flex flex-col gap-2">
+          {recipients.map((r) => (
+            <label key={r.email} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={picked.includes(r.email)}
+                onChange={(e) =>
+                  setPicked((p) =>
+                    e.target.checked ? [...p, r.email] : p.filter((x) => x !== r.email),
+                  )
+                }
+              />
+              {r.name ? `${r.name} · ` : ""}
+              {r.email}
+              {r.self ? <Badge tone="info">Siz</Badge> : null}
+            </label>
+          ))}
+        </div>
+        {message ? (
+          <p
+            role={message.ok ? "status" : "alert"}
+            className={`mt-3 text-sm ${message.ok ? "text-success" : "text-danger"}`}
+          >
+            {message.text}
+          </p>
+        ) : null}
+        <div className="mt-6 flex justify-end">
+          <Button
+            disabled={pending || picked.length === 0}
+            onClick={async () => {
+              setPending(true);
+              const r = await apiCall(`/api/campaigns/${campaignId}/test`, "POST", {
+                recipients: picked.slice(0, 5),
+              });
+              setPending(false);
+              setMessage(
+                r.ok
+                  ? {
+                      ok: true,
+                      text: `${(r.data as { sent: number }).sent} test e-postası gönderildi.`,
+                    }
+                  : { ok: false, text: r.message },
+              );
+            }}
+          >
+            {pending ? "Gönderiliyor…" : "Gönder"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

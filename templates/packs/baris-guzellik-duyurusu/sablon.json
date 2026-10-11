@@ -1,0 +1,15 @@
+{
+  "ad": "Barış Güzellik Duyurusu",
+  "kategori": "announcement",
+  "aciklama": "Güzellik temalı, duyuru içerikli tek sütunlu duyarlı e-posta şablonu.",
+  "mod": "A",
+  "kaynak": "newsletter-email-template-2026-09-02-04-24-53-utc.zip",
+  "lisans_notu": "Kaynak ZIP'te lisans dosyası yok (BİLİNMİYOR); kaynak yalnızca ad/kategori referansı olarak kullanıldı, hiçbir metin/görsel/kod kopyalanmadı. Çıktı özgün olarak yazıldı.",
+  "etiketler": [
+    "güzellik",
+    "announcement",
+    "tr",
+    "e-posta",
+    "600px"
+  ]
+}
