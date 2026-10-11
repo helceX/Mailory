@@ -21,7 +21,7 @@ export type CampaignDraftValues = Partial<
 >;
 
 export async function createCampaign(
-  db: Database,
+  db: Pick<Database, "insert">,
   organizationId: OrganizationId,
   input: Required<Pick<Campaign, "name" | "utm">> &
     CampaignDraftValues & { createdByUserId: string | null },

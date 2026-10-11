@@ -57,6 +57,7 @@ export async function campaignImpactReport(
     control = group("control");
   return {
     goal: config.goal,
+    controlPercent: config.controlPercent,
     endsAt: endsAt.toISOString(),
     treatment,
     control,

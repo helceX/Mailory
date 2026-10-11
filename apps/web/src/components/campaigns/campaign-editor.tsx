@@ -56,6 +56,12 @@ export type EditorProps = {
   audiencePlan: AudiencePlan | null;
   contentEfficiency: ContentEfficiency | null;
   impactPlan: { eligible: number; control: number; treatment: number } | null;
+  outcomeSignals: {
+    name: string;
+    received: number;
+    people: number;
+    lastReceived: string;
+  }[];
   requireApproval: boolean;
   canSend: boolean;
   identities: (Option & { fromEmail: string; usable: boolean })[];
@@ -81,7 +87,8 @@ export function CampaignEditor(props: EditorProps) {
       campaign.audience && "id" in campaign.audience ? campaign.audience.id : "",
     excludeDormant: campaign.audience?.excludeDormant ?? false,
     impactEnabled: Boolean(campaign.audience?.impact),
-    impactGoal: campaign.audience?.impact?.goal ?? "purchase",
+    impactGoal:
+      campaign.audience?.impact?.goal ?? campaign.audience?.outcomeGoal ?? "purchase",
     impactControl: campaign.audience?.impact?.controlPercent ?? 20,
     impactDays: campaign.audience?.impact?.windowDays ?? 7,
     utm: campaign.utm,
@@ -112,13 +119,19 @@ export function CampaignEditor(props: EditorProps) {
       : undefined;
     if (!form.audienceKind) return null;
     if (form.audienceKind === "all")
-      return { kind: "all", excludeDormant: form.excludeDormant, impact };
+      return {
+        kind: "all",
+        excludeDormant: form.excludeDormant,
+        impact,
+        outcomeGoal: form.impactGoal,
+      };
     return form.audienceId
       ? ({
           kind: form.audienceKind,
           id: form.audienceId,
           excludeDormant: form.excludeDormant,
           impact,
+          outcomeGoal: form.impactGoal,
         } as CampaignAudience)
       : null;
   }
@@ -395,6 +408,62 @@ export function CampaignEditor(props: EditorProps) {
         </Section>
 
         <Section title="Etki Motoru">
+          <Field
+            id="impact-goal"
+            label="Hedef olay adı"
+            hint="Satın alma, demo veya geri dönüş olayınızın adı. Dönüşüm kaynağındaki adla tam eşleşmeli."
+          >
+            <Input
+              maxLength={60}
+              list="received-goals"
+              value={form.impactGoal}
+              onChange={(e) => set("impactGoal", e.target.value)}
+            />
+          </Field>
+          <datalist id="received-goals">
+            {props.outcomeSignals.map((s) => (
+              <option key={s.name} value={s.name} />
+            ))}
+          </datalist>
+          <div className="rounded-lg border p-3 text-sm" aria-live="polite">
+            {dirty ? (
+              <p className="text-muted-foreground">
+                Hedefi kaydettikten sonra alınan olaylarla karşılaştırın.
+              </p>
+            ) : props.outcomeSignals.some((s) => s.name === form.impactGoal) ? (
+              <>
+                <p>
+                  Bu hedef için son 14 günde{" "}
+                  {
+                    props.outcomeSignals.find((s) => s.name === form.impactGoal)!
+                      .received
+                  }{" "}
+                  olay alındı.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Son kayıt:{" "}
+                  {new Date(
+                    props.outcomeSignals.find(
+                      (s) => s.name === form.impactGoal,
+                    )!.lastReceived,
+                  ).toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" })}{" "}
+                  (İstanbul). Olay alınması iki grubun bütün sonuçlarının kapsandığını
+                  doğrulamaz.
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                Bu hedef son alınan olaylar arasında görünmüyor. Olay adını ve dönüşüm
+                kaynağını doğrulayın; bu durum tek başına sıfır dönüşüm anlamına gelmez.
+              </p>
+            )}
+            <Link
+              href="/settings/developers"
+              className="mt-2 inline-block text-xs text-primary hover:underline"
+            >
+              Dönüşüm kaynağını bağlama
+            </Link>
+          </div>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input
               type="checkbox"
@@ -410,17 +479,6 @@ export function CampaignEditor(props: EditorProps) {
           </p>
           {form.impactEnabled ? (
             <>
-              <Field
-                id="impact-goal"
-                label="Hedef olay adı"
-                hint="Dönüşüm API’sindeki name alanıyla tam eşleşmeli; örneğin purchase veya demo_request."
-              >
-                <Input
-                  maxLength={60}
-                  value={form.impactGoal}
-                  onChange={(e) => set("impactGoal", e.target.value)}
-                />
-              </Field>
               <Field id="impact-control" label="Kontrol grubunun payı">
                 <NativeSelect
                   value={form.impactControl}

@@ -10,6 +10,10 @@ Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) �
 
 ## Temel işler
 
+- **MAIL-202 (done):** İlk satış/demo/yeniden etkinleştirme başlangıçları; gerçek teklif ve HTTPS eylemiyle atomik şablon + taslak oluşturma, isteğe bağlı Etki Motoru.
+- **MAIL-203 (done):** Son 14 günlük dönüşüm alım kanıtı; editörde hedef adı eşleşmesi, son kayıt zamanı ve veri eksikliği açıklaması. 0020 indeksi dağıtımda uygulanmalı.
+- **MAIL-204 (done):** Ana ekranda kurulum, gönderilebilir kitle, açık ölçüm ve taslak önceliği; son üç ölçüm için sonraki adım. [İş geliştirme yönü ve doğrulama](MAILORY_GROWTH_LOOP.md).
+
 - **MAIL-201 (done):** Entegre Etki Motoru V1 — kampanya ayarları, sabit kontrol/treatment grupları, atomik gönderim hazırlığı, atıftan bağımsız dönüşüm ölçümü, belirsizlik/çakışma raporu, public stats API ve veri silme/dışa aktarım. Dağıtım öncesi 0019 migration gerekir. [Kullanım ve sınırlar](MAILORY_IMPACT_ENGINE.md).
 
 | ID       | Title                                         | Pri | Phase | Deps    | Description                                                                                                                                                                    | Acceptance Criteria                             | Status  |

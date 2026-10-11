@@ -11,7 +11,7 @@ const isUnique = (e: unknown) => {
 // ---- templates -------------------------------------------------------------------------------------
 
 export async function createTemplate(
-  db: Database,
+  db: Pick<Database, "transaction">,
   organizationId: OrganizationId,
   input: {
     name: string;

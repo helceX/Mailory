@@ -4,6 +4,8 @@ import {
   CAMPAIGN_STATUSES,
   CAMPAIGN_STATUS_LABELS,
   isCampaignStatus,
+  CAMPAIGN_PLAYBOOKS,
+  type CampaignPlaybookKind,
 } from "@mailory/core";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -30,9 +32,13 @@ const TABS = [
 export default async function CampaignsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; playbook?: string }>;
 }) {
-  const { status: param } = await searchParams;
+  const { status: param, playbook: requested } = await searchParams;
+  const initialPlaybook =
+    requested && Object.hasOwn(CAMPAIGN_PLAYBOOKS, requested)
+      ? (requested as CampaignPlaybookKind)
+      : undefined;
   const status = param && isCampaignStatus(param) ? param : undefined;
   const actor = (await getOrgContext())!.actor!;
   const deps = campaignDeps();
@@ -56,7 +62,12 @@ export default async function CampaignsPage({
       <PageHeader
         title="Kampanyalar"
         description="E-posta kampanyalarınızı hazırlayın, test edin, zamanlayın."
-        actions={<NewCampaignButton canWrite={can(actor.role, "campaigns:write")} />}
+        actions={
+          <NewCampaignButton
+            canWrite={can(actor.role, "campaigns:write")}
+            initialPlaybook={initialPlaybook}
+          />
+        }
       />
       {can(actor.role, "org:manage_settings") && policy.ok ? (
         <>

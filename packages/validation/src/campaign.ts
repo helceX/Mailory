@@ -4,6 +4,7 @@ import { conversionSchema } from "./conversion";
 
 const uuid = z.string().uuid();
 const economy = {
+  outcomeGoal: conversionSchema.shape.name.optional(),
   excludeDormant: z.boolean().optional(),
   impact: z
     .object({
@@ -40,7 +41,30 @@ export const campaignUtmSchema = z.object({
 
 export const createCampaignSchema = z.object({
   name: z.string().trim().min(1, "Kampanya adı gerekli.").max(120),
+  playbook: z
+    .object({
+      kind: z.enum(["first_sale", "demo", "reactivation"]),
+      proposition: z
+        .string()
+        .trim()
+        .min(10, "Faydayı en az 10 karakterle açıklayın.")
+        .max(1000),
+      actionUrl: z
+        .url()
+        .max(2048)
+        .refine((v) => {
+          try {
+            const u = new URL(v);
+            return u.protocol === "https:" && !u.username && !u.password;
+          } catch {
+            return false;
+          }
+        }, "Geçerli ve kullanıcı bilgisi içermeyen bir HTTPS bağlantısı girin."),
+      measureImpact: z.boolean().default(false),
+    })
+    .optional(),
 });
+export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 
 /** Partial update of a draft; every field optional so the wizard can save step by step. */
 export const campaignDraftSchema = z.object({

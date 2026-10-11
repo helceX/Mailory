@@ -157,6 +157,7 @@ export default async function CampaignPage({
         audiencePlan={result.audiencePlan}
         contentEfficiency={result.contentEfficiency}
         impactPlan={result.impactPlan}
+        outcomeSignals={result.outcomeSignals}
         requireApproval={result.requireApproval}
         canSend={canSend}
         identities={

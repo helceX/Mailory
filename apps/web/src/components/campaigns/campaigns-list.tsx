@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Mail, Plus } from "lucide-react";
-import { CAMPAIGN_STATUS_LABELS, type CampaignStatus } from "@mailory/core/shared";
+import {
+  CAMPAIGN_STATUS_LABELS,
+  CAMPAIGN_PLAYBOOKS,
+  type CampaignPlaybookKind,
+  type CampaignStatus,
+} from "@mailory/core/shared";
 import {
   Badge,
   Button,
@@ -13,6 +18,8 @@ import {
   EmptyState,
   Field,
   Input,
+  NativeSelect,
+  Textarea,
   Table,
   TableContainer,
   TBody,
@@ -33,9 +40,18 @@ export type CampaignRow = {
   updatedAt: string;
 };
 
-export function NewCampaignButton({ canWrite }: { canWrite: boolean }) {
+export function NewCampaignButton({
+  canWrite,
+  initialPlaybook,
+}: {
+  canWrite: boolean;
+  initialPlaybook?: CampaignPlaybookKind;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(initialPlaybook));
+  const [playbook, setPlaybook] = useState<CampaignPlaybookKind | "">(
+    initialPlaybook ?? "",
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (!canWrite) return null;
@@ -52,16 +68,29 @@ export function NewCampaignButton({ canWrite }: { canWrite: boolean }) {
       </Button>
       <DialogContent
         title="Yeni kampanya"
-        description="Önce bir ad verin; konu, şablon ve kitleyi bir sonraki adımda seçersiniz."
+        description="Boş taslakla veya hedefinize uygun bir başlangıçla ilerleyin. Gönderim öncesinde içeriği ve kitleyi kontrol edersiniz."
       >
         <form
           className="mt-4 flex flex-col gap-4"
           onSubmit={async (event) => {
             event.preventDefault();
-            const name = String(new FormData(event.currentTarget).get("name") ?? "");
+            const fields = new FormData(event.currentTarget);
+            const name = String(fields.get("name") ?? "");
             setPending(true);
             setError(null);
-            const result = await apiCall("/api/campaigns", "POST", { name });
+            const result = await apiCall("/api/campaigns", "POST", {
+              name,
+              ...(playbook
+                ? {
+                    playbook: {
+                      kind: playbook,
+                      proposition: String(fields.get("proposition") ?? ""),
+                      actionUrl: String(fields.get("actionUrl") ?? ""),
+                      measureImpact: fields.get("measureImpact") === "on",
+                    },
+                  }
+                : {}),
+            });
             if (!result.ok) {
               setPending(false);
               return setError(result.message);
@@ -83,6 +112,64 @@ export function NewCampaignButton({ canWrite }: { canWrite: boolean }) {
               placeholder="Yaz kampanyası"
             />
           </Field>
+          <Field id="nc-playbook" label="Kampanyanın amacı">
+            <NativeSelect
+              value={playbook}
+              onChange={(e) => setPlaybook(e.target.value as CampaignPlaybookKind | "")}
+            >
+              <option value="">Boş taslak</option>
+              {Object.entries(CAMPAIGN_PLAYBOOKS).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value.title}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          {playbook ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {CAMPAIGN_PLAYBOOKS[playbook].description} Konu, düzenlenebilir şablon
+                ve tek bir eylem düğmesi hazırlanır. Uygun aboneler başlangıç
+                kitlesidir; göndermeden önce seçimi gözden geçirin.
+              </p>
+              <Field
+                id="nc-proposition"
+                label="Alıcıya sunduğunuz fayda"
+                hint="Gerçek teklifinizi ve alıcıya sağlayacağı faydayı yazın."
+              >
+                <Textarea
+                  name="proposition"
+                  minLength={10}
+                  maxLength={1000}
+                  required
+                  placeholder="Örneğin: Ekibinizin teklif hazırlama süresini azaltan ürünü birlikte inceleyelim."
+                />
+              </Field>
+              <Field
+                id="nc-url"
+                label="Eylem bağlantısı"
+                hint="Satın alma, görüşme veya geri dönüş sayfanızın HTTPS adresi."
+              >
+                <Input
+                  name="actionUrl"
+                  type="url"
+                  pattern="https://.*"
+                  maxLength={2048}
+                  required
+                  placeholder="https://siteniz.com/gorusme"
+                />
+              </Field>
+              <label className="flex items-center gap-2 text-sm">
+                <input name="measureImpact" type="checkbox" /> Etki Motoru ile
+                karşılaştırma yap (%50 kontrol, 7 gün)
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Hedef olay: {CAMPAIGN_PLAYBOOKS[playbook].goal}. Etki ölçümü için iki
+                grubun tüm hedef olaylarını bağlamalısınız. Kontrol grubuna kampanya
+                gönderilmez; az veride sonuç belirsiz kalır.
+              </p>
+            </>
+          ) : null}
           <div className="flex justify-end">
             <Button type="submit" disabled={pending}>
               {pending ? "Oluşturuluyor…" : "Oluştur"}

@@ -18,7 +18,7 @@ Mailchimp'te segmentasyon, otomasyon, gelir raporlaması ve AI; MailerLite'ta ot
 | ---- | --------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------- |
 | 1    | Kampanya başına Kitle Tasarruf Modu                             | Uygulandı; mevcut SQL, ücretli dış API yok           | Seçilen kitle ile oluşturulan alıcılar aynı kurala dayanır |
 | 2    | HTML boyutu, okunma süresi, kesilme uyarısı                     | Uygulandı; yerel içerik ölçümü, LLM yok              | UTF-8 bayt; 80/102 KB bantları; 200 kelime/dakika          |
-| 3    | İlk satış / demo / yeniden etkinleştirme için üç rehber         | Sonraki pilot; statik şablon + mevcut dönüşüm API'si | İlk kampanya hazırlama süresi, dönüşüm kurulum oranı       |
+| 3    | İlk satış / demo / yeniden etkinleştirme için üç rehber         | Uygulandı; yerel şablon + hedef olay + büyüme önerisi | İlk kampanya hazırlama süresi, dönüşüm kurulum oranı       |
 | 4    | Rehberli taşıma: örnek CSV, izin beyanı, bastırma ve DNS raporu | Sonraki pilot; mevcut import/DNS araçları            | İlk başarılı aktarım süresi, destek talepleri              |
 | 5    | Platform maliyet görünümü ve kurum bütçe uyarısı                | Sonraki altyapı işi; mevcut kullanım + birim maliyet | SES faturasıyla kalibre edilen tahmin; sabit giderler ayrı |
 

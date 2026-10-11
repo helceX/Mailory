@@ -130,6 +130,65 @@ suite("campaign engine (real Postgres)", () => {
   const fetchRow = async (id: string) =>
     (await db.select().from(campaigns).where(eq(campaigns.id, id)))[0]!;
 
+  it("creates a business starter and native template together without scheduling or sending", async () => {
+    const w = await workspace();
+    for (const kind of ["first_sale", "demo", "reactivation"] as const) {
+      const created = await svc.createCampaignFor(deps(), w.actor, {
+        name: `Hedef ${kind}`,
+        playbook: {
+          kind,
+          proposition: "Ekibinizin işlerini tek yerde birleştirin.",
+          actionUrl: "https://example.org/demo",
+          measureImpact: kind === "demo",
+        },
+      });
+      if (!created.ok) throw new Error("starter");
+      const row = await fetchRow(created.id);
+      expect(row.status).toBe("draft");
+      expect(row.scheduledAt).toBeNull();
+      expect(row.startedAt).toBeNull();
+      expect(row.audience?.outcomeGoal).toBe(
+        { first_sale: "purchase", demo: "demo_request", reactivation: "reactivated" }[
+          kind
+        ],
+      );
+      expect(row.audience?.impact).toEqual(
+        kind === "demo"
+          ? { goal: "demo_request", controlPercent: 50, windowDays: 7 }
+          : undefined,
+      );
+      const template = await getTemplateFor(tdeps(), w.actor, row.templateId!);
+      expect(template.ok).toBe(true);
+      expect(JSON.stringify(template)).toContain("https://example.org/demo");
+      expect(JSON.stringify(template)).toContain(
+        "Ekibinizin işlerini tek yerde birleştirin.",
+      );
+    }
+    expect(sent).toEqual([]);
+  });
+
+  it("rejects invalid starter actions and read-only campaign creation", async () => {
+    const w = await workspace();
+    const playbook = {
+      kind: "demo" as const,
+      proposition: "Ekibiniz için demo görüşmesi.",
+      actionUrl: "not-url",
+      measureImpact: false,
+    };
+    expect(
+      (await svc.createCampaignFor(deps(), w.actor, { name: "Geçersiz", playbook })).ok,
+    ).toBe(false);
+    const { actor } = await memberOf(w.org.id, "viewer");
+    expect(
+      (
+        await svc.createCampaignFor(deps(), actor, {
+          name: "Yetkisiz",
+          playbook: { ...playbook, actionUrl: "https://example.org" },
+        })
+      ).ok,
+    ).toBe(false);
+  });
+
   it("persists opt-in economy, freezes its count and retains the mode when duplicated", async () => {
     const w = await workspace();
     const id = await readyDraft(w);

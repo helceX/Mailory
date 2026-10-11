@@ -55,3 +55,4 @@ export * from "./repositories/api";
 export * from "./repositories/billing-profile";
 export * from "./repositories/conversions";
 export * from "./repositories/impact";
+export * from "./repositories/growth";

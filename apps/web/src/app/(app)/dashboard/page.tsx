@@ -18,6 +18,8 @@ import { campaignDeps } from "@/lib/campaigns/deps";
 import { listCampaignsFor } from "@/lib/campaigns/service";
 import { getDeliverabilityCenter } from "@/lib/deliverability/service";
 import { getOnboarding } from "@/lib/senders/service";
+import { getGrowthOverview } from "@/lib/analytics/growth";
+import { GrowthPanel } from "@/components/dashboard/growth-panel";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -26,12 +28,13 @@ export default async function DashboardPage() {
   const context = (await getOrgContext())!;
   const actor = context.actor!;
   const deps = { db: getDb().db };
-  const [onboarding, analytics, plan, center, campaigns] = await Promise.all([
+  const [onboarding, analytics, plan, center, campaigns, growth] = await Promise.all([
     getOnboarding(deps, actor),
     getAnalyticsOverview(deps, actor, 30),
     getPlanOverview(deps, actor),
     getDeliverabilityCenter(deps, actor),
     listCampaignsFor(campaignDeps(), actor),
+    getGrowthOverview(deps, actor),
   ]);
   const hasData = analytics.ok && analytics.overview.campaigns > 0;
   const recent = campaigns.ok
@@ -62,6 +65,13 @@ export default async function DashboardPage() {
         />
       )}
       {center.ok ? <AttentionList alerts={center.actions} /> : null}
+      {growth.ok ? (
+        <GrowthPanel
+          data={growth}
+          canWrite={can(actor.role, "campaigns:write")}
+          canManageApi={can(actor.role, "api_keys:manage")}
+        />
+      ) : null}
       {analytics.ok && hasData ? (
         <section aria-labelledby="perf" className="flex flex-col gap-3">
           <div className="flex items-center justify-between">

@@ -1,4 +1,4 @@
-import type { Finding } from "@mailory/core/shared";
+import { impactNextAction, type Finding } from "@mailory/core/shared";
 import type { CampaignStats, ConversionStats } from "@mailory/db";
 import type { campaignImpactReport } from "@mailory/db";
 import { HealthPanel } from "../deliverability/health-panel";
@@ -46,6 +46,10 @@ export function CampaignReport({
           <h3 id="impact-report" className="font-semibold">
             Etki Motoru — {impact.goal}
           </h3>
+          <p className="mt-2 rounded border bg-muted p-3 text-sm">
+            <strong>Sonraki adım:</strong>{" "}
+            {impactNextAction(impact.status, impact.controlPercent)}
+          </p>
           <p className="mt-2 text-sm">
             {
               {

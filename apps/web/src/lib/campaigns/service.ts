@@ -31,6 +31,8 @@ import {
   audienceEngagement,
   getOrgSendLimit,
   createCampaign,
+  createTemplate,
+  outcomeSignals,
   deleteCampaignDraft,
   getCampaign,
   getCampaignPolicy,
@@ -58,8 +60,14 @@ import {
   applyUtmToText,
   buildMergeValues,
   renderEmail,
+  buildPlaybook,
 } from "@mailory/email";
-import { emailDocSchema, type CampaignDraftInput } from "@mailory/validation";
+import {
+  emailDocSchema,
+  createCampaignSchema,
+  type CreateCampaignInput,
+  type CampaignDraftInput,
+} from "@mailory/validation";
 import { ensureNotSuspended } from "../billing/enforce";
 import { authorize, type Actor } from "../org/service";
 import { viewIdentities } from "../senders/service";
@@ -351,9 +359,16 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
   if (!need(actor, "campaigns:read")) return denied;
   const row = await getCampaign(deps.db, actor.organizationId, id);
   if (!row) return fail("not_found");
-  const [policy, r] = await Promise.all([
+  const [policy, r, signals] = await Promise.all([
     getCampaignPolicy(deps.db, actor.organizationId),
     readiness(deps, actor, row),
+    need(actor, "analytics:read")
+      ? outcomeSignals(
+          deps.db,
+          actor.organizationId,
+          (deps.now ?? (() => new Date()))(),
+        )
+      : [],
   ]);
   return {
     ok: true as const,
@@ -368,6 +383,7 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
     audiencePlan: r.audiencePlan,
     contentEfficiency: r.contentEfficiency,
     impactPlan: r.impactPlan,
+    outcomeSignals: signals,
     requireApproval: policy.requireApproval,
     sender: r.ctx.identity
       ? {
@@ -384,17 +400,61 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
 export async function createCampaignFor(
   deps: CampaignDeps,
   actor: Actor,
-  input: { name: string },
+  input: CreateCampaignInput,
 ) {
   if (!need(actor, "campaigns:write")) return denied;
+  const parsed = createCampaignSchema.safeParse(input);
+  if (!parsed.success) return fail("invalid", parsed.error.issues[0]?.message);
+  input = parsed.data;
+  if (input.playbook && !need(actor, "templates:write")) return denied;
   const identities = await listSenderIdentities(deps.db, actor.organizationId);
-  const row = await createCampaign(deps.db, actor.organizationId, {
-    name: input.name,
-    utm: { ...DEFAULT_UTM, campaign: slugifyUtm(input.name) },
-    senderIdentityId: identities.find((i) => i.isDefault)?.id ?? null,
-    createdByUserId: actor.userId,
+  const starter = input.playbook
+    ? buildPlaybook(await loadBrandKit(deps, actor), input.playbook)
+    : null;
+  if (starter && !emailDocSchema.safeParse(starter.doc).success)
+    return fail("invalid", "Başlangıç şablonu oluşturulamadı.");
+  const row = await deps.db.transaction(async (tx) => {
+    const template = starter
+      ? await createTemplate(tx, actor.organizationId, {
+          name: `${input.name.slice(0, 80)} — ${crypto.randomUUID().slice(0, 8)}`,
+          category: "other",
+          doc: starter.doc,
+          userId: actor.userId,
+        })
+      : null;
+    if (starter && !template) throw new Error("Playbook template could not be created");
+    return createCampaign(tx, actor.organizationId, {
+      name: input.name,
+      utm: { ...DEFAULT_UTM, campaign: slugifyUtm(input.name) },
+      senderIdentityId: identities.find((i) => i.isDefault)?.id ?? null,
+      createdByUserId: actor.userId,
+      ...(starter
+        ? {
+            templateId: template!.template.id,
+            subject: starter.plan.subject,
+            preheader: starter.doc.settings.preheader,
+            audience: {
+              kind: "all" as const,
+              outcomeGoal: starter.plan.goal,
+              excludeDormant: false,
+              ...(input.playbook!.measureImpact
+                ? {
+                    impact: {
+                      goal: starter.plan.goal,
+                      controlPercent: 50 as const,
+                      windowDays: 7 as const,
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
+    });
   });
-  await audit(deps, actor, "campaign.created", row.id, { name: row.name });
+  await audit(deps, actor, "campaign.created", row.id, {
+    name: row.name,
+    playbook: input.playbook?.kind ?? null,
+  });
   return { ok: true as const, id: row.id };
 }
 

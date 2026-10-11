@@ -129,3 +129,7 @@ Audience JSONB alanındaki isteğe bağlı `excludeDormant` mevcut 90 günlük e
 ## D-113 — Etki Motoru kampanya akışına entegredir
 
 Kontrol oranı/hedef/süre audience JSONB'de isteğe bağlıdır; sabit gruplar `campaign_impact_members` tablosunda tutulur (0019). Status geçişi, atama ve treatment alıcıları tek transaction'dır; controls gönderim kuyruğuna girmez. Atıftan bağımsız hedef olaylarıyla intention-to-treat raporu, Wilson sınır farkı ve yeterlilik/çakışma kontrolleri kullanılır; otomatik kazanan seçimi veya gönderim değişikliği yok. Yeni ücretli sağlayıcı/LLM gerektirmez. Ayrıntı: `MAILORY_IMPACT_ENGINE.md`.
+
+## D-114 — Hedefe göre büyüme akışı yerel kurallarla çalışır
+
+İlk satış/demo/yeniden etkinleştirme için marka kitine uyan, kullanıcının gerçek teklifini ve HTTPS adresini taşıyan düzenlenebilir şablon ile kampanya atomik oluşturulur. Gönderim başlamaz; Etki Motoru opt-in kalır. Hedef olay Impact kapalıyken de audience JSONB'de saklanır. Alım kanıtı için 0020 indeksi, kurulum/aktif ölçüm/taslak önceliği için mevcut SQL kullanılır. Sonuçlar belirsizliği saklamadan sonraki adımı açıklar. Yeni ücretli API, LLM veya işçi yok. Ticari hipotez ve doğrulama: `MAILORY_GROWTH_LOOP.md`.

@@ -1,0 +1,1 @@
+CREATE INDEX "conversions_ingestion_idx" ON "conversions" USING btree ("organization_id","created_at");
