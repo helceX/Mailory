@@ -1,10 +1,10 @@
 # MAILORY — Strateji: rakiplerden neyi farklı yapıyoruz
 
-> Rakiplerin güncel özellikleri bu belgede **doğrulanmamıştır**; aşağıdakiler analiz ve hipotezdir, gerçek kullanıcı görüşmeleriyle sınanmalıdır.
+> Bu belge tarihsel hipotezleri kaydeder; rakiplerde bir özelliğin bulunmadığını kanıtlamaz. Güncel kararlar, uygulanmış işler ve 11 Ekim 2026 resmi kaynak karşılaştırması: [MAILORY_DIFFERENTIATION.md](MAILORY_DIFFERENTIATION.md). Önceliklendirmede güncel belgeyi kullanın.
 
 ## Sorun tespiti
 
-Mevcut araçlar **göndermeyi** iyi yapar, **sonucu** değil. Kullanıcıya editör, liste ve "Gönder" düğmesi verilir; ne yazacağına, kime/ne zaman göndereceğine ve işe yarayıp yaramadığına tek başına karar verir.
+Mailchimp ve MailerLite gibi araçlarda otomasyon, öneriler ve sonuç raporlaması zaten vardır. Fırsatımız, küçük girişimin ilk kampanyasında kitle, içerik ve sonuç kararlarını anlaşılır bir akışta ve düşük maliyetle birleştirmektir. Aşağıdaki maddeler rakipler hakkında doğrulanmış genellemeler değil, kullanıcı görüşmelerinde sınanacak sorun varsayımlarıdır.
 
 1. Ölçümler yanıltıcı: açılma oranı güvenilir değil (Apple MPP, güvenlik tarayıcıları) ama herkes onu optimize ediyor.
 2. "Ne yapmalıyım?" cevapsız: araç veri gösterir, karar vermez.

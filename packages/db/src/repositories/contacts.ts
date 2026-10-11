@@ -20,6 +20,8 @@ export type ContactFilter = {
   consentStatus?: string;
   listId?: string;
   tagId?: string;
+  /** Campaign economy mode; never suppresses or deletes a contact. */
+  excludeDormant?: boolean;
   /** A resolved (validated) segment definition. */
   segment?: SegmentNodeInput;
 };
@@ -62,6 +64,10 @@ export function contactWhere(
     );
   }
   if (filter.segment) conditions.push(compileSegment(filter.segment, organizationId));
+  if (filter.excludeDormant)
+    conditions.push(
+      sql`(${contacts.engagementScore} is null or ${contacts.engagementScore} > 0)`,
+    );
   return and(...conditions)!;
 }
 

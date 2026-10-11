@@ -136,6 +136,8 @@ export default async function CampaignPage({
         health={result.health}
         ai={ai}
         audienceCount={result.audienceCount}
+        audiencePlan={result.audiencePlan}
+        contentEfficiency={result.contentEfficiency}
         requireApproval={result.requireApproval}
         canSend={canSend}
         identities={

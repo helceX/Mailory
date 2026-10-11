@@ -2,6 +2,14 @@
 
 Durum: `todo` · `doing` · `done` · `blocked`. Öncelik: P0 (V1 çekirdeği) · P1 · P2.
 
+## Düşük maliyetli farklılaşma — 11 Ekim 2026
+
+- **MAIL-199 (done):** Kampanya başına isteğe bağlı Kitle Tasarruf Modu; standart/ekonomik kitle karşılaştırması. Eski kampanyalar, yeni ve puansız kişiler korunur. Önizleme ve alıcı oluşturma aynı filtreyi kullanır; gerçek PostgreSQL testleri.
+- **MAIL-200 (done):** UTF-8 içerik boyutu, Gmail kesilme uyarısı ve tahmini okuma süresi; ücretli API/AI veya yeni üretim bağımlılığı yok.
+- Sıradaki pilot önerileri, maliyet hesabı ve ölçüm planı: [MAILORY_DIFFERENTIATION.md](MAILORY_DIFFERENTIATION.md).
+
+## Temel işler
+
 | ID       | Title                                         | Pri | Phase | Deps    | Description                                                                                                                                                                    | Acceptance Criteria                             | Status  |
 | -------- | --------------------------------------------- | --- | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------- |
 | MAIL-001 | Project audit                                 | P0  | 0     | —       | Repo, CiM, tasarım ve Railway çıkarım audit'i                                                                                                                                  | `MAILORY_DISCOVERY.md` mevcut                   | done    |

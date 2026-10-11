@@ -48,11 +48,15 @@ export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
   failed: "Başarısız",
 };
 
-export type CampaignAudience =
+export type CampaignAudience = (
   | { kind: "all" }
   | { kind: "list"; id: string }
   | { kind: "segment"; id: string }
-  | { kind: "tag"; id: string };
+  | { kind: "tag"; id: string }
+) & {
+  /** Opt-in: exclude score=0 contacts for this campaign only; unknown/new contacts remain eligible. */
+  excludeDormant?: boolean;
+};
 
 export type CampaignUtm = {
   enabled: boolean;

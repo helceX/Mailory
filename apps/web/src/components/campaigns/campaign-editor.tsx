@@ -11,6 +11,8 @@ import {
   type Finding,
   type HealthBand,
   type ReadinessIssue,
+  type AudiencePlan,
+  type ContentEfficiency,
   dayNotes,
   isPoorSendDay,
   isWeekend,
@@ -51,6 +53,8 @@ export type EditorProps = {
   ai: AiStatus;
   health: { score: number; band: HealthBand; findings: Finding[] };
   audienceCount: number;
+  audiencePlan: AudiencePlan | null;
+  contentEfficiency: ContentEfficiency | null;
   requireApproval: boolean;
   canSend: boolean;
   identities: (Option & { fromEmail: string; usable: boolean })[];
@@ -74,6 +78,7 @@ export function CampaignEditor(props: EditorProps) {
     audienceKind: campaign.audience?.kind ?? "",
     audienceId:
       campaign.audience && "id" in campaign.audience ? campaign.audience.id : "",
+    excludeDormant: campaign.audience?.excludeDormant ?? false,
     utm: campaign.utm,
     trackOpens: campaign.trackOpens,
     trackClicks: campaign.trackClicks,
@@ -94,9 +99,14 @@ export function CampaignEditor(props: EditorProps) {
 
   function audiencePayload(): CampaignAudience | null {
     if (!form.audienceKind) return null;
-    if (form.audienceKind === "all") return { kind: "all" };
+    if (form.audienceKind === "all")
+      return { kind: "all", excludeDormant: form.excludeDormant };
     return form.audienceId
-      ? ({ kind: form.audienceKind, id: form.audienceId } as CampaignAudience)
+      ? ({
+          kind: form.audienceKind,
+          id: form.audienceId,
+          excludeDormant: form.excludeDormant,
+        } as CampaignAudience)
       : null;
   }
 
@@ -323,6 +333,52 @@ export function CampaignEditor(props: EditorProps) {
               </>
             )}
           </p>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={form.excludeDormant}
+                disabled={!form.audienceKind || busy !== null}
+                onChange={(e) => set("excludeDormant", e.target.checked)}
+              />
+              Kitle Tasarruf Modu
+            </label>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Son 90 günlük gönderim geçmişinde etkileşim skoru sıfır olan kişileri
+              yalnızca bu kampanyadan çıkarır. Yeni ve yeterli geçmişi olmayan kişiler
+              korunur; kimse silinmez veya abonelikten çıkarılmaz. İzleme kapalıysa veya
+              alıcı istemcisi ölçümü engelliyorsa skor gerçek ilgiyi yansıtmayabilir;
+              hedef kitlenizi kontrol edin.
+            </p>
+            {!dirty && props.audiencePlan ? (
+              <div className="mt-3" aria-live="polite">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Metric
+                    label="Standart kitle"
+                    value={props.audiencePlan.standard.toLocaleString("tr-TR")}
+                  />
+                  <Metric
+                    label="Tasarruf modunda"
+                    value={props.audiencePlan.economical.toLocaleString("tr-TR")}
+                  />
+                  <Metric
+                    label="Daha az gönderim"
+                    value={`${props.audiencePlan.avoided.toLocaleString("tr-TR")} (%${props.audiencePlan.reductionPercent})`}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Gönderim adedi karşılaştırmasıdır; aynı sonucu veya aynı oranda fatura
+                  tasarrufunu garanti etmez. Abonelik ve bastırma kontrolleri her iki
+                  kitlede de uygulanır. Yeniden etkinleştirme kampanyası için modu
+                  kapatın.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Karşılaştırmayı görmek için hedef kitlenizi seçip kaydedin.
+              </p>
+            )}
+          </div>
         </Section>
 
         <Section title="5. İzleme ve UTM">
@@ -416,6 +472,30 @@ export function CampaignEditor(props: EditorProps) {
           </p>
         ) : null}
 
+        {!dirty && props.contentEfficiency ? (
+          <section
+            className="rounded-lg border p-3"
+            aria-labelledby="content-efficiency-title"
+          >
+            <h3 id="content-efficiency-title" className="text-sm font-semibold">
+              İçerik verimi
+            </h3>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Metric
+                label="Tahmini okuma"
+                value={`${props.contentEfficiency.readingSeconds} sn`}
+              />
+              <Metric
+                label="E-posta boyutu"
+                value={`${(props.contentEfficiency.htmlBytes / 1024).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} KB`}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Önizleme ölçümüdür; kişiselleştirme ve izleme boyutu artırabilir. Okuma
+              süresi 200 kelime/dakika varsayımıyla hesaplanır.
+            </p>
+          </section>
+        ) : null}
         <HealthPanel
           score={props.health.score}
           band={props.health.band}
@@ -524,6 +604,15 @@ type Sample = {
   excerpt: string;
   issues: { code: string; message: string }[];
 };
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
 
 /** Pre-send review: the campaign as it will look for real, awkward contacts from the audience. */
 function SamplesReview({

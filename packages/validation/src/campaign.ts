@@ -2,6 +2,7 @@ import { z } from "zod";
 import { emailSchema } from "./audience";
 
 const uuid = z.string().uuid();
+const economy = { excludeDormant: z.boolean().optional() };
 const utmValue = z
   .string()
   .trim()
@@ -12,10 +13,10 @@ const utmValue = z
   );
 
 export const campaignAudienceSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("all") }),
-  z.object({ kind: z.literal("list"), id: uuid }),
-  z.object({ kind: z.literal("segment"), id: uuid }),
-  z.object({ kind: z.literal("tag"), id: uuid }),
+  z.object({ kind: z.literal("all"), ...economy }),
+  z.object({ kind: z.literal("list"), id: uuid, ...economy }),
+  z.object({ kind: z.literal("segment"), id: uuid, ...economy }),
+  z.object({ kind: z.literal("tag"), id: uuid, ...economy }),
 ]);
 
 export const campaignUtmSchema = z.object({

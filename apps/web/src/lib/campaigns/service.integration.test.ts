@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import {
   asOrganizationId,
   campaigns,
+  contacts,
   createContact,
   createDb,
   createSenderDomain,
@@ -128,6 +129,47 @@ suite("campaign engine (real Postgres)", () => {
   }
   const fetchRow = async (id: string) =>
     (await db.select().from(campaigns).where(eq(campaigns.id, id)))[0]!;
+
+  it("persists opt-in economy, freezes its count and retains the mode when duplicated", async () => {
+    const w = await workspace();
+    const id = await readyDraft(w);
+    const people = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.organizationId, w.oid));
+    await db
+      .update(contacts)
+      .set({ engagementScore: 0 })
+      .where(eq(contacts.id, people[0]!.id));
+    await db
+      .update(contacts)
+      .set({ engagementScore: 80 })
+      .where(eq(contacts.id, people[1]!.id));
+    expect(
+      await svc.updateCampaignFor(deps(), w.actor, id, {
+        audience: { kind: "list", id: w.listId, excludeDormant: true },
+      }),
+    ).toMatchObject({ ok: true });
+    const reviewed = await svc.getCampaignFor(deps(), w.actor, id);
+    expect(reviewed).toMatchObject({
+      ok: true,
+      audienceCount: 2,
+      audiencePlan: { standard: 3, economical: 2, avoided: 1, unscored: 1 },
+      contentEfficiency: { sizeBand: "small" },
+    });
+    expect(await svc.scheduleCampaignFor(deps(), w.actor, id)).toMatchObject({
+      ok: true,
+    });
+    expect((await fetchRow(id)).snapshot?.audienceCount).toBe(2);
+    const duplicate = await svc.duplicateCampaignFor(deps(), w.actor, id);
+    if (!duplicate.ok) throw new Error("duplicate");
+    expect((await fetchRow(duplicate.id)).audience).toEqual({
+      kind: "list",
+      id: w.listId,
+      excludeDormant: true,
+    });
+    expect(sent).toHaveLength(0);
+  });
 
   describe("pre-send review (ön otopsi)", () => {
     it("surfaces awkward real contacts and what would go wrong for each; sends nothing", async () => {

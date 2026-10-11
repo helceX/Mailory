@@ -18,17 +18,18 @@ export async function resolveAudienceFilter(
   audience: CampaignAudience | null,
 ): Promise<{ filter: ContactFilter | null; exists: boolean }> {
   if (!audience) return { filter: null, exists: false };
+  const economy = audience.excludeDormant ? { excludeDormant: true } : {};
   switch (audience.kind) {
     case "all":
-      return { filter: {}, exists: true };
+      return { filter: { ...economy }, exists: true };
     case "list": {
       const list = await getList(db, organizationId, audience.id);
-      return { filter: { listId: audience.id }, exists: Boolean(list) };
+      return { filter: { listId: audience.id, ...economy }, exists: Boolean(list) };
     }
     case "tag": {
       const tags = await listTags(db, organizationId);
       return {
-        filter: { tagId: audience.id },
+        filter: { tagId: audience.id, ...economy },
         exists: tags.some((t) => t.id === audience.id),
       };
     }
@@ -36,7 +37,10 @@ export async function resolveAudienceFilter(
       const segment = await getSegment(db, organizationId, audience.id);
       return {
         filter: segment
-          ? { segment: segment.definition as NonNullable<ContactFilter["segment"]> }
+          ? {
+              segment: segment.definition as NonNullable<ContactFilter["segment"]>,
+              ...economy,
+            }
           : null,
         exists: Boolean(segment),
       };

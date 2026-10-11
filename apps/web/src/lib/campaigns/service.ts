@@ -10,6 +10,11 @@ import {
   reviewContent,
   reviewSender,
   scoreFindings,
+  planAudience,
+  economicalAudienceHealth,
+  measureContent,
+  reviewContentEfficiency,
+  type ContentEfficiency,
   DEFAULT_UTM,
   evaluateReadiness,
   hasBlockers,
@@ -24,7 +29,6 @@ import {
 } from "@mailory/core";
 import {
   audienceEngagement,
-  countSendable,
   getOrgSendLimit,
   createCampaign,
   deleteCampaignDraft,
@@ -236,15 +240,35 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
   const customKeys = (await listContactFields(deps.db, actor.organizationId)).map(
     (f) => f.key,
   );
-  const audienceCount =
+  const [baseHealth, dailyLimit] = await Promise.all([
     ctx.audienceFilter && ctx.audienceExists
-      ? await countSendable(deps.db, actor.organizationId, ctx.audienceFilter)
-      : 0;
+      ? audienceEngagement(deps.db, actor.organizationId, {
+          ...ctx.audienceFilter,
+          excludeDormant: false,
+        })
+      : null,
+    getOrgSendLimit(deps.db, actor.organizationId),
+  ]);
+  const audiencePlan = baseHealth ? planAudience(baseHealth) : null;
+  const audienceHealth =
+    baseHealth && row.audience?.excludeDormant
+      ? economicalAudienceHealth(baseHealth)
+      : baseHealth;
+  const audienceCount = audienceHealth?.size ?? 0;
   let unknown: string[] = [];
+  let contentEfficiency: ContentEfficiency | null = null;
   if (ctx.template?.doc) {
     const brand = await loadBrandKit(deps, actor);
-    unknown = (await renderFor(deps, actor, row, ctx.template.doc, brand, customKeys))
-      .unknownKeys;
+    const rendered = await renderFor(
+      deps,
+      actor,
+      row,
+      ctx.template.doc,
+      brand,
+      customKeys,
+    );
+    unknown = rendered.unknownKeys;
+    contentEfficiency = measureContent(rendered.html, rendered.text);
   }
   const issues = evaluateReadiness({
     subject: row.subject,
@@ -264,12 +288,6 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
       severity: "blocker",
       message: "Şablon içeriği okunamadı.",
     });
-  const [audienceHealth, dailyLimit] = await Promise.all([
-    ctx.audienceFilter && ctx.audienceExists
-      ? audienceEngagement(deps.db, actor.organizationId, ctx.audienceFilter)
-      : null,
-    getOrgSendLimit(deps.db, actor.organizationId),
-  ]);
   // Missing unsubscribe link / unverified sender are readiness blockers already; don't list them twice.
   const findings = [
     ...reviewContent({
@@ -282,10 +300,19 @@ async function readiness(deps: CampaignDeps, actor: Actor, row: Campaign) {
       ? reviewSender(ctx.domain ? { verified: true, ...ctx.domain } : null)
       : []),
     ...reviewAudience(audienceHealth, dailyLimit),
+    ...(contentEfficiency ? reviewContentEfficiency(contentEfficiency) : []),
   ].filter((f) => f.code !== "no_unsubscribe" && f.code !== "sender_unverified");
   const score = scoreFindings(findings);
   const health = { score, band: healthBand(score), findings };
-  return { ctx, issues, audienceCount, customKeys, health };
+  return {
+    ctx,
+    issues,
+    audienceCount,
+    customKeys,
+    health,
+    audiencePlan,
+    contentEfficiency,
+  };
 }
 
 // ---- queries -----------------------------------------------------------------------------------
@@ -320,6 +347,8 @@ export async function getCampaignFor(deps: CampaignDeps, actor: Actor, id: strin
     issues: r.issues,
     health: r.health,
     audienceCount: r.audienceCount,
+    audiencePlan: r.audiencePlan,
+    contentEfficiency: r.contentEfficiency,
     requireApproval: policy.requireApproval,
     sender: r.ctx.identity
       ? {
